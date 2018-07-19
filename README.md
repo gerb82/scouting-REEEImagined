@@ -24,7 +24,9 @@ it's also written in a weird web language, when we work in java. so every year s
 
 
 so, what now?
+
 simple:
+
 we nuke it from orbit (not the team), and we rebuild it. why rebuild the wheel?
 because our wheel is currently a 2d square, and the rotational axis goes from one corner to the opposite one.
 
