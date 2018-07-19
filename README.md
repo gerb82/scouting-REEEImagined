@@ -31,7 +31,9 @@ because our wheel is currently a 2d square, and the rotational axis goes from on
 ok ok, back to serious things. what does this system need to do?
 
 access:
+
 local network: scouting area only.
+
 public network: anything that cannot or should not be connected directly to the local system/can also be connected through the internet. this network will be password protected, with different roles having different passwords, as this is the only way to stop
 someone from connecting to it and messing with things severely, be it a person in the team in a wrong role, or even an outsider.
 
