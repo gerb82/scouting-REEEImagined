@@ -68,7 +68,7 @@ we will have a testing environment for the different screens to test them withou
 
 that's... a lot of features. i know. so work-plan (i'll be using feature numbers):
 1) running alpha version - start of august. 10th of august worst case scenario.
-alpha includes: 1 and 2 zone. 3 somewhere along the way. maybe 4. 6 for debugging, aka crude. 12 is a basic rule. 13 is a must. 14 too. 16, 17 and 18 must have some sort of basic support.
+alpha includes: 1 and 2 done. 3 somewhere along the way. maybe 4. 6 for debugging, aka crude. 12 is a basic rule. 13 is a must. 14 too. 16, 17 and 18 must have some sort of basic support.
 gui will be pretty crude and just functional, nothing more. configuration edited by text
 2) running beta version - rosh-hashana in the worst case possible.
 beta includes: everything in the alpha. easy way to create connections for all the different clients, and as many of them being functional as possible. deeper support for the configuration with more options. at least start working on 15.
