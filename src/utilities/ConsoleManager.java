@@ -3,6 +3,8 @@ package utilities;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -44,8 +46,10 @@ public class ConsoleManager {
             crashLog.createNewFile();
             class logStream extends FileOutputStream {
 
-                private logStream(File file, boolean b) throws FileNotFoundException {
+                private Paint color;
+                private logStream(File file, boolean b, Paint textColor) throws FileNotFoundException {
                     super(file, b);
+                    color = textColor;
                 }
 
                 @Override
@@ -62,7 +66,7 @@ public class ConsoleManager {
 
                 @Override
                 public void write(byte[] b){
-                    consoleAccessor.updateConsole(new String(b));
+                    consoleAccessor.updateConsole(new String(b), color);
                     try {
                         super.write(b);
                         flush();
@@ -71,8 +75,8 @@ public class ConsoleManager {
                     }
                 }
             }
-            System.setOut(new PrintStream(new logStream(log, true)));
-            System.setErr(new PrintStream(new logStream(crashLog, true)));
+            System.setOut(new PrintStream(new logStream(log, true, Color.BLACK)));
+            System.setErr(new PrintStream(new logStream(crashLog, true, Color.RED)));
             return loader;
         } catch (IOException e) {
             e.printStackTrace();
