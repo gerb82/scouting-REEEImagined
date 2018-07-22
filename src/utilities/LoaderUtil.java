@@ -25,7 +25,7 @@ public class LoaderUtil {
      * @throws YouIdiotException - If the associated FXML file does not exist in the specified location
      */
     public static FXMLLoader set(Class clazz) throws YouIdiotException{
-        URL path = pathMaker(clazz, "resources", "fxml");
+        URL path = pathMaker(clazz, "fxml");
         if(path == null){
             throw new YouIdiotException("The FXML file appropriate for the " + clazz.toString() + " does not exist in the right place");
         }
@@ -62,6 +62,7 @@ public class LoaderUtil {
         switch(fileType){
             case "fxml":
                 output = output.replace("Controller", "") + ".fxml";
+                output = output.replace("code", "resources");
                 break;
             case "":
                 output = output.replace(clazz.getSimpleName(), "");
@@ -72,13 +73,11 @@ public class LoaderUtil {
     /**
      * Method used to get the absolute location of the load location and add to it the relative location of the requested file.
      * @param clazz - The class of the controller.
-     * @param newPackage - The package that will be used instead of "code".
      * @param fileType - The type of file to look for. If fileType is empty it will look for a directory.
      * @return - The full path of the FXML file.
      */
-    public static URL pathMaker(Class clazz, String newPackage, String fileType){
-        String controller = resource(clazz, fileType);
-        String fxmlFile = controller.replace("code", newPackage);
-        return LoaderUtil.class.getClassLoader().getResource(fxmlFile);
+    public static URL pathMaker(Class clazz, String fileType){
+        String targetFile = resource(clazz, fileType);
+        return LoaderUtil.class.getClassLoader().getResource(targetFile);
     }
 }

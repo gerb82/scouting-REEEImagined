@@ -3,7 +3,6 @@ package utilities;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -17,7 +16,8 @@ public class ConsoleManager {
         Parent root;
         ConsoleController controller = null;
         try {
-            loader = new FXMLLoader(LoaderUtil.pathMaker(ConsoleController.class, "", "fxml"));
+            loader = new FXMLLoader(LoaderUtil.pathMaker(ConsoleController.class, "fxml"));
+            System.out.println(loader.getLocation());
             root = loader.load();
             controller = loader.getController();
             if(!contained){
@@ -30,7 +30,7 @@ public class ConsoleManager {
             e.printStackTrace();
         }
         final ConsoleController consoleAccessor = controller;
-        File logDirectory = new File((LoaderUtil.pathMaker(clazz, "code", "").getPath()+"logs").replace("%20", " "));
+        File logDirectory = new File((LoaderUtil.pathMaker(clazz, "").getPath()+"logs").replace("%20", " "));
         File log = null;
         try {
             LocalDateTime time = LocalDateTime.now();
@@ -53,32 +53,32 @@ public class ConsoleManager {
             e.printStackTrace();
         }
         try {
-            System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(log, true),1) {
+            System.setOut(new PrintStream(new FileOutputStream(log, true) {
 
                 @Override
                 public void write(byte[] b, int off, int len){
-                    try {
-                        byte[] line = new byte[len];
-                        System.arraycopy(b, off, line, 0, len);
-                        consoleAccessor.updateConsole(new String(line));
-                        super.write(b, off, len);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    byte[] line = new byte[len];
+                    System.arraycopy(b, off, line, 0, len);
+                    write(line);
                 }
 
                 @Override
                 public void write(int b){
+                    write(new byte[]{((byte)b)});
+                }
+
+                @Override
+                public void write(byte[] b){
+                    consoleAccessor.updateConsole(new String(b));
                     try {
-                        consoleAccessor.updateConsole(new String(new byte[]{((byte)b)}));
                         super.write(b);
+                        flush();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }));
             System.setErr(System.out);
-            System.out.println("success!");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
