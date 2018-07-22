@@ -12,27 +12,18 @@ import java.time.LocalDateTime;
 public class ConsoleManager {
 
     public static FXMLLoader enableConsole(Class clazz, boolean contained){
-        FXMLLoader loader = null;
-        Parent root;
-        ConsoleController controller = null;
         try {
-            loader = new FXMLLoader(LoaderUtil.pathMaker(ConsoleController.class, "fxml"));
-            System.out.println(loader.getLocation());
-            root = loader.load();
-            controller = loader.getController();
+            FXMLLoader loader = new FXMLLoader(LoaderUtil.pathMaker(ConsoleController.class, "fxml"));
+            Parent root = loader.load();
+            ConsoleController controller = loader.getController();
             if(!contained){
                 Stage stage = new Stage();
                 stage.setTitle("Console");
                 stage.setScene(new Scene(root, 600, 400));
                 stage.show();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        final ConsoleController consoleAccessor = controller;
-        File logDirectory = new File((LoaderUtil.pathMaker(clazz, "").getPath()+"logs").replace("%20", " "));
-        File log = null;
-        try {
+            final ConsoleController consoleAccessor = controller;
+            File logDirectory = new File((LoaderUtil.pathMaker(clazz, "").getPath()+"logs").replace("%20", " "));
             LocalDateTime time = LocalDateTime.now();
             int[] date = new int[]{time.getYear(), time.getMonthValue(), time.getDayOfMonth()};
             int hour = time.getHour();
@@ -47,13 +38,15 @@ public class ConsoleManager {
                 }
                 i++;
             }
-            log = new File( logDirectory.getPath() + File.separator +"log " + hour + '꞉' + minute + '-' + seconds + ".txt");
+            File log = new File( logDirectory.getPath() + File.separator +"log " + hour + '꞉' + minute + '-' + seconds + ".txt");
             log.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            System.setOut(new PrintStream(new FileOutputStream(log, true) {
+            File crashLog = new File(log.getPath().replace(".txt", " Errors.txt"));
+            crashLog.createNewFile();
+            class logStream extends FileOutputStream {
+
+                private logStream(File file, boolean b) throws FileNotFoundException {
+                    super(file, b);
+                }
 
                 @Override
                 public void write(byte[] b, int off, int len){
@@ -77,11 +70,13 @@ public class ConsoleManager {
                         e.printStackTrace();
                     }
                 }
-            }));
-            System.setErr(System.out);
-        } catch (FileNotFoundException e) {
+            }
+            System.setOut(new PrintStream(new logStream(log, true)));
+            System.setErr(new PrintStream(new logStream(crashLog, true)));
+            return loader;
+        } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-        return loader;
     }
 }
