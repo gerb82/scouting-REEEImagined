@@ -9,8 +9,6 @@ import javafx.stage.Stage;
 import utilities.ConsoleManager;
 import utilities.LoaderUtil;
 
-import java.io.File;
-import java.nio.file.Paths;
 
 public class Main extends Application{
 

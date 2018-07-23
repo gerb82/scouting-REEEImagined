@@ -1,0 +1,10 @@
+At the start of the file, there will be a string explaining what this file does.
+This string has to be in a very specific format, as it is essentially how the reader knows what to do with said file.
+It is essentially a file header. The header will always look like this:
+$$[DataType]/$$
+possible DataTypes:
+# ClassDictionary - A dictionary of sorts that links specified shortcuts to appropriate class paths.
+# GBUINode - A simple UI node, in a format similar to that of an fxml file.
+# GBUINodeScaled - A more advanced UI node, with an option to calculate the different measurements for the different screens according to screen size and ratio.
+# DataFile - A simple file containing lists of different data types. It is intended to be used by the end user in order to define different types of data they would like the program to work with, without touching a single line of the source code.
+Because the different types differ greatly from each-other, they each have their own manual explaining how they work.

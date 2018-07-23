@@ -1,0 +1,48 @@
+A ClassDictionary data file is actually the simplest data file type.
+after the header, you'll basically just have a long list that looks like this:
+
+[Name]: = [ClassPath];
+
+Name will just be whatever nickname you choose to give this class. Only letters may be used for names.
+ClassPath will be the path you would normally use in order to import said class.
+If you wish that the classPath will be for something like a stack, that changes it's type based on the object in contains using <E...>, create it like this:
+([E...])_[ClassPath]
+If there is only one E, you just put in E once. if there is more than one, you just do (E,E,E...) for as many as you need. Make sure they are all 'E'.
+If you wish that the ClassPath will be for a primitive type, use the appropriate one out of this list:
+# B_byte
+# B_char
+# B_short
+# B_int
+# B_long
+# B_float
+# B_double
+# B_boolean
+
+*Note that if the class does not have any public constructor, the code will throw an exception if you try to instantiate it.
+
+
+From here on out it's things you do not actually care about for the Dictionary file, but this is how you will use what you defined here elsewhere:
+
+
+If you just wish to create an object of the appropriate class, you would just do one of the following:
+T_[Name]:[ObjectName] = x; //Will create a new temporary object, that will be used for local calculations and not passed to the program in the end.
+P_[Name]:[ObjectName] = x; //Will create a new permanent object. The difference from a temporary one is that this one will be passed to the program after data is fully read, and the program will attempt to find a fitting object to inject it into. The instance of the object that will go through the injection can be specified, as well as the method of injection. The program will crash if there is nothing to inject into/the injection fails.
+C_[Name]:[ObjectName] = x; //Will create a new contained object. A contained object will not be deleted at the end of the read, and will actually be used in the main program. However, it will not be injected. In order to pass it to the main program, you'll have to attach it to a permanent object in one way or another (for example, by adding it the list of children of a permanent node (GUI example)).
+
+*Not linking a contained object to a permanent one by the end of the load will result in a warning in the console, but nothing more. That being said, please don't be stupid.
+*Temporary objects can be deleted at any time. You do that in the following way:
+ delete:[ObjectName]; //Will throw an exception if the object is not a temporary object.
+
+If you wish to instantiate a certain object, you will need to do the following:
+[ObjectName] = N_[Name]:(args...); //Will create a new instance of the object. You may pass any amount of arguments, from 0 to infinity. Keep in mind that order does matter, as it will just try to find a constructor that accepts these types of arguments in this order, and if it can't find one, it will crash.
+
+If you wish to create an array of said object, you will have to do the following:
+T/C/P_[Name]:[ObjectName][] = x; //Will create a new temporary, contained or permanent (you choose) array.
+
+If you wish to instantiate an array of said object, you will have to do the following:
+[ObjectName][] = N_[Name]:[[ListOfDimensionSizes]]; //Will instantiate a new array. In order to instantiate it, you will have to give a list of dimensions. You do that by giving them as an "argument". For example: [3,4,6] will create an array where the first dimension's length will be 3, the second's will be 4, and the third's will be 6. The amount of dimension lengths you give will determine the amount of dimensions of the array.
+
+If you wish to create an object like a stack for example, that uses the <E...> part we mentioned before, you will have to do the following:
+T/C/P_[Name]:[ObjectName]<[VariableOfType1],...> = x; //Works like the previous examples. Just make sure you put the exact amount of E's.
+
+It's then the same for instantiating it as it's been so far. If you wish to combine such a thing with an array, then the <E...> will come before the [] of the array.

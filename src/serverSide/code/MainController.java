@@ -17,9 +17,4 @@ public class MainController {
         System.out.println(message.getText());
         event.consume();
     }
-
-    @FXML
-    public void initialize() {
-        submit.setOnAction(this::submitMessage);
-    }
 }
