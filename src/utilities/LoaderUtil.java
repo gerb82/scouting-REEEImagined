@@ -66,6 +66,10 @@ public class LoaderUtil {
                 break;
             case "":
                 output = output.replace(clazz.getSimpleName(), "");
+                break;
+            case "GBDConfig":
+                output = output.replace("code", "configuration");
+                output = output + ".GBD";
         }
         return output;
     }

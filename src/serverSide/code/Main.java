@@ -7,7 +7,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import utilities.ConsoleManager;
+import utilities.GBLoader.ClassToNamesMap;
 import utilities.LoaderUtil;
+
+import java.io.File;
 
 
 public class Main extends Application{
@@ -19,6 +22,7 @@ public class Main extends Application{
         FXMLLoader loader = LoaderUtil.set(MainController.class);
         Parent root = loader.getRoot();
         Scene scene = new Scene(root, 600, 400);
+        ClassToNamesMap.addToDictionary(new File((LoaderUtil.pathMaker(Main.class, "GBDConfig")).getPath().replace("%20", " ")));
         primaryStage.setScene(scene);
         primaryStage.show();
     }

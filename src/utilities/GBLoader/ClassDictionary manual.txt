@@ -5,9 +5,8 @@ after the header, you'll basically just have a long list that looks like this:
 
 Name will just be whatever nickname you choose to give this class. Only letters may be used for names.
 ClassPath will be the path you would normally use in order to import said class.
-If you wish that the classPath will be for something like a stack, that changes it's type based on the object in contains using <E...>, create it like this:
-([E...])_[ClassPath]
-If there is only one E, you just put in E once. if there is more than one, you just do (E,E,E...) for as many as you need. Make sure they are all 'E'.
+If you use a class that uses <?,...>, just use it normally, and all types inside the <> will just be objects.
+You will have to keep track of the types, or use the editor that will do it for you, as it is impossible to create them and type the properly without compiling the GBD data to java code/compiling code at runtime, one of which loses the point of this format, while the other is not a viable option as it complicated everything by a lot.
 If you wish that the ClassPath will be for a primitive type, use the appropriate one out of this list:
 # B_byte
 # B_char
@@ -42,7 +41,10 @@ T/C/P_[Name]:[ObjectName][] = x; //Will create a new temporary, contained or per
 If you wish to instantiate an array of said object, you will have to do the following:
 [ObjectName][] = N_[Name]:[[ListOfDimensionSizes]]; //Will instantiate a new array. In order to instantiate it, you will have to give a list of dimensions. You do that by giving them as an "argument". For example: [3,4,6] will create an array where the first dimension's length will be 3, the second's will be 4, and the third's will be 6. The amount of dimension lengths you give will determine the amount of dimensions of the array.
 
-If you wish to create an object like a stack for example, that uses the <E...> part we mentioned before, you will have to do the following:
-T/C/P_[Name]:[ObjectName]<[VariableOfType1],...> = x; //Works like the previous examples. Just make sure you put the exact amount of E's.
+In order to access an array as a whole, just write it's name normally. If you wish to access a specific cell of it (which can be another array), use [ObjectName][[CellNumber]], and that will be the [ObjectName] for that cell (so you can repeat that for it's cells etc).
 
-It's then the same for instantiating it as it's been so far. If you wish to combine such a thing with an array, then the <E...> will come before the [] of the array.
+If you wish to use an action on one of those objects, just do the following:
+[ObjectName].[ActionName]([ArgsIfAny]);
+
+Any calls to a static method should be done using:
+[Name]:.[ActionName]([ArgsIfAny]);
