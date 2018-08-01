@@ -1,0 +1,104 @@
+So you wanna program in GBD. That's nice. But do you know how to do that? Doubt it. You're reading MY manual after all. None would do that unless they must.
+
+Ok memes aside, how the hell does this format i came up with work?
+
+So, i'm assuming you know java already. If not, hopefully by the time you're reading this i already made the program that teaches that.
+If i didn't, go nag the lead programmer. I'm not kidding. Go do it right now.
+
+So, the way i see it, there are two main types of lines.
+You have a line for creating a value/using an operation, and a line for setting a value.
+
+Lines for setting a value look like this:
+X (Name) = Y(A,B,C);
+etc.
+Just keep in mind: The right side can also do stuff. It's just that the line is centered around the right side's return type.
+It sets that return type to the left side.
+
+We also have normal lines that just perform operations. For example:
+Y.Operation(A,B,C);
+etc.
+Basically, it's like the first one, but usually an operation on an object, and USUALLY with a void return type (though it can be any return type. We simply throw that return type away.)
+
+There are technically also a third type of lines. We'll call em code-flow lines.
+if(){}, else{}, else if(){}, while(){}, do{}while(), for(a;b;c){}, for(A:A's){}, switch(){case a:, case b: default:} and maybe a few more.
+pretty normal stuff really.
+
+So... most of the things you can do in java are supported by the language. How did i make something that carzy? I didn't really. It's just generic as hell.
+The file "ClassDictionary manual.txt" found in this package will show you details about syntax.
+Keep in mind though, there is one pretty big difference you'll barely notice.
+Strings in java, in case you weren't aware, are.... honestly ridiculous. They have so many operators it's scary.
+Now, i would have to implement every single one of them. Not fun at all.
+So, if you wanna manipulate strings: you'll have to make do with the basics.
+I only implemented one operator for strings that comes inside of the parenthesis ("").
+Since the program realises it's the start or end of a string using parenthesis, if you wanna have them as part of your string, just write \" instead of " in the right spot.
+If you wanna use a ' as a char, just use '''. Chars will just check for the char between the first ' and the one two chars later.
+
+Other than that, code-flow works for the aforementioned concepts.
+What about classes etc?
+Oh boy that one's painful.
+So, as you probably figured, i'm not letting you create classes. Defining a class at runtime would be utterly impossible as far as i'm aware.
+But! Don't lose hope. For the level of scripting you will need, you can avoid classes.
+Defining methods will still work, and even defining your own objects.
+Yea. You read that right. Your own fucking objects.
+So methods will be public by default, don't worry, they'll get erased after it and they are only for your code.
+Ok. I'm not exactly correct. Methods will be accessible through the object that interpreted your file.
+Usually, it would be deleted automatically. But if you feel like making me cry on the inside for all the hours invested in this feature, you CAN keep the interpreter.
+You can even load another file from this one. Even while writing this i feel like crying. But you can.
+In theory, if you got creative enough, i think you could run your whole code from this file.
+You could also stab someone, or even me. It would have a similar effect.
+BUT that's besides the point. My point is that this language is generic as hell. It's not aiming for efficiency. It's aiming to be generic.
+Defining your own methods will be easy:
+
+func [returnType] [name]([args]){
+    code;
+    return [outputObject];
+}
+
+Objects are similar. Just that they can have objects inside of them, or even methods.
+GOD this was a complex one to make (fun fact, i'm writing this doc before writing it. I'M NOT PROCRASTINATING, I'M JUST DOING IT IN AN ORGANIZED WAY ;-;).
+
+Object [TypeName]{
+
+    constructor([args]){
+        code;
+    }
+
+    func [returnType] [name]([args]){
+        code;
+        return [outputObject];
+    }
+}
+
+And yea. You can nest them. Man this one's a hard one to code.
+
+So... after you finished tormenting poor old me... few other things you should now.
+All variables are global. you can delete em at any point (If they are of type temporary (T_)), but they are all there and PUBLIC. I trust you that you're not too dumb to break that.
+Script will throw exceptions for even the smallest errors. That being said, it ignores most characters so it shouldn't be that bad.
+Also, the exceptions are documented.
+
+One last thing. You're probably wondering how the heck are you supposed to give the Permanent variables back.
+So... basically, on the backend, all 3 types are stored in their respective Maps.
+Temporary map gets all it's cells destroyed and then the list is deleted upon completion.
+Contained map also gets deleted, but values are left alone. You get a warning in the logs if they aren't contained properly, but no crash.
+Permanent will by default go over every variable, compare it to a list of variables that support injection (via an annotation).
+If a value exists and fits the type, it just injects it. No questions asked.
+If a value does not exist, it throws an exception.
+You can override it so that when it is reached it acts in a different way.
+If you want you can even make it not inject to anything.
+WHY THOUGH?!
+Whatever it is, you can do it.
+Don't use it to run scripts at the end. If you wish to create an "On end" area, it's entirely possible, and it will be invoked before, after, or before and after injection.
+It's a lot more reliable than overriding a permanent variable's method, as it's always gonna run when you want it to. The list will USUALLY run at order of initiation, but i promise no reliability there.
+To do that, invoke scripts.OnEndBeforeInjection(){
+    code;
+}
+And scripts.OnEndAfterInjection(){
+
+}
+
+Both will run before contained and temporary are deleted.
+
+
+
+*Important thing to note on custom objects: they can only be temporary. You can reference them during the "OnEnd" methods. You can reference them anywhere in your script. But they cannot be contained or permanent, as they do not exist as actual java objects. The code cannot interact with them, as they are not actual compiled objects. When you use them, you will have to find a way to convert them to actual java objects if you wish to pass them to the java program.
+Essentially, both custom objects and functions are just tools for you to do your calculations in your scripts. The interpreter will simulate those nonexistent functions and objects to run your script, but they are not actual objects or functions. Just something that is faked in order to run your script.
