@@ -13,5 +13,6 @@ public class GBDYouIdiotException extends RuntimeException {
 
     public GBDYouIdiotException(String reason) {
         this.reason = reason;
+        System.out.println(reason);
     }
 }

@@ -7,10 +7,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import utilities.ConsoleManager;
-import utilities.GBLoader.ClassToNamesMap;
+import utilities.GBLoader.GBDReader;
 import utilities.LoaderUtil;
-
-import java.io.File;
 
 
 public class Main extends Application{
@@ -22,7 +20,9 @@ public class Main extends Application{
         FXMLLoader loader = LoaderUtil.set(MainController.class);
         Parent root = loader.getRoot();
         Scene scene = new Scene(root, 600, 400);
-        ClassToNamesMap.addToDictionary(new File((LoaderUtil.pathMaker(Main.class, "GBDConfig")).getPath().replace("%20", " ")));
+        //ClassToNamesMap.addToDictionary(new File((LoaderUtil.pathMaker(Main.class, "GBDConfig")).getPath().replace("%20", " ")));
+        //GBDReader reader = new GBDReader();
+        //reader.readDictionaries(new File("C:\\Users\\User\\IdeaProjects\\scouting REEEimagined\\src\\serverSide\\code\\gbdtest.txt"));
         primaryStage.setScene(scene);
         primaryStage.show();
     }

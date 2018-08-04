@@ -1,0 +1,23 @@
+this file contains all the regexes used by the gbd format
+
+
+quotation removal: "(?:'\"')|(?:\"((?:[^\\"]|\\"|\\[^"])*)\")|(\")"
+explanation:
+non-capture group: all quotation marks contained inside '' as those are a representation of the char "
+OR
+capture group 1: all strings contained between two "" who were both not captured during the non-capture group.
+take care though: the string "xts'"'" will treat the "xts'" as a string, causing an exception since the ' and the " are not closed by anything.
+if you want to have a " inside a string as an actual character, write it as \".
+this capture group will capture either normal characters, a \" as a ", or a \ with anything but a " after it as a \ with that thing after it as two separate chars.
+OR
+capture group 2: captures a " that has not been captured by any of the previous groups, meaning it is unpaired.
+if such a " is captured, an exception is thrown because it means there is a non-even number of " that can be string delimiters in the file, meaning the file is not properly written.
+
+chars removal: "(?s)('.')|(')"
+explanation:
+(?s) = dotall flag set to true. meaning any . in the regex will refer to one of ANY character that exists.
+capture group 1: all characters contained as one character between two ''.
+OR
+capture group 2: all ' that were not captured by the previous group, meaning they are not in a valid format.
+if group 2 is not empty, an exception is thrown because it means there are illegal ' in the file, meaning the file is not properly written.
+

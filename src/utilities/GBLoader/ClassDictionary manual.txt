@@ -7,15 +7,7 @@ Name will just be whatever nickname you choose to give this class. Only letters 
 ClassPath will be the path you would normally use in order to import said class.
 If you use a class that uses <?,...>, just use it normally, and all types inside the <> will just be objects.
 You will have to keep track of the types, or use the editor that will do it for you, as it is impossible to create them and type the properly without compiling the GBD data to java code/compiling code at runtime, one of which loses the point of this format, while the other is not a viable option as it complicated everything by a lot.
-If you wish that the ClassPath will be for a primitive type, use the appropriate one out of this list:
-# B_byte
-# B_char
-# B_short
-# B_int
-# B_long
-# B_float
-# B_double
-# B_boolean
+If you wish that the ClassPath will be for a primitive type, just use it's wrapper instead. It makes everyone's lives easier.
 
 *Note that if the class does not have any public constructor, the code will throw an exception if you try to instantiate it.
 

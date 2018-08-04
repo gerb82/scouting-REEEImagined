@@ -6,72 +6,20 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GBDReader {
 
     // variables
-    private Scanner scanner = null;
-    String currentLine;
-    String prefHeader = "";
+    private static Interpreter interpreter = new Interpreter();
 
-    // constructor
-    protected GBDReader() {
+    public static void readDictionaries(File... file){
+        for (File dictionary : file)
+        interpreter.setFileReaderProtocol(dictionary, "ClassDictionary");
     }
-
-    // header reader
-    protected String readHeader() {
-        scanner.useDelimiter(Pattern.compile("[/$$]"));
-        scanner.next();
-        String output = scanner.next();
-        currentLine = scanner.next();
-        return output;
-    }
-
-    // class finished
-    private void finishedFile() {
-        scanner.close();
-        scanner = null;
-    }
-
-    // class dictionary reader
-    protected void readClassDictionaryFile(HashMap<String, Class<?>> names, File file) {
-        scanner.reset();
-        scanner.useDelimiter(Pattern.compile(";"));
-        int lineCount = 1;
-        currentLine = scanner.next();
-        while (scanner.hasNext()) {
-            currentLine = scanner.next();
-            lineCount += currentLine.split(System.lineSeparator()).length;
-            currentLine = currentLine.replaceAll("[^A-Za-z:=.]", "");
-            try {
-                assert (currentLine.chars().filter(ch -> ch == ':').count() == 1);
-            } catch (AssertionError e) {
-                throw new GBDYouIdiotException("line number " + lineCount + " in the file " + file.getPath() + " does not have exactly one ':'. It is important you put exactly one in the right format for the interpreter to understand your file.");
-            }
-            try {
-                assert (currentLine.chars().filter(ch -> ch == '=').count() == 1);
-            } catch (AssertionError e) {
-                throw new GBDYouIdiotException("line number " + lineCount + " in the file " + file.getPath() + " does not have exactly one '='. It is important you put exactly one in the right format for the interpreter to understand your file.");
-            }
-            try {
-                assert (!names.containsKey(currentLine.substring(0, currentLine.indexOf(':') - 1)));
-                names.put(currentLine.substring(0, currentLine.indexOf(':')), Class.forName(currentLine.substring(currentLine.indexOf('=') + 1)));
-            } catch (ClassNotFoundException e) {
-                throw new GBDYouIdiotException("in the file " + file.getPath() + " line number " + lineCount + "'s class path is invalid. Please recheck that it is the right path. The path read: " + (currentLine.substring(currentLine.indexOf('=') + 1)));
-            } catch (AssertionError e) {
-                throw new GBDYouIdiotException("in the file " + file.getPath() + " line number " + lineCount + "'s name is already defined in the dictionary. Please check for duplicates in your file/change it to a different name. List of currently used names:" + names.keySet());
-            }
-        }
-        System.out.println("Successfully loaded the file " + file.getPath() + " as a GBDictionary");
-        finishedFile();
-    }
-
     // full code interpreter
-    private class Interpreter{
+    private static class Interpreter{
 
         private class Variable{
 
@@ -88,6 +36,186 @@ public class GBDReader {
                 }
                 else{
                     throw new GBDYouIdiotException("invalid cast. cannot cast " + value.getClass() + " into " + type);
+                }
+            }
+        }
+
+        private static HashMap<String, Class<?>> typeMap = new HashMap<>();
+        private HashMap<String, Variable> C_vars = new HashMap<>();
+        private HashMap<String, Variable> T_vars = new HashMap<>();
+        private HashMap<String, Variable> P_vars = new HashMap<>();
+        private HashMap<String, String> names = new HashMap<>();
+        private HashMap<Integer, Character> chars = new HashMap<>();
+        private HashMap<Character, Integer> charsNums = new HashMap<>();
+        private HashMap<Integer, String> strings = new HashMap<>();
+        private HashMap<String, Integer> stringsNums = new HashMap<>();
+        private int charsCounter = 0;
+        private int stringsCounter = 0;
+
+        private Interpreter(){
+
+        }
+
+        private void classDictionary(String finalScript){
+            String[] types = finalScript.toString().replaceAll("[^a-zA-Z:;=.]", "").split(";");
+            Pattern pattern = Pattern.compile("(.*):=(.*)");
+            Matcher matcher = null;
+            int lineCount = 0;
+            try {
+                for (String type : types) {
+                    if(type.isEmpty()){
+                        throw new GBDYouIdiotException("empty definition at line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
+                    }
+                    assert(type.chars().filter(ch -> ch ==':').count() == 1);
+                    assert(type.chars().filter(ch -> ch =='=').count() == 1);
+                    matcher = pattern.matcher(type);
+                    matcher.find();
+                    assert(matcher.group(1) == null && matcher.group(2) == null);
+                    typeMap.put(matcher.group(1), Class.forName(matcher.group(2)));
+                }
+            } catch (AssertionError e){
+                throw new GBDYouIdiotException("invalid formatting in line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
+            } catch (ClassNotFoundException e){
+                throw new GBDYouIdiotException("the class " + matcher.group(2) + " in line " + lineCount + " is not a valid class. note that the line count counts the amount of definitions up to this point, and does not consider enters");
+            }
+            System.out.println(typeMap);
+            System.out.println(finalScript);
+        }
+
+        private void scriptFile(StringBuilder finalScript, String header){
+            Pattern quotes = Pattern.compile("(?:'\"')|(?:\"((?:[^\\\"]|\\\"|\\[^\"])*)\")|(\")");
+            String finalV = finalScript.toString();
+            Matcher matcher = quotes.matcher(finalScript);
+            while(matcher.find()){
+                System.out.println(matcher.group(0));
+                for(int i = 1; i<= matcher.groupCount(); i++){
+                    if(i == 1 && matcher.group(1) != null) {
+                        Integer test = stringsNums.putIfAbsent(matcher.group(1), stringsCounter);
+                        if (test != null) {
+                            finalV = finalV.replace("\"" + matcher.group(1) + "\"","\"" + "@S" + test + "\"");
+                            System.out.println("replaced1");
+                        } else {
+                            finalV = finalV.replace("\"" + matcher.group(1) + "\"","\"" + "@S" + stringsCounter + "\"");
+                            strings.put(stringsCounter, matcher.group(1));
+                            stringsCounter++;
+                            System.out.println("replaced2");
+                        }
+                    }
+                    if (i == 2 && matcher.group(2) != null){
+                        throw new GBDYouIdiotException("invalid amount of \". check that each one has a closing one");
+                    }
+                }
+            }
+            Pattern charsP = Pattern.compile("(?s)('.')|(')");
+            finalScript = new StringBuilder(finalV);
+            matcher = charsP.matcher(finalScript);
+            while(matcher.find()){
+                System.out.println(matcher.group(0));
+                for(int i = 1; i<= matcher.groupCount(); i++){
+                    if(i == 1 && matcher.group(1) != null) {
+                        Integer test = charsNums.putIfAbsent(Character.valueOf(matcher.group(1).charAt(1)), charsCounter);
+                        if (test != null) {
+                            finalV = finalV.replace(matcher.group(1),"'" + "@C" + test + "'");
+                        } else {
+                            finalV = finalV.replace(matcher.group(1), "'" + "@C" + charsCounter + "'");
+                            chars.put(charsCounter, Character.valueOf(matcher.group(1).charAt(1)));
+                            charsCounter++;
+                        }
+                    }
+                    if (i == 2 && matcher.group(2) != null){
+                        throw new GBDYouIdiotException("invalid amount of \'. check that each one has a closing one");
+                    }
+                }
+            }
+        }
+
+        private void setFileReaderProtocol(File file, String prefHeader) {
+            try {
+                List<String> script = Files.readAllLines(file.toPath());
+                StringBuilder finalScript = new StringBuilder("");
+                String header = script.get(0);
+                Matcher matcher = Pattern.compile("\\Q$$\\E(.*)\\Q/$$\\E").matcher(header);
+                matcher.find();
+                header = matcher.group(1);
+                if (!prefHeader.equals(header)) {
+                    throw new GBDYouIdiotException("file header is incorrect");
+                }
+                script.remove(0);
+                for (String string : script) {
+                    finalScript.append(string + System.lineSeparator());
+                }
+                switch(header) {
+                    case "ClassDictionary":
+                        classDictionary(finalScript.toString());
+                        break;
+                    case "DataFile":
+                        scriptFile(finalScript, header);
+                        break;
+                }
+
+            } catch (IOException e) {
+                throw new GBDYouIdiotException("The file doesn't exist");
+            }
+        }
+
+        private int getNextIndexOfWord(String string, String word, int startIndex){
+            Pattern pattern = Pattern.compile("[1-9a-zA-Z]");
+            boolean failed = false;
+            while(true) {
+                int firstIndex = string.indexOf(word, startIndex);
+                if (firstIndex != -1) {
+                    if (firstIndex != 0) {
+                        String before = Character.toString(string.charAt(firstIndex - 1));
+                        Matcher matcher = pattern.matcher(before);
+                        if (matcher.find()) {
+                            failed = true;
+                        }
+                    }
+                    if (firstIndex != string.length()-1){
+                        String after = Character.toString(string.charAt(firstIndex + 1));
+                        Matcher matcher = pattern.matcher(after);
+                        if (matcher.find()) {
+                            failed = true;
+                        }
+                    }
+                    if(!failed) {
+                        return firstIndex;
+                    }
+                    startIndex = firstIndex + 1;
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
+
+        // unchecked
+
+        private void Interpret(String line) {
+
+        }
+
+        private void addNameToMemory(String name, Class<?> type){
+            String AName = name.substring(2).replaceAll("_", "");
+            if(names.containsKey(AName)){
+                throw new GBDYouIdiotException("name is already taken");
+            }
+            else {
+                switch (name.substring(0, 2)) {
+                    case "C_":
+                        C_vars.put(AName, new Variable(type));
+                        names.put(AName, "C_");
+                        break;
+                    case "P_":
+                        P_vars.put(AName, new Variable(type));
+                        names.put(AName, "P_");
+                        break;
+                    case "T_":
+                        T_vars.put(AName, new Variable(type));
+                        names.put(AName, "T_");
+                        break;
+                    default:
+                        throw new GBDYouIdiotException("type prefix is invalid");
                 }
             }
         }
@@ -143,6 +271,7 @@ public class GBDReader {
 
             public java.lang.Object invoke(Object object, java.lang.Object... arguments){
                 // interpreter will do later
+                return null;
             }
         }
 
@@ -155,6 +284,7 @@ public class GBDReader {
             @Override
             public Object invoke(Object object, java.lang.Object... arguments) {
                 // interpreter will do later
+                return null;
             }
         }
 
@@ -215,207 +345,6 @@ public class GBDReader {
                 }
                 throw new GBDYouIdiotException("no fitting function found");
             }
-        }
-
-        private HashMap<String, Variable> C_vars = new HashMap<>();
-        private HashMap<String, Variable> T_vars = new HashMap<>();
-        private HashMap<String, Variable> P_vars = new HashMap<>();
-        private HashMap<String, String> names = new HashMap<>();
-        private HashMap<Integer, Character> chars = new HashMap<>();
-        private HashMap<Character, Integer> charsNums = new HashMap<>();
-        private HashMap<Integer, String> strings = new HashMap<>();
-        private HashMap<String, Integer> stringsNums = new HashMap<>();
-        private int charsCounter = 0;
-        private int stringsCounter = 0;
-
-        private Interpreter(){
-
-        }
-
-        private void setFileReaderProtocol(File file) {
-            try {
-                List<String> script = Files.readAllLines(file.toPath());
-                StringBuilder finalScript = new StringBuilder("");
-                String header = script.get(0);
-                Matcher matcher = Pattern.compile("\\Q$$\\E(.*)\\Q/$$\\E").matcher(header);
-                matcher.find();
-                header = matcher.group(1);
-                if (!prefHeader.equals(header)) {
-                    throw new GBDYouIdiotException("file header is incorrect");
-                }
-                for (String string : script) {
-                    finalScript.append(string + System.lineSeparator());
-                }
-                int lastIndex = -1;
-                int lastStart = 0;
-                boolean inQuotes = false;
-                try {
-                    while (finalScript.indexOf("\"", lastIndex + 1) > -1) {
-                        lastIndex = finalScript.indexOf("\"", lastIndex + 1);
-                        switch (finalScript.charAt(lastIndex - 1)) {
-                            case '\\':
-                                break;
-                            case '\'':
-                                if (!inQuotes) {
-                                    if (finalScript.indexOf("\'", lastIndex) == lastIndex + 1) {
-                                        break;
-                                    }
-                                }
-                            default:
-                                inQuotes = !inQuotes;
-                                if (inQuotes) {
-                                    lastStart = lastIndex + 1;
-                                } else {
-                                    Integer test = stringsNums.putIfAbsent(finalScript.substring(lastStart, lastIndex), stringsCounter);
-                                    if(test != null){
-                                        finalScript.replace(lastStart, lastIndex, "@S" + test);
-                                    }
-                                    else {
-                                        strings.putIfAbsent(stringsCounter, finalScript.substring(lastStart, lastIndex));
-                                        finalScript.replace(lastStart, lastIndex, "@S" + stringsCounter);
-                                        lastIndex += Integer.toString(stringsCounter).length() + 2 - (finalScript.substring(lastIndex - lastStart)).length();
-                                        stringsCounter++;
-                                    }
-                                }
-                        }
-                    }
-                    if(inQuotes){
-                        throw new GBDYouIdiotException("invalid file formatting. check that all \" have a closing \"");
-                    }
-                    lastIndex = -1;
-                    while (finalScript.indexOf("\'", lastIndex + 1) > -1){
-                        lastIndex = finalScript.indexOf("\'", lastIndex + 1);
-                        if(finalScript.charAt(lastIndex+2) == '\''){
-                            char current = finalScript.charAt(lastIndex+1);
-                            Integer test = charsNums.putIfAbsent(current, charsCounter);
-                            if(test != null){
-                                finalScript.replace(lastIndex, lastIndex + 2, "\'" + "@C" + test + "\'");
-                            }
-                            else{
-                                chars.putIfAbsent(charsCounter, current);
-                                finalScript.replace(lastIndex, lastIndex + 2, "\'" + "@C" + charsCounter + "\'");
-                                lastIndex = Integer.toString(charsCounter).length() + 2 - 1;
-                                charsCounter++;
-                            }
-                        }
-                        else {
-                            throw new GBDYouIdiotException("invalid file formatting. check that all opening ' have a closing '");
-                        }
-                    }
-                } catch (ArrayIndexOutOfBoundsException e){
-                    throw new GBDYouIdiotException("invalid file formatting. might be caused by a lack of a ; at the end of the last line of the file");
-                }
-
-            } catch (IOException e) {
-                throw new GBDYouIdiotException("The file doesn't exist");
-            }
-        }
-
-        private int getNextIndexOfWord(String string, String word, int startIndex){
-            Pattern pattern = Pattern.compile("[1-9a-zA-Z]");
-            boolean failed = false;
-            while(true) {
-                int firstIndex = string.indexOf(word, startIndex);
-                if (firstIndex != -1) {
-                    if (firstIndex != 0) {
-                        String before = Character.toString(string.charAt(firstIndex - 1));
-                        Matcher matcher = pattern.matcher(before);
-                        if (matcher.find()) {
-                            failed = true;
-                        }
-                    }
-                    if (firstIndex != string.length()-1){
-                        String after = Character.toString(string.charAt(firstIndex + 1));
-                        Matcher matcher = pattern.matcher(after);
-                        if (matcher.find()) {
-                            failed = true;
-                        }
-                    }
-                    if(!failed) {
-                        return firstIndex;
-                    }
-                    startIndex = firstIndex + 1;
-                }
-                else {
-                    return -1;
-                }
-            }
-        }
-
-        // unchecked
-
-        private void Interpret(String line) {
-            line = line.replaceFirst(";", "");
-            if (countInString(line, '=') == 1) {
-                LeftSide(line.split("=")[0]);
-            }
-        }
-
-        private String LeftSide(String line){
-            String output;
-            if(countInString(line, ':') == 1){
-                String[] leftSide;
-                line = line.replaceAll("[^A-Za-z1-9_:]", "");
-                leftSide = line.split(":");
-                leftSide[0] = leftSide[0].replaceAll("[1-9_]", "");
-                Class<?> type = ClassToNamesMap.names.get(leftSide[0].substring(2));
-                if(type == null){
-                    throw new GBDYouIdiotException("type argument is not an existing class");
-                }
-                addNameToMemory(leftSide[1], type);
-                output = leftSide[1];
-            }
-            else{
-                line = line.replaceAll("[^A-Za-z1-9]", "");
-                if(names.containsKey(line)){
-                    output = line;
-                }
-                else{
-                    throw new GBDYouIdiotException("variable " + line + " does not exist");
-                }
-            }
-            return output;
-        }
-
-        private void addNameToMemory(String name, Class<?> type){
-            String AName = name.substring(2).replaceAll("_", "");
-            if(names.containsKey(AName)){
-                throw new GBDYouIdiotException("name is already taken");
-            }
-            else {
-                switch (name.substring(0, 2)) {
-                    case "C_":
-                        C_vars.put(AName, new Variable(type));
-                        names.put(AName, "C_");
-                        break;
-                    case "P_":
-                        P_vars.put(AName, new Variable(type));
-                        names.put(AName, "P_");
-                        break;
-                    case "T_":
-                        T_vars.put(AName, new Variable(type));
-                        names.put(AName, "T_");
-                        break;
-                    default:
-                        throw new GBDYouIdiotException("type prefix is invalid");
-                }
-            }
-        }
-
-        private int countInString(String string, char filter){
-            string = string.replaceAll("\".*\"","").replaceAll("\'.*\'","");
-            return (int)string.chars().filter(ch -> ch == filter).count();
-        }
-
-        private String readNextLine(){
-            scanner.useDelimiter("\"(?:[^\\\"]|\".)*\"|(;)");
-            Pattern pattern = Pattern.compile();
-            Matcher matcher = pattern.matcher("test123");
-            MatchResult result = scanner.forEachRemaining();
-        }
-
-        private String convertToOperateableString(String string){
-            // pattern.next("(?:[^"\\]|\\.)*|;")
         }
     }
 }
