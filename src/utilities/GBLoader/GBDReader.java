@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,7 +34,7 @@ public class GBDReader {
                     this.value = value;
                 }
                 else{
-                    throw new GBDYouIdiotException("invalid cast. cannot cast " + value.getClass() + " into " + type);
+                    throw new GBDYouDimwitException("invalid cast. cannot cast " + value.getClass() + " into " + type);
                 }
             }
         }
@@ -64,7 +63,7 @@ public class GBDReader {
             try {
                 for (String type : types) {
                     if(type.isEmpty()){
-                        throw new GBDYouIdiotException("empty definition at line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
+                        throw new GBDYouDimwitException("empty definition at line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
                     }
                     assert(type.chars().filter(ch -> ch ==':').count() == 1);
                     assert(type.chars().filter(ch -> ch =='=').count() == 1);
@@ -74,9 +73,9 @@ public class GBDReader {
                     typeMap.put(matcher.group(1), Class.forName(matcher.group(2)));
                 }
             } catch (AssertionError e){
-                throw new GBDYouIdiotException("invalid formatting in line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
+                throw new GBDYouDimwitException("invalid formatting in line " + lineCount + ". note that the line count counts the amount of definitions up to this point, and does not consider enters");
             } catch (ClassNotFoundException e){
-                throw new GBDYouIdiotException("the class " + matcher.group(2) + " in line " + lineCount + " is not a valid class. note that the line count counts the amount of definitions up to this point, and does not consider enters");
+                throw new GBDYouDimwitException("the class " + matcher.group(2) + " in line " + lineCount + " is not a valid class. note that the line count counts the amount of definitions up to this point, and does not consider enters");
             }
             System.out.println(typeMap);
             System.out.println(finalScript);
@@ -102,7 +101,7 @@ public class GBDReader {
                         }
                     }
                     if (i == 2 && matcher.group(2) != null){
-                        throw new GBDYouIdiotException("invalid amount of \". check that each one has a closing one");
+                        throw new GBDYouDimwitException("invalid amount of \". check that each one has a closing one");
                     }
                 }
             }
@@ -123,7 +122,7 @@ public class GBDReader {
                         }
                     }
                     if (i == 2 && matcher.group(2) != null){
-                        throw new GBDYouIdiotException("invalid amount of \'. check that each one has a closing one");
+                        throw new GBDYouDimwitException("invalid amount of \'. check that each one has a closing one");
                     }
                 }
             }
@@ -138,7 +137,7 @@ public class GBDReader {
                 matcher.find();
                 header = matcher.group(1);
                 if (!prefHeader.equals(header)) {
-                    throw new GBDYouIdiotException("file header is incorrect");
+                    throw new GBDYouDimwitException("file header is incorrect");
                 }
                 script.remove(0);
                 for (String string : script) {
@@ -154,7 +153,7 @@ public class GBDReader {
                 }
 
             } catch (IOException e) {
-                throw new GBDYouIdiotException("The file doesn't exist");
+                throw new GBDYouDimwitException("The file doesn't exist");
             }
         }
 
@@ -198,7 +197,7 @@ public class GBDReader {
         private void addNameToMemory(String name, Class<?> type){
             String AName = name.substring(2).replaceAll("_", "");
             if(names.containsKey(AName)){
-                throw new GBDYouIdiotException("name is already taken");
+                throw new GBDYouDimwitException("name is already taken");
             }
             else {
                 switch (name.substring(0, 2)) {
@@ -215,7 +214,7 @@ public class GBDReader {
                         names.put(AName, "T_");
                         break;
                     default:
-                        throw new GBDYouIdiotException("type prefix is invalid");
+                        throw new GBDYouDimwitException("type prefix is invalid");
                 }
             }
         }
@@ -334,7 +333,7 @@ public class GBDReader {
                         return constructor.invoke(this, arguments);
                     }
                 }
-                throw new GBDYouIdiotException("no fitting constructor found");
+                throw new GBDYouDimwitException("no fitting constructor found");
             }
 
             public java.lang.Object invoke(Signature signature, java.lang.Object... arguments){
@@ -343,7 +342,7 @@ public class GBDReader {
                         return function.invoke(this, arguments);
                     }
                 }
-                throw new GBDYouIdiotException("no fitting function found");
+                throw new GBDYouDimwitException("no fitting function found");
             }
         }
     }

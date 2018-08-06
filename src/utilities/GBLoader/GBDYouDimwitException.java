@@ -1,6 +1,6 @@
 package utilities.GBLoader;
 
-public class GBDYouIdiotException extends RuntimeException {
+public class GBDYouDimwitException extends RuntimeException {
     /**
      * An exception used to signify that something is misused in a terrible way.
      * Also prints said reason.
@@ -11,8 +11,7 @@ public class GBDYouIdiotException extends RuntimeException {
 
     public final String reason;
 
-    public GBDYouIdiotException(String reason) {
+    public GBDYouDimwitException(String reason) {
         this.reason = reason;
-        System.out.println(reason);
     }
 }

@@ -1,6 +1,6 @@
 package utilities;
 
-public class YouIdiotException extends RuntimeException {
+public class YouDimwitException extends RuntimeException {
 
     /**
      * An exception used to signify that something is misused in a terrible way.
@@ -8,7 +8,7 @@ public class YouIdiotException extends RuntimeException {
      * Also crashes the program. If it's called it is probably a good enough reason to do that.
      * @param reason - The reason the exception was thrown.
      */
-    public YouIdiotException(String reason){
+    public YouDimwitException(String reason){
         System.out.println("The program has crashed because " + reason);
         System.err.println("The program has crashed because " + reason);
     }

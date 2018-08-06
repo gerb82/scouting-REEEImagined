@@ -4,7 +4,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.LoadException;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 
 /**
@@ -21,13 +20,13 @@ public class LoaderUtil {
      * So for example: "side/code/MainController" will use the FXML file in "side/resources/Main.fxml".
      * And: "side/code/sub/SubController" will use the FXML file in side/resources/sub/Sub.fxml".
      * The FXML file must not have a set controller, as it will be set by this method, and the loader will throw an exception otherwise.
-     * @throws YouIdiotException - If the controller was set on the FXML file.
-     * @throws YouIdiotException - If the associated FXML file does not exist in the specified location
+     * @throws YouDimwitException - If the controller was set on the FXML file.
+     * @throws YouDimwitException - If the associated FXML file does not exist in the specified location
      */
-    public static FXMLLoader set(Class clazz) throws YouIdiotException{
+    public static FXMLLoader set(Class clazz) throws YouDimwitException {
         URL path = pathMaker(clazz, "fxml");
         if(path == null){
-            throw new YouIdiotException("the FXML file appropriate for the " + clazz.toString() + " does not exist in the right place");
+            throw new YouDimwitException("the FXML file appropriate for the " + clazz.toString() + " does not exist in the right place");
         }
         FXMLLoader loader = new FXMLLoader(path);
         try {
@@ -39,7 +38,7 @@ public class LoaderUtil {
             loader.load();
         } catch (LoadException e) {
             if(e.getMessage().contains("Controller value already specified")) {
-                throw new YouIdiotException("the controller was already set for the file at " + path.toString());
+                throw new YouDimwitException("the controller was already set for the file at " + path.toString());
             }
             else{
                 e.printStackTrace();
