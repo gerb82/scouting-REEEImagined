@@ -52,12 +52,62 @@ public class GBDB {
         return values;
     }
 
+    public static String joinsLogic(String... values){
+
+    }
+
+    public static String formatSelect(String type, String[]... arguments){
+        SmartAssert.makeSure(arguments[0] != null, type + " requires at least 1 column to work with");
+        SmartAssert.makeSure(arguments[0].length > 0, type + " requires at least 1 column to work with");
+        SmartAssert.makeSure(arguments[1] != null, type + " requires at least 1 table to work with");
+        SmartAssert.makeSure(arguments[1].length == 1, type + " requires at least 1 table to work with");
+        if(type.contains("SELECT")) {
+            SmartAssert.makeSure(arguments.length == 8, type + " requires exactly 8 lists of arguments, with all the lists after the 3rd being optional (put null instead to avoid using them). the lists are: columns list, table (only 1), join (and how)(optional), where (optional), order by (optional)(if left out will sort by id), limit (first cell is the limit, 2nd cell is the offset, to only use a number limit use a length 1 array), group by (optional), having (optional)");
+        }
+        String joins = " ";
+        if(arguments[2] != null){
+            SmartAssert.makeSure(arguments[2].length > 0, type + " requires at least 1 join condition when the join argument is not null");
+            joins += makeIntoOne(false, arguments[2]);
+        }
+        String where = " ";
+        if(arguments[3] != null){
+            SmartAssert.makeSure(arguments[3].length > 0, type + " requires at least 1 where filter when the where filter argument is not null");
+            where += makeIntoOne(false, arguments[3]);
+        }
+        String order = " ";
+        if(arguments[4] != null){
+            SmartAssert.makeSure(arguments[4].length > 0, type + " requires at least 1 order by statement when the order by argument is not null");
+            order += makeIntoOne(false, arguments[4]);
+        }
+        String limit = " ";
+        if(arguments[5] != null){
+            SmartAssert.makeSure(arguments[5].length == 1 || arguments[5].length == 2, type + " requires either 1 or 2 limit arguments when the limit argument is not null");
+            limit += "LIMIT " + arguments[5][0];
+            if(arguments[5].length == 2){
+                limit += " OFFSET " + arguments[5][1];
+            }
+        }
+        String group = " ";
+        if(arguments[6] != null){
+            SmartAssert.makeSure(arguments[6].length > 0, type + " requires at least 1 column to group by when the group by argument is not null");
+            group += "GROUP BY " + makeIntoOne(true, arguments[6]);
+        }
+        String having = " ";
+        if(arguments[7] != null){
+            SmartAssert.makeSure(arguments[7].length > 0, type + " requires at least 1 having statement when the having argument is not null");
+            having += makeIntoOne(false, arguments[7]);
+        }
+        return " " + makeIntoOne(true, arguments[0]) + " FROM " + arguments[1][0] + joins + where + order + limit + group;
+    }
+
     public static String newStatement(StatementType type, String[]... arguments){
         StringBuilder output = new StringBuilder("");
         switch (type) {
             case SELECT:
-                output.append("SELECT");
+                output.append("SELECT" + formatSelect("SELECT", arguments));
                 break;
+            case SELECT_DISTINCT:
+                output.append("SELECT DISTINCT" + formatSelect("SELECT_DISTINCT", arguments));
             case INSERT:
                 SmartAssert.makeSure(arguments[0] != null, "INSERT requires at least one table to work with");
                 SmartAssert.makeSure(arguments[0].length > 0, "INSERT requires at least one table to work with");
@@ -81,11 +131,11 @@ public class GBDB {
                     for(int j = 0; j<arguments[1].length; j++){
                         temp.add(arguments[2][i+j]);
                     }
-                    String string = makeIntoOne((String[])temp.toArray());
+                    String string = makeIntoOne(true, (String[])temp.toArray());
                     values.append(" ( " + string + " )");
                 }
                 for(String table : arguments[0]) {
-                    output.append("INSERT INTO " + table + " (" + makeIntoOne(arguments[1]) + " ) VALUES" + values.toString() + ";");
+                    output.append("INSERT INTO " + table + " (" + makeIntoOne(true, arguments[1]) + " ) VALUES" + values.toString());
                 }
                 break;
             case INSERT_DEFAULT:
@@ -106,7 +156,8 @@ public class GBDB {
                 }
                 break;
             case DELETE:
-                output.append("DELETE");
+                SmartAssert.makeSure(arguments.length == 4, "DELETE accepts exactly 4 lists of arguments, three of which are optional and can be set to null: table (exactly one), where (optional), order by (optional), limit (optional)(length of one for just a line limit, and of two for a length with an offset)");
+                output.append("DELETE" + formatSelect("DELETE",new String[]{""}, arguments[0], null, arguments[1], arguments[2], arguments[3], null, null));
                 break;
             case REPLACE:
                 output.append("REPLACE");
@@ -123,9 +174,9 @@ public class GBDB {
                 SmartAssert.makeSure(arguments[0].length > 0, "ALTER_ADD_COLUMN requires at least one table to work with");
                 SmartAssert.makeSure(arguments[1].length > 0, "ALTER_ADD_COLUMN requires at least one column to add");
                 SmartAssert.makeSure(arguments.length == 2, "ALTER_ADD_COLUMN accepts exactly 2 lists of arguments: tables, and columns to add");
-                String columns = makeIntoOne(arguments[1]);
+                String columns = makeIntoOne(true, arguments[1]);
                 for (String table : arguments[0]) {
-                    output.append("ALTER TABLE " + table + " ADD COLUMN " + columns + ";");
+                    output.append("ALTER TABLE " + table + " ADD COLUMN " + columns);
                 }
                 break;
             case ALTER_NAME:
@@ -134,7 +185,7 @@ public class GBDB {
                 SmartAssert.makeSure(arguments[1] != null, "ALTER_NAME requires exactly one new table name in order to work");
                 SmartAssert.makeSure(arguments[1].length == 1, "ALTER_NAME requires exactly one new table name in order to work");
                 SmartAssert.makeSure(arguments.length == 2, "ALTER_NAME accepts exactly 2 lists of length 1 of arguments: table, and new name for that table");
-                output.append("ALTER TABLE " + arguments[0][0] + " RENAME TO " + arguments[1][0] + ";");
+                output.append("ALTER TABLE " + arguments[0][0] + " RENAME TO " + arguments[1][0]);
                 break;
 
 
@@ -158,21 +209,54 @@ public class GBDB {
                 SmartAssert.makeSure(arguments[0] != null, "DROP_VIEW requires exactly one name in order to work");
                 SmartAssert.makeSure(arguments[0].length == 1, "DROP_VIEW requires exactly one name in order to work");
                 SmartAssert.makeSure(arguments.length == 1, "DROP_VIEW requires exactly one list of length 1 of arguments: name");
-                output.append("DROP VIEW IF EXISTS " + arguments[0][0] + ";");
+                output.append("DROP VIEW IF EXISTS " + arguments[0][0]);
                 break;
         }
         return output.toString();
     }
 
-    private static String makeIntoOne(String... strings){
+    public static String union(String... statements){
+        StringBuilder output = new StringBuilder("");
+        if(statements.length > 0) {
+            for (String string : statements) {
+                if (output.toString() == "") {
+                    output.append(string);
+                } else {
+                    output.append(" UNION " + string);
+                }
+            }
+        }
+        return output.toString();
+
+    }
+
+    public static String unionAll(String... statements){
+        StringBuilder output = new StringBuilder("");
+        if(statements.length > 0) {
+            for (String string : statements) {
+                if (output.toString() == "") {
+                    output.append(string);
+                } else {
+                    output.append(" UNION ALL " + string);
+                }
+            }
+        }
+        return output.toString();
+    }
+
+    private static String makeIntoOne(boolean periods, String... strings){
         StringBuilder output = new StringBuilder("");
         if(strings.length > 0) {
-            for(String string : strings){
-                if(output.toString() == ""){
+            for (String string : strings) {
+                if (output.toString() == "") {
                     output.append(string);
-                }
-                else{
-                    output.append(", " + string);
+                } else {
+                    if(periods) {
+                        output.append(", " + string);
+                    }
+                    else{
+                        output.append(" " + strings);
+                    }
                 }
             }
         }
@@ -180,7 +264,7 @@ public class GBDB {
     }
 
     public enum StatementType{
-        SELECT,
+        SELECT, SELECT_DISTINCT,
         INSERT, INSERT_DEFAULT, INSERT_SELECT,
         DELETE,
         REPLACE,
