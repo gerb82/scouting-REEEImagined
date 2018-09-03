@@ -12,7 +12,13 @@ import java.io.OutputStream;
  * How you add it, when do you add it, and everything else depends on your specific implementation, but usually you'll want to do it during the constructor/initialization.
  * {@link ConsoleImplementation#message(String)}, {@link ConsoleImplementation#warn(String)} and {@link ConsoleImplementation#error(String)} are the main methods through which the console implementation will be accessed.
  * You can also make the other methods public and use them directly, but that will not work through the {@link Utils} methods, meaning you'll either have to write your own "wrapper", use the console object directly, or do a LOT of casting. All three ways are not recommended if you are looking to make a standard console.
- * 
+ * So, the three different main methods: message, warn, error.
+ * {@link ConsoleImplementation#message(String)} - a normal, regular message to the console/log.
+ * {@link ConsoleImplementation#warn(String)} - a warning message, about non-fatal errors/possible issues with the code, that should not stop the program from running, but should probably be dealt with.
+ * {@link ConsoleImplementation#error(String)} - an error message, about any fatal/non-fatal errors that have an actual impact on the code (crashing a necessary thread, an invalid input that causes an {@link AssertionYouDimwitException}/{@link AssertionError}/{@link IllegalArgumentException}, etc).
+ * All three of those 3 methods have a version that writes only to the log or only to the console, if such a thing should be desired.
+ * There is also a static method that should be implemented should you want any of these methods, as it will auto-cast the console into the appropriate version in an easy to use way, to avoid ugly casting whenever it can be avoided.
+ * The method should be called asConsole(Object console).
  */
 public abstract class ConsoleImplementation {
 
@@ -29,8 +35,9 @@ public abstract class ConsoleImplementation {
     private File logFileLocation;
     private File errorLogFileLocation;
 
-    private void initiateConsole(){}
-    private void initiateLog(){}
+    abstract void initiateConsole();
+    abstract void initiateLog();
+    abstract void initiateErrorLog();
     abstract boolean isConsole();
     abstract boolean isLogFile();
     public void message(String message){
