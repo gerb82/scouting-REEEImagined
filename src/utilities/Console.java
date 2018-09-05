@@ -1,9 +1,41 @@
 package utilities;
 
+import javafx.scene.paint.Paint;
+
 public class Console extends ConsoleImplementation{
 
-    static Console asConsole(Object console){
+    static Console asConsole(ConsoleImplementation console){
         return (Console) console;
+    }
+
+    @Override
+    public void message(String message){
+        logMessage(message);
+        consoleMessage(message);
+    }
+
+    @Override
+    public void warn(String warning){
+        logWarn(warning);
+        consoleWarn(warning);
+        errorLogWarn(warning);
+    }
+
+    @Override
+    public void warn(String warning, String[] ErrorTitles, StackTraceElement[][] elements) {
+
+    }
+
+    @Override
+    public void error(String error){
+        logError(error);
+        consoleError(error);
+        errorLogError(error);
+    }
+
+    @Override
+    public void error(String error, String[] ErrorTitles, StackTraceElement[][] elements) {
+
     }
 
     @Override
@@ -22,16 +54,6 @@ public class Console extends ConsoleImplementation{
     }
 
     @Override
-    public boolean isConsole() {
-        return false;
-    }
-
-    @Override
-    public boolean isLogFile() {
-        return false;
-    }
-
-    @Override
     public void logMessage(String message) {
 
     }
@@ -47,6 +69,31 @@ public class Console extends ConsoleImplementation{
     }
 
     @Override
+    public void logCustom(String tag, String message) {
+
+    }
+
+    @Override
+    public void errorLogMessage(String message) {
+
+    }
+
+    @Override
+    public void errorLogWarn(String message) {
+
+    }
+
+    @Override
+    public void errorLogError(String messaage) {
+
+    }
+
+    @Override
+    public void errorLogCustom(String tag, String message) {
+
+    }
+
+    @Override
     public void consoleMessage(String console) {
 
     }
@@ -58,6 +105,11 @@ public class Console extends ConsoleImplementation{
 
     @Override
     public void consoleError(String error) {
+
+    }
+
+    @Override
+    public void consoleCustom(boolean time, String tag, String message, Paint color) {
 
     }
 }

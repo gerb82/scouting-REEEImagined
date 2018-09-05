@@ -1,6 +1,7 @@
 package utilities;
 
 import javafx.scene.Node;
+import javafx.scene.paint.Paint;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -17,45 +18,162 @@ import java.io.OutputStream;
  * {@link ConsoleImplementation#warn(String)} - a warning message, about non-fatal errors/possible issues with the code, that should not stop the program from running, but should probably be dealt with.
  * {@link ConsoleImplementation#error(String)} - an error message, about any fatal/non-fatal errors that have an actual impact on the code (crashing a necessary thread, an invalid input that causes an {@link AssertionYouDimwitException}/{@link AssertionError}/{@link IllegalArgumentException}, etc).
  * All three of those 3 methods have a version that writes only to the log or only to the console, if such a thing should be desired.
- * There is also a static method that should be implemented should you want any of these methods, as it will auto-cast the console into the appropriate version in an easy to use way, to avoid ugly casting whenever it can be avoided.
- * The method should be called asConsole(Object console).
+ * There is also a static method that should be implemented should you want to directly use any of these methods, as it will automatically cast the console into the appropriate version in an easy to use way, to avoid ugly casting whenever it can be avoided.
+ * The method should be called asConsole({@link ConsoleImplementation} console).
+ * Also, all the fields in this implementation are private. In order to access them you will have to create getters and setters for them in your implementation.
  */
 public abstract class ConsoleImplementation {
 
     /**
-     * A boolean representing whether a console
+     * A boolean representing whether a console has been created already.
      */
     private boolean console;
+    /**
+     * A boolean representing whether a regular log file has been created already.
+     */
     private boolean logFile;
+    /**
+     * A boolean representing whether an error log file has been created already.
+     */
     private boolean errorLogFile;
+    /**
+     * The root node in the console hierarchy tree.
+     */
     private Node consoleRoot;
+    /**
+     * The controller object for the console.
+     */
     private Object consoleController;
+    /**
+     * The output stream connected to the normal log file.
+     */
     private OutputStream logFileStream;
+    /**
+     * The output stream connected to the error log file.
+     */
     private OutputStream errorLogFileStream;
+    /**
+     * The file object representing the normal log file.
+     */
     private File logFileLocation;
+    /**
+     * The file object representing the error log file.
+     */
     private File errorLogFileLocation;
 
+
+    /**
+     * The method used to create a console.
+     */
     abstract void initiateConsole();
+    /**
+     * The method used to create a normal log file.
+     */
     abstract void initiateLog();
+    /**
+     * The method used to create an error log file.
+     */
     abstract void initiateErrorLog();
-    abstract boolean isConsole();
-    abstract boolean isLogFile();
-    public void message(String message){
-        consoleMessage(message);
-        logMessage(message);
-    }
-    public void warn(String warning){
-        consoleWarn(warning);
-        logWarn(warning);
-    }
-    public void error(String error){
-        consoleError(error);
-        logError(error);
-    }
+
+    /**
+     * The method used to post a normal message.
+     * @param message - The String message to be posted.
+     */
+    abstract void message(String message);
+
+    /**
+     * The method used to post a warning message.
+     * @param warning - The String warning to be posted.
+     */
+    abstract void warn(String warning);
+
+    /**
+     * The method used to post a warning message, as well as the related errors.
+     * @param warning - The String warning to be posted.
+     * @param ErrorTitles - The titles for the errors, in the order to be printed.
+     * @param elements - The stacktraces of all the errors, in the order to be printed.
+     */
+    abstract void warn(String warning, String[] ErrorTitles, StackTraceElement[][] elements);
+    /**
+     * The method used to post an error message.
+     * @param error - The String error to be posted.
+     */
+    abstract void error(String error);
+
+    /**
+     * The method used to post an error message, as well as the related errors.
+     * @param error - The String error to be posted.
+     * @param ErrorTitles - The titles for the errors, in the order to be printed.
+     * @param elements - The stacktraces of all the errors, in the order to be printed.
+     */
+    abstract void error(String error, String[] ErrorTitles, StackTraceElement[][] elements);
+
+    /**
+     * The method used to post a message to just the log.
+     * @param message - The String message to be posted.
+     */
     abstract void logMessage(String message);
+    /**
+     * The method used to post a warning to just the log.
+     * @param warning - The String warning to be posted.
+     */
     abstract void logWarn(String warning);
+    /**
+     * The method used to post an error to just the log.
+     * @param error - The String error to be posted.
+     */
     abstract void logError(String error);
-    abstract void consoleMessage(String console);
+    /**
+     * The method used to post a custom message to just the log.
+     * @param tag - The tag to be used for the message
+     * @param message - The String message to be posted.
+     */
+    abstract void logCustom(String tag, String message);
+
+    /**
+     * The method used to post a message to just the error log.
+     * @param message - The String message to be posted.
+     */
+    abstract void errorLogMessage(String message);
+    /**
+     * The method used to post a warning to just the error log.
+     * @param warning - The String warning to be posted.
+     */
+    abstract void errorLogWarn(String warning);
+    /**
+     * The method used to post an error to just the error log.
+     * @param error - The String error to be posted.
+     */
+    abstract void errorLogError(String error);
+    /**
+     * The method used to post a custom message to just the error log.
+     * @param tag - The tag to be used for the message.
+     * @param message - The String message to be posted.
+     */
+    abstract void errorLogCustom(String tag, String message);
+
+    /**
+     * The method used to post a message to just the console.
+     * @param message - The String message to be posted.
+     */
+    abstract void consoleMessage(String message);
+    /**
+     * The method used to post a warning to just the console.
+     * @param warning - The String warning to be posted.
+     */
     abstract void consoleWarn(String warning);
+    /**
+     * The method used to post an error to just the console.
+     * @param error - The String error to be posted.
+     */
     abstract void consoleError(String error);
+
+    /**
+     * The method used to post a custom message to just the console.
+     * @param time - A boolean signaling if the time should be printed in the message.
+     * @param tag - The tag to be used for the message.
+     * @param message - The String message to be posted.
+     * @param color - The color the message should have.
+     */
+    abstract void consoleCustom(boolean time, String tag, String message, Paint color);
 }
