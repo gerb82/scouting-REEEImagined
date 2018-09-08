@@ -66,7 +66,7 @@ we will have a testing environment for the different screens to test them withou
 19) configuration editor. ideally, the configurators will not touch the configuration files directly, and instead edit them through a specialized editor. this way we can promise that we won't have any syntax issues.
 
 
-that's... a lot of features. i know. so work-plan (i'll be using feature numbers):
+that's... a lot of features. i know. so work-plan (i'll be using feature numbers): (oops didn't work)
 1) running alpha version - start of august. 10th of august worst case scenario.
 alpha includes: 1 and 2 done. 3 somewhere along the way. maybe 4. 6 for debugging, aka crude. 12 is a basic rule. 13 is a must. 14 too. 16, 17 and 18 must have some sort of basic support.
 gui will be pretty crude and just functional, nothing more. configuration edited by text
