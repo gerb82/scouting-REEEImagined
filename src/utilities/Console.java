@@ -1,6 +1,10 @@
 package utilities;
 
+import javafx.scene.Node;
 import javafx.scene.paint.Paint;
+
+import java.io.File;
+import java.io.OutputStream;
 
 public class Console extends ConsoleImplementation{
 
@@ -16,14 +20,23 @@ public class Console extends ConsoleImplementation{
 
     @Override
     public void warn(String warning){
+        warning += System.lineSeparator();
         logWarn(warning);
         consoleWarn(warning);
         errorLogWarn(warning);
     }
 
     @Override
-    public void warn(String warning, String[] ErrorTitles, StackTraceElement[][] elements) {
-
+    public void warn(String warning, Exception[] exceptions) {
+        StringBuilder sb = new StringBuilder(warning + System.lineSeparator());
+        for(Exception e : exceptions){
+            sb.append(e.getMessage() + System.lineSeparator() + "A detailed walk-through of the exception:" + System.lineSeparator());
+            for(StackTraceElement element : e.getStackTrace()){
+                sb.append(element + System.lineSeparator());
+            }
+            sb.append(System.lineSeparator());
+        }
+        warn(sb.toString());
     }
 
     @Override
@@ -34,8 +47,16 @@ public class Console extends ConsoleImplementation{
     }
 
     @Override
-    public void error(String error, String[] ErrorTitles, StackTraceElement[][] elements) {
-
+    public void error(String error, Exception[] exceptions) {
+        StringBuilder sb = new StringBuilder(error + System.lineSeparator());
+        for(Exception e : exceptions){
+            sb.append(e.getMessage() + System.lineSeparator() + "A detailed walk-through of the exception:" + System.lineSeparator());
+            for(StackTraceElement element : e.getStackTrace()){
+                sb.append(element + System.lineSeparator());
+            }
+            sb.append(System.lineSeparator());
+        }
+        error(sb.toString());
     }
 
     @Override

@@ -20,47 +20,46 @@ import java.io.OutputStream;
  * All three of those 3 methods have a version that writes only to the log or only to the console, if such a thing should be desired.
  * There is also a static method that should be implemented should you want to directly use any of these methods, as it will automatically cast the console into the appropriate version in an easy to use way, to avoid ugly casting whenever it can be avoided.
  * The method should be called asConsole({@link ConsoleImplementation} console).
- * Also, all the fields in this implementation are private. In order to access them you will have to create getters and setters for them in your implementation.
+ * There is a list of parameters you should implement, as they will be useful for the methods in your implementation. They should be private with getters and setters.
  */
 public abstract class ConsoleImplementation {
 
     /**
      * A boolean representing whether a console has been created already.
      */
-    private boolean console;
+    protected boolean console;
     /**
      * A boolean representing whether a regular log file has been created already.
      */
-    private boolean logFile;
+    protected boolean logFile;
     /**
      * A boolean representing whether an error log file has been created already.
      */
-    private boolean errorLogFile;
+    protected boolean errorLogFile;
     /**
      * The root node in the console hierarchy tree.
      */
-    private Node consoleRoot;
+    protected Node consoleRoot;
     /**
      * The controller object for the console.
      */
-    private Object consoleController;
+    protected Object consoleController;
     /**
      * The output stream connected to the normal log file.
      */
-    private OutputStream logFileStream;
+    protected OutputStream logFileStream;
     /**
      * The output stream connected to the error log file.
      */
-    private OutputStream errorLogFileStream;
+    protected OutputStream errorLogFileStream;
     /**
      * The file object representing the normal log file.
      */
-    private File logFileLocation;
+    protected File logFileLocation;
     /**
      * The file object representing the error log file.
      */
-    private File errorLogFileLocation;
-
+    protected File errorLogFileLocation;
 
     /**
      * The method used to create a console.
@@ -90,10 +89,9 @@ public abstract class ConsoleImplementation {
     /**
      * The method used to post a warning message, as well as the related errors.
      * @param warning - The String warning to be posted.
-     * @param ErrorTitles - The titles for the errors, in the order to be printed.
-     * @param elements - The stacktraces of all the errors, in the order to be printed.
+     * @param exceptions - The exceptions relevant to the error.
      */
-    abstract void warn(String warning, String[] ErrorTitles, StackTraceElement[][] elements);
+    abstract void warn(String warning, Exception[] exceptions);
     /**
      * The method used to post an error message.
      * @param error - The String error to be posted.
@@ -103,10 +101,9 @@ public abstract class ConsoleImplementation {
     /**
      * The method used to post an error message, as well as the related errors.
      * @param error - The String error to be posted.
-     * @param ErrorTitles - The titles for the errors, in the order to be printed.
-     * @param elements - The stacktraces of all the errors, in the order to be printed.
+     * @param exceptions - The exceptions relevant to the error.
      */
-    abstract void error(String error, String[] ErrorTitles, StackTraceElement[][] elements);
+    abstract void error(String error, Exception[] exceptions);
 
     /**
      * The method used to post a message to just the log.
