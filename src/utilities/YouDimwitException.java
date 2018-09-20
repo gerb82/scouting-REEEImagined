@@ -9,6 +9,7 @@ public class YouDimwitException extends RuntimeException {
      * @param reason - The reason the exception was thrown.
      */
     public YouDimwitException(String reason){
+        super(reason);
         System.out.println("The program has crashed because " + reason);
         System.err.println("The program has crashed because " + reason);
     }
