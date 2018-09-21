@@ -21,7 +21,6 @@ public class TextLine extends TextInputControl{
         }
 
         private String getRemainingPart(int start){
-            start++;
             String test = characters.substring(start);
             characters.delete(start, characters.length());
             return test;
@@ -49,7 +48,7 @@ public class TextLine extends TextInputControl{
                         continue;
                     case BACK_SPACE:
                         if(finalText.toString().isEmpty()) current.getLineContent().deleteBack(index, notifyListeners);
-                        else finalText.deleteCharAt(characters.length());
+                        else finalText.deleteCharAt(finalText.length());
                         continue;
                     case DELETE:
                         deleteNext = true;
@@ -57,11 +56,11 @@ public class TextLine extends TextInputControl{
                         finalText.append(c);
                 }
             }
-            if(deleteNext){deleteForward(index)}
+            if(deleteNext) finalText.append(deleteForward(index, notifyListeners));
+            addText(index, finalText.toString(), notifyListeners);
         }
 
         private void addText(int index, String text, boolean notifyListeners){
-            text = TextInputControl.filterInput(text, true, true);
             if (!text.isEmpty()) {
                 characters.insert(index, text);
                 if (notifyListeners) {
@@ -70,8 +69,10 @@ public class TextLine extends TextInputControl{
             }
         }
 
-        private void deleteForward(int index){
-            delete(index);
+        private String deleteForward(int index, boolean notifyListeners){
+            if(index==characters.length()){ String output = parent.getNextLine().getLineContent().getRemainingPart(0); parent.getNextLine().selfDestruct(); return output}
+            else delete(index, index++, notifyListeners);
+            return "";
         }
 
         @Override public void delete(int start, int end, boolean notifyListeners) {
