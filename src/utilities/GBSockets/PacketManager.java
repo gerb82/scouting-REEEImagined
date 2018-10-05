@@ -2,5 +2,8 @@ package utilities.GBSockets;
 
 public class PacketManager {
 
-    public void addHandler()
+    protected void checkPackageValidity(Object content, String contentType, String packetType) throws BadPacketException{
+        assert
+    }
+
 }
