@@ -1,9 +1,67 @@
 package utilities.GBSockets;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class PacketManager {
 
-    protected void checkPackageValidity(Object content, String contentType, String packetType) throws BadPacketException{
-        assert
+    // outgoing packets
+    private List<String> sendTypes = new ArrayList<>();
+    private Map<String, Integer> packetNumbers = new HashMap<>();
+    private int packetTotal = 0;
+    private final int managerID;
+
+    protected void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
+        Packet packet = new Packet(content, contentType, packetType, this);
+        //socket.sendPacket(packet);
     }
 
+    protected PacketManager(int ManagerID){
+        this.managerID = ManagerID;
+    }
+
+    private synchronized int[] numerize(String packetType){
+        int[] output;
+        if(packetType != null){
+            output = new int[]{packetTotal, packetNumbers.get(packetType), managerID};
+            packetNumbers.put(packetType, output[1]++);
+        }
+        else{
+            output = new int[]{packetTotal, managerID};
+        }
+        packetTotal++;
+        return output;
+    }
+
+    protected int[] checkPacketValidity(Object content, String packetType) throws BadPacketException{
+        try {
+            assert (sendTypes.contains(packetType));
+        }
+        catch (AssertionError e){
+            throw new BadPacketException("The packet type for the packet" + formatPacketIDs(numerize(null), packetType) + " was of a type that cannot be sent.");
+        }
+        int[] packetNumbers = numerize(packetType);
+        try {
+            assert (content instanceof Serializable);
+        }
+        catch (AssertionError e){
+            throw new BadPacketException("The packet content for packet " + formatPacketIDs(packetNumbers, packetType) + " is invalid, because it can't be serialized.");
+        }
+        return packetNumbers;
+    }
+
+    protected static String formatPacketIDs(int[] ids, String packetType) throws IllegalArgumentException{
+        if(ids.length == 2){
+            return "number" + ids[0] + " (total), in PacketManager number " + ids[1];
+        }
+        else if(ids.length == 3 && packetType != null){
+            return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in PacketManager number " + ids[2];
+        }
+        else {
+            throw new IllegalArgumentException("The method formatPacketIDs has been passed an Illegal argument. Either the \"ids\" array didn't have exactly 2 or 3 cells, or the packet type was null when there are 3 ids in the \"ids\" array. the arguments - ids: " + ids.toString() + " packetType: " + packetType);
+        }
+    }
 }

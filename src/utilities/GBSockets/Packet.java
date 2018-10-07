@@ -5,6 +5,7 @@ public class Packet {
     protected Object content;
     protected String packetType;
     protected String contentType;
+    protected transient int[] ids;
 
     @Deprecated
     public Object getContent() {
@@ -29,7 +30,7 @@ public class Packet {
     }
 
     protected Packet(Object content, String contentType, String packetType, PacketManager parent) throws BadPacketException{
-
+        this.ids = parent.checkPacketValidity(content, packetType);
         this.content = content;
         this.contentType = contentType;
         this.packetType = packetType;
