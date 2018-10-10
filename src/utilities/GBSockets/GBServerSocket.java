@@ -1,4 +1,4 @@
 package utilities.GBSockets;
 
-public class GBServerSocket {
+public class GBServerSocket extends GBSocket {
 }
