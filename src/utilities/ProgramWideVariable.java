@@ -6,7 +6,9 @@ import java.util.Set;
 
 public class ProgramWideVariable {
 
-    private static Map<String, Object> variableMap = new HashMap<>();
+    private static Map<String, Object> variableMap = new HashMap<>(){{
+
+    }};
 
     public static Set<String> dumpKeys(){
         return variableMap.keySet();
@@ -23,16 +25,20 @@ public class ProgramWideVariable {
         if(keys.length < values.length){
             throw new IllegalArgumentException("Cannot initialize default values when there are more values than keys. the lenghts of each array: keys - " + keys.length + " values - " + values.length);
         }
-        else{
-            for(int i = 0; i<keys.length; i++){
-                try{
-                    variableMap.putIfAbsent(keys[i], values[i]);
-                }
-                catch (IndexOutOfBoundsException e){
-                    variableMap.putIfAbsent(keys[i], null);
-                }
+        for(int i = 0; i<keys.length; i++){
+            try{
+                variableMap.putIfAbsent(keys[i], values[i]);
+            }
+            catch (IndexOutOfBoundsException e){
+                variableMap.putIfAbsent(keys[i], null);
             }
         }
+        addGBUILibDefaults();
+    }
+
+    private static void addGBUILibDefaults(){
+        variableMap.putIfAbsent(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), true);
+        variableMap.putIfAbsent(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true);
     }
 
     private final String key;
@@ -56,5 +62,9 @@ public class ProgramWideVariable {
             return variableMap.get(key);
         }
         return null;
+    }
+
+    public enum GBUILibVariables{
+        GBUILIB_GBSOCKET_ALLOWUNSAFE, GBUILIB_CONSOLE_ENABLED;
     }
 }

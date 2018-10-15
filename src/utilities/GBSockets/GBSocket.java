@@ -2,16 +2,17 @@ package utilities.GBSockets;
 
 public class GBSocket{
 
-    private boolean isDeprecated;
+    private boolean isInvalid;
     private PacketManager manager;
 
     @Deprecated
     public GBSocket(){
-        isDeprecated = true;
+        if()
+        isInvalid = true;
     }
 
     public GBSocket(boolean autoReconnect, boolean revive, ActionHandler handler, ){
-        isDeprecated = true;
+        isInvalid = false;
     }
 
     @Deprecated
@@ -24,7 +25,7 @@ public class GBSocket{
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
-        if(!isDeprecated) {
+        if(!) {
             manager.sendAsPacket(content, contentType, packetType);
         }
         else {
