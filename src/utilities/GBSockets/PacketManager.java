@@ -8,6 +8,17 @@ import java.util.Map;
 
 public class PacketManager {
 
+    // constructor
+
+    protected PacketManager(int ManagerID, GBSocket socket,
+                            ActionHandler actionHandler){
+        // output
+        this.socket = socket;
+        this.managerID = ManagerID;
+        // input
+        this.actionHandler = actionHandler;
+    }
+
     // outgoing packets
     private List<String> sendTypes = new ArrayList<>();
     private Map<String, Integer> packetNumbers = new HashMap<>();
@@ -17,11 +28,6 @@ public class PacketManager {
 
     protected void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
         socket.sendPacket(new Packet(content, contentType, packetType, this));
-    }
-
-    protected PacketManager(int ManagerID, GBSocket socket){
-        this.socket = socket;
-        this.managerID = ManagerID;
     }
 
     private synchronized int[] numerize(String packetType){
@@ -65,4 +71,10 @@ public class PacketManager {
             throw new IllegalArgumentException("The method formatPacketIDs has been passed an Illegal argument. Either the \"ids\" array didn't have exactly 2 or 3 cells, or the packet type was null when there are 3 ids in the \"ids\" array.\nthe arguments - ids: " + ids.toString() + " packetType: " + packetType);
         }
     }
+
+    // incoming packets
+
+    private ActionHandler actionHandler;
+
+
 }

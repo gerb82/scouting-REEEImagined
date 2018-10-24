@@ -6,9 +6,20 @@ import java.util.Set;
 
 public class ProgramWideVariable {
 
-    private static Map<String, Object> variableMap = new HashMap<>(){{
+    public interface InsertMethod{
+        void insert(String key, Object content);
+    }
 
-    }};
+    public interface GlobalVariablesPreset{
+        void initalize(InsertMethod insertToMap);
+    }
+
+    private static Map<String, Object> variableMap = new HashMap<>();
+    private static Boolean initialized = false;
+
+    public static boolean isInitialized(){
+        return initialized;
+    }
 
     public static Set<String> dumpKeys(){
         return variableMap.keySet();
@@ -21,27 +32,47 @@ public class ProgramWideVariable {
         return variableMap.containsKey(key);
     }
 
-    public static void initalizeDefaults(String[] keys, Object[] values){
-        if(keys.length < values.length){
-            throw new IllegalArgumentException("Cannot initialize default values when there are more values than keys. the lenghts of each array: keys - " + keys.length + " values - " + values.length);
-        }
-        for(int i = 0; i<keys.length; i++){
-            try{
-                variableMap.putIfAbsent(keys[i], values[i]);
+    public static void initalizeDefaults(GlobalVariablesPreset... presets){
+        if(!initialized) {
+            addGBUILibDefaults();
+            for (GlobalVariablesPreset gvp : presets) {
+                gvp.initalize(variableMap::putIfAbsent);
             }
-            catch (IndexOutOfBoundsException e){
-                variableMap.putIfAbsent(keys[i], null);
-            }
+            initialized = true;
         }
-        addGBUILibDefaults();
     }
 
     private static void addGBUILibDefaults(){
-        variableMap.putIfAbsent(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), true);
+        variableMap.putIfAbsent(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false);
         variableMap.putIfAbsent(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true);
     }
 
     private final String key;
+
+    public static Object getVariableWithDefault(String key, Object value){
+        ProgramWideVariable var = new ProgramWideVariable(key, value, false);
+        return var.getValue();
+    }
+
+    public static Object gerVariableWithDefaultSafe(String key, Object value, Class<?> type){
+        Object result = getVariableWithDefault(key, value);
+        if(result.getClass().isInstance(type)){
+            return result;
+        }
+        else{
+            return value;
+        }
+    }
+
+    public static boolean getBooleanWithDefault(String key, boolean value){
+        Object result = getVariableWithDefault(key, value);
+        if(result instanceof Boolean){
+            return (boolean)result;
+        }
+        else{
+            return value;
+        }
+    }
 
     public ProgramWideVariable(String key, Object value, boolean override){
         this.key = key;

@@ -1,13 +1,14 @@
 package utilities.GBSockets;
 
+import utilities.ProgramWideVariable;
+
 public class GBSocket{
 
     private boolean isInvalid;
     private PacketManager manager;
 
-    @Deprecated
-    public GBSocket(){
-        if()
+    public GBSocket() throws IllegalAccessException{
+        if(!((Boolean)ProgramWideVariable.getVariableWithDefault(ProgramWideVariable.GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false, Boolean.class)));
         isInvalid = true;
     }
 
