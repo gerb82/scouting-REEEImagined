@@ -1,5 +1,7 @@
 package utilities.GBSockets;
 
+import utilities.GBUILibGlobals;
+
 public class Packet {
 
     protected Object content;
@@ -8,27 +10,39 @@ public class Packet {
     protected int[] ids;
     protected boolean errorChecked;
 
-    @Deprecated
     public Object getContent() {
-        return content;
+        if(GBUILibGlobals.unsafeSockcets()) {
+            return content;
+        } else {
+            throw new UnsafeSocketException("There was an attempt to get a packet's content directly, even though unsafe sockets are disabled");
+        }
     }
 
-    @Deprecated
     public String getContentType() {
-        return contentType;
+        if(GBUILibGlobals.unsafeSockcets()) {
+            return contentType;
+        } else {
+            throw new UnsafeSocketException("There was an attempt to get a packet's content type identifier directly, even though unsafe sockets are disabled");
+        }
     }
 
-    @Deprecated
     public String getPacketType() {
-        return packetType;
+        if(GBUILibGlobals.unsafeSockcets()) {
+            return packetType;
+        } else {
+            throw new UnsafeSocketException("There was an attempt to get a packet's type identifier directly, even though unsafe sockets are disabled");
+        }
     }
 
-    @Deprecated
     public Packet(Object content, String contentType, String packetType){
+        if(GBUILibGlobals.unsafeSockcets()) {
         this.content = content;
         this.contentType = contentType;
         this.packetType = packetType;
         this.errorChecked = false;
+        } else {
+            throw new UnsafeSocketException("There was an attempt to create a packet directly, even though unsafe sockets are disabled");
+        }
     }
 
     protected Packet(Object content, String contentType, String packetType, PacketManager parent) throws BadPacketException{
