@@ -1,12 +1,18 @@
 package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
-import utilities.ProgramWideVariable;
+
+import java.nio.channels.SocketChannel;
 
 public class GBSocket{
 
     private boolean isInvalid;
     private PacketManager manager;
+    private SocketChannel socket;
+
+    protected void SocketConnect(){
+
+    }
 
     public GBSocket(){
         if(GBUILibGlobals.unsafeSockcets()) {
