@@ -1,5 +1,9 @@
 package utilities;
 
+import utilities.MethodTypes.BlankMethod;
+
+import java.util.ArrayList;
+
 public class GBUILibGlobals {
 
     public static void initalize(ProgramWideVariable.InsertMethod insertToMap) {
@@ -14,6 +18,15 @@ public class GBUILibGlobals {
 
         //console
         insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true);
+
+
+        //util
+        insertToMap.insert(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            for(BlankMethod method : new ProgramWideVariable<ArrayList<BlankMethod>>(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), true, false).getValueSafe()){
+                method.execute();
+            }
+        }));
     }
 
     public enum GBUILibVariables{
@@ -25,14 +38,48 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT,
         GBUILIB_GBSOCKET_FULLDELETETIMER,
 
-        GBUILIB_CONSOLE_ENABLED
+        GBUILIB_CONSOLE_ENABLED,
+
+        GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN
     }
 
-    public static boolean getBooleanVar(GBUILibVariables key, boolean defaultValue){
+    public static Boolean getBooleanVar(GBUILibVariables key, boolean defaultValue){
         return (boolean)ProgramWideVariable.gerVariableWithDefaultSafe(key.toString(), defaultValue, Boolean.class);
     }
 
-    public static boolean unsafeSockcets(){
+    public static Boolean unsafeSockcets(){
         return getBooleanVar(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE, false);
+    }
+
+    public static void addShutdownCommand(BlankMethod method){
+        ((ArrayList<BlankMethod>)ProgramWideVariable.gerVariableWithDefaultSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), ArrayList.class)).add(method);
+    }
+
+    public static void removeShutdownCommand(BlankMethod method){
+        ((ArrayList<BlankMethod>)ProgramWideVariable.gerVariableWithDefaultSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), ArrayList.class)).remove(method);
+    }
+
+    public static Integer getIntVar(GBUILibVariables key, int defaultValue){
+        return (Integer)ProgramWideVariable.gerVariableWithDefaultSafe(key.toString(), defaultValue, Integer.class);
+    }
+
+    public static Integer getSocketTimeout(){
+        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER, 30);
+    }
+
+    public static Integer getSocketReceiveStreamSize(){
+        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE, 8192);
+    }
+
+    public static Integer getMaxServerConnections(){
+        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS, -1);
+    }
+
+    public static Integer getHeartBeatRate(){
+        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE, 5);
+    }
+
+    public static Integer fullDeleteServerSocket(){
+        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER, 120);
     }
 }

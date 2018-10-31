@@ -1,17 +1,67 @@
 package utilities.GBSockets;
 
+import javafx.scene.shape.Rectangle;
 import utilities.GBUILibGlobals;
+import utilities.ProgramWideVariable;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.SocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 public class GBSocket{
 
+    private static Selector selector;
     private boolean isInvalid;
     private PacketManager manager;
     private SocketChannel socket;
+    private boolean autoReconnect;
+    private boolean connectionTimeout;
+    private boolean linger;
+    private SocketAddress adress;
+    private ObjectInputStream input;
+    private ObjectOutputStream output;
 
     protected void SocketConnect(){
+        try {
+            socket = SocketChannel.open();
+            socket.socket().setReceiveBufferSize(GBUILibGlobals.getSocketReceiveStreamSize());
+            if(connectionTimeout) {
+                socket.socket().setSoTimeout(GBUILibGlobals.getSocketTimeout());
+            }
+            if(socket.connect(adress)){
+                output = new ObjectOutputStream(socket.socket().getOutputStream());
+                input = new ObjectInputStream(socket.socket().getInputStream());
+                socket.configureBlocking(false);
+                socket.register(selector, SelectionKey.OP_READ);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public void startConnection(){
+        GBUILibGlobals.addShutdownCommand(this::dropConnection);
+    }
+
+    public void stopAutoReConnection(){
+        autoReconnect = false;
+    }
+
+    public void dropConnection(){
+        stopAutoReConnection();
+        try {
+            socket.finishConnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void finalize(){
+        GBUILibGlobals.removeShutdownCommand(this::dropConnection);
     }
 
     public GBSocket(){
@@ -35,7 +85,12 @@ public class GBSocket{
     }
 
     protected synchronized void sendPacket(Packet packet){
-
+        try {
+            output.writeObject(packet);
+            output.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
