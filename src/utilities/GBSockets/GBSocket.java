@@ -38,7 +38,7 @@ public class GBSocket{
                 output = new ObjectOutputStream(socket.socket().getOutputStream());
                 input = new ObjectInputStream(socket.socket().getInputStream());
                 socket.configureBlocking(false);
-                socket.register(selector, SelectionKey.OP_READ);
+                socket.register(selector, SelectionKey.OP_READ, this);
             }
         } catch (IOException e) {
             e.printStackTrace();

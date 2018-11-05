@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -15,21 +13,21 @@ import java.util.*;
 public class GBServerSocket{
 
     // selector area (Oh god why)
-    private class SelectorTimoutThread extends Thread{
+    private class SelectorTimeOutThread extends Thread{
         private class SocketWaitTime{
-            private int time;
+            private long time;
             private final GBSocket channel;
 
-            public SocketWaitTime(int time, GBSocket channel){
+            public SocketWaitTime(long time, GBSocket channel){
                 this.time = time;
                 this.channel = channel;
             }
 
-            public void setTime(int time) {
+            public void setTime(long time) {
                 this.time = time;
             }
 
-            public int getTime() {
+            public long getTime() {
                 return time;
             }
 
@@ -42,10 +40,10 @@ public class GBServerSocket{
         private Queue<SocketWaitTime> sleepQueue;
         private boolean keepRunning;
         private Instant start;
-        private HashMap<GBSocket, Integer> ack;
+        private HashMap<GBSocket, Long> ack;
         private int timeOut;
 
-        public SelectorTimoutThread(){
+        public SelectorTimeOutThread(){
             start = Instant.now();
             timeOut = GBUILibGlobals.getSocketTimeout();
             ack = new HashMap<>();
@@ -67,14 +65,14 @@ public class GBServerSocket{
                 else{
                     SocketWaitTime temp = sleepQueue.poll();
                     try {
-                        wait((long)(temp.getTime() - calculateTime() * 1000));
+                        wait(temp.getTime() - calculateTime());
                     } catch (InterruptedException e) {
                         continue;
                     }
                     if(sockets.contains(temp.channel)) {
-                        int lastAck = ack.get(temp.channel);
+                        long lastAck = ack.get(temp.channel);
                         if (lastAck > temp.getTime()) {
-                            temp.setTime(lastAck + timeOut);
+                            temp.setTime(calculateTime() + timeOut);
                         } else {
                             removeSelectorChannel(temp.channel);
                         }
@@ -86,6 +84,7 @@ public class GBServerSocket{
         public boolean closeThread(boolean force){
             if(force || sockets.isEmpty()){
                 this.keepRunning = false;
+                notify();
             }
             return false;
         }
@@ -99,6 +98,9 @@ public class GBServerSocket{
             sockets.add(socket);
             ack.put(socket, calculateTime());
             sleepQueue.add(new SocketWaitTime(calculateTime(), socket));
+            if(sockets.isEmpty()) {
+                notify();
+            }
         }
 
         public void ack(GBSocket socket){
@@ -107,37 +109,39 @@ public class GBServerSocket{
             }
         }
 
-        private int calculateTime(){
-            return (int)(Duration.between(start, Instant.now()).toMillis()/1000);
+        private long calculateTime(){
+            return Duration.between(start, Instant.now()).toMillis();
         }
     }
 
-    private SelectorTimoutThread timoutThread = new SelectorTimoutThread();
+    private SelectorTimeOutThread timeOutThread = new SelectorTimeOutThread();
     private HashMap<GBSocket, SelectionKey> selectionKeys = new HashMap<>();
     private Selector selector;
 
     private boolean initSelector(){
         try {
             selector = Selector.open();
+            timeOutThread.start();
             return true;
         } catch (IOException e) {
             return false;
         }
     }
 
-    private boolean addSelectorChannel(GBSocket channel){
+    private boolean addSelectorChannel(GBSocket socket){
         try {
-            selectionKeys.put(channel,channel.getChannel().register(selector, SelectionKey.OP_READ));
+            selectionKeys.put(socket,socket.getChannel().register(selector, SelectionKey.OP_READ));
+            timeOutThread.addSocket(socket);
             return true;
         } catch (ClosedChannelException e) {
             return false;
         }
     }
 
-    private boolean removeSelectorChannel(GBSocket channel){
+    private boolean removeSelectorChannel(GBSocket socket){
         try{
-
-            selectionKeys.remove(channel).cancel();
+            selectionKeys.remove(socket).cancel();
+            timeOutThread.removeSocket(socket);
             return true;
         } catch (NullPointerException e){
             return false;
