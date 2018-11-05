@@ -1,8 +1,6 @@
 package utilities.GBSockets;
 
-import javafx.scene.shape.Rectangle;
 import utilities.GBUILibGlobals;
-import utilities.ProgramWideVariable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -24,6 +22,10 @@ public class GBSocket{
     private SocketAddress adress;
     private ObjectInputStream input;
     private ObjectOutputStream output;
+
+    protected SocketChannel getChannel(){
+        return socket;
+    }
 
     protected void SocketConnect(){
         try {
@@ -61,6 +63,7 @@ public class GBSocket{
     }
 
     public void finalize(){
+        dropConnection();
         GBUILibGlobals.removeShutdownCommand(this::dropConnection);
     }
 
