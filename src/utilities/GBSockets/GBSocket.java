@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Timer;
 
 public class GBSocket implements AutoCloseable{
 
@@ -124,6 +125,12 @@ public class GBSocket implements AutoCloseable{
     }
 
     private void handShake(){
+
+    }
+
+    private Timer heart;
+
+    private void heartBeat(){
 
     }
 }

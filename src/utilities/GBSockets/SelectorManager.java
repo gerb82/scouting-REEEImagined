@@ -52,15 +52,22 @@ public class SelectorManager implements AutoCloseable{
                     if(selector.select() > 0) {
                         for (SelectionKey key : selector.selectedKeys()) {
                             GBSocket socket = ((GBSocket) key.attachment());
-                            try {
-                                Packet packet = socket.readPacket();
-                                if (server) {
-                                    serverQueue.add(new GBServerSocket.PacketToProcess(packet, socket));
-                                } else {
-                                    socket.receivePacket(packet);
+                            boolean flag = true;
+                            while(flag) {
+                                try {
+                                    Packet packet = socket.readPacket();
+                                    if(packet == null){
+                                        flag = false;
+                                        continue;
+                                    }
+                                    if (server) {
+                                        serverQueue.add(new GBServerSocket.PacketToProcess(packet, socket));
+                                    } else {
+                                        socket.receivePacket(packet);
+                                    }
+                                } catch (BadPacketException | IOException e) {
+                                    socket.dropConnection();
                                 }
-                            } catch (BadPacketException | IOException e) {
-                                socket.dropConnection();
                             }
                         }
                     }
