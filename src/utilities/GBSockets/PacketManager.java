@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 public class PacketManager {
-
     // constructor
 
     protected PacketManager(int ManagerID, GBSocket socket,
@@ -21,7 +20,7 @@ public class PacketManager {
 
     // outgoing packets
     private List<String> sendTypes = new ArrayList<>();
-    private Map<String, Integer> packetNumbers = new HashMap<>();
+    private Map<String, Integer> packetNumbers = new HashMap<String, Integer>(){{this.put("HeartBeat", 0);}};
     private int packetTotal = 0;
     private final int managerID;
     private GBSocket socket;
@@ -52,7 +51,9 @@ public class PacketManager {
         }
         int[] packetNumbers = numerize(packetType);
         try {
-            assert (content instanceof Serializable);
+            if(content != null) {
+                assert (content instanceof Serializable);
+            }
         }
         catch (AssertionError e){
             throw new BadPacketException("The packet content for packet " + formatPacketIDs(packetNumbers, packetType) + " is invalid, because it can't be serialized.");
@@ -76,5 +77,9 @@ public class PacketManager {
 
     private ActionHandler actionHandler;
 
-
+    protected Packet heartBeat(){
+        try {
+            return Packet.heartBeat(checkPacketValidity(null, "HeartBeat"));
+        } catch (BadPacketException e) {return null;}
+    }
 }

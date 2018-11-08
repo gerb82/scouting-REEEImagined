@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Timer;
+import java.util.TimerTask;
 
 public class GBSocket implements AutoCloseable{
 
@@ -80,7 +82,9 @@ public class GBSocket implements AutoCloseable{
 
     public synchronized void sendPacket(Packet... packets){
         if(GBUILibGlobals.unsafeSockcets() && isUnsafe){
-
+            for(Packet packet : packets){
+                sendPacket(packet);
+            }
         } else {
             throw new UnsafeSocketException("There was an attempt to send a packet directly and not through a packet manager, even though unsafe sockets are disabled");
         }
@@ -129,8 +133,28 @@ public class GBSocket implements AutoCloseable{
     }
 
     private Timer heart;
+    private Instant lastSent;
+    private final long heartBeatDelay;
+    private final boolean alwaysBeat;
+
+    private class heartBeatTask extends TimerTask{
+
+        @Override
+        public void run() {
+            if (alwaysBeat) {
+                long sinceLast = Duration.between(lastSent, Instant.now()).toMillis();
+                if (sinceLast < heartBeatDelay){
+                    heart.schedule(new heartBeatTask(), heartBeatDelay-sinceLast);
+                }
+                else{
+                    heartBeat();
+                    heart.schedule(new heartBeatTask(), heartBeatDelay);
+                }
+            }
+        }
+    }
 
     private void heartBeat(){
-
+        sendPacket(manager.heartBeat());
     }
 }

@@ -52,4 +52,22 @@ public class Packet {
         this.packetType = packetType;
         this.errorChecked = true;
     }
+
+    protected static Packet sendAck(int[] IDs, String originalType){
+        return new Packet(IDs, originalType);
+    }
+
+    private Packet(int[] IDs, String originalType){
+        this.ids = IDs;
+        this.packetType = originalType;
+    }
+
+    protected static Packet heartBeat(int... ID){
+        return new Packet(ID);
+    }
+
+    private Packet(int... ID){
+        this.packetType = "HeartBeat";
+        this.ids = ID;
+    }
 }

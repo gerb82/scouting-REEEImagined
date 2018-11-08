@@ -203,12 +203,15 @@ public class GBServerSocket implements AutoCloseable{
     private boolean isUnsafe;
 
     protected boolean initSelector(){
-        if (!isUnsafe) {
-            timeOutThread.activate();
-            initializeReceiveSplit();
+        if(selector != null) {
+            if (!isUnsafe) {
+                timeOutThread.activate();
+                initializeReceiveSplit();
+            }
+            selector = new SelectorManager(true, toBeProcessed);
+            return true;
         }
-        selector = new SelectorManager(true, toBeProcessed);
-        return true;
+        return false;
     }
 
     protected boolean addSelectorChannel(GBSocket socket) {
@@ -297,5 +300,9 @@ public class GBServerSocket implements AutoCloseable{
 
     private void handShake(){
 
+    }
+
+    private void ack(GBSocket socket, int[] IDs){
+        socket.sendPacket();
     }
 }
