@@ -4,13 +4,13 @@ import utilities.GBUILibGlobals;
 
 public class Packet {
 
-    protected Object content;
-    protected String packetType;
-    protected String contentType;
-    protected int[] ids;
-    protected boolean errorChecked;
+    private Object content;
+    private String packetType;
+    private String contentType;
+    private int[] ids;
+    private boolean errorChecked;
 
-    public Object getContent() {
+    public Object getContentUnsafe() {
         if(GBUILibGlobals.unsafeSockcets()) {
             return content;
         } else {
@@ -18,7 +18,7 @@ public class Packet {
         }
     }
 
-    public String getContentType() {
+    public String getContentTypeUnsafe() {
         if(GBUILibGlobals.unsafeSockcets()) {
             return contentType;
         } else {
@@ -26,12 +26,32 @@ public class Packet {
         }
     }
 
-    public String getPacketType() {
+    public String getPacketTypeUnsafe() {
         if(GBUILibGlobals.unsafeSockcets()) {
             return packetType;
         } else {
             throw new UnsafeSocketException("There was an attempt to get a packet's type identifier directly, even though unsafe sockets are disabled");
         }
+    }
+
+    protected Object getContent() {
+        return content;
+    }
+
+    protected String getPacketType() {
+        return packetType;
+    }
+
+    protected String getContentType() {
+        return contentType;
+    }
+
+    protected int[] getIds() {
+        return ids;
+    }
+
+    protected boolean isErrorChecked() {
+        return errorChecked;
     }
 
     public Packet(Object content, String contentType, String packetType){
@@ -51,23 +71,5 @@ public class Packet {
         this.contentType = contentType;
         this.packetType = packetType;
         this.errorChecked = true;
-    }
-
-    protected static Packet sendAck(int[] IDs, String originalType){
-        return new Packet(IDs, originalType);
-    }
-
-    private Packet(int[] IDs, String originalType){
-        this.ids = IDs;
-        this.packetType = originalType;
-    }
-
-    protected static Packet heartBeat(int... ID){
-        return new Packet(ID);
-    }
-
-    private Packet(int... ID){
-        this.packetType = "HeartBeat";
-        this.ids = ID;
     }
 }

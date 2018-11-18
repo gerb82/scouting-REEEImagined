@@ -1,33 +1,26 @@
 package utilities.GBSockets;
 
-import java.lang.reflect.InvocationTargetException;
+import utilities.GBUILibGlobals;
+
 import java.util.HashMap;
 
 public class ActionHandler {
 
-    public interface HandlerType{}
+    private GBSocket parent;
 
-    private class Handlers{
-
-        private PacketHandler handler;
-        private Class<? extends HandlerType> handlerType;
-
-        private Handlers(PacketHandler handler, Class<? extends HandlerType> handlerType){
-            this.handler = handler;
-            this.handlerType = handlerType;
-        }
-    }
-
-    public class StandardHandler implements HandlerType{
-
+    public class PacketOut {
         private Object content;
         private String contentType;
-        private GBSocket socket;
+        private String packetType;
+        private int[] IDs;
+        private boolean errorChecked;
 
-        public StandardHandler(GBSocket socket, Packet packet){
-            content = packet.content;
-            contentType = packet.contentType;
-            this.socket = socket;
+        private PacketOut(Packet packet){
+            content = packet.getContent();
+            contentType = packet.getContentType();
+            packetType = packet.getPacketType();
+            IDs = packet.getIds();
+            errorChecked = packet.isErrorChecked();
         }
 
         public Object getContent() {
@@ -38,71 +31,38 @@ public class ActionHandler {
             return contentType;
         }
 
-        public GBSocket getSocket() {
-            return socket;
-        }
-    }
-
-    public class StandardHandlerWithIDs extends StandardHandler{
-
-        private int[] ids;
-
-        public StandardHandlerWithIDs(GBSocket socket, Packet packet) {
-            super(socket, packet);
-            ids = packet.ids;
+        public String getPacketType() {
+            return packetType;
         }
 
-        public int[] getIds() {
-            return ids;
-        }
-    }
-
-    public class UnsafeHandler implements HandlerType{
-
-        private Packet packet;
-        private GBSocket socket;
-
-        public UnsafeHandler(GBSocket socket, Packet packet){
-            this.packet = packet;
-            this.socket = socket;
+        public int[] getIDs() {
+            return IDs;
         }
 
-        public Packet getPacket() {
-            return packet;
-        }
-
-        public GBSocket getSocket() {
-            return socket;
+        public boolean isErrorChecked() {
+            return errorChecked;
         }
     }
 
     public interface PacketHandler{
-        void handle(HandlerType handler);
+        void handle(GBSocket socket, PacketOut packet) throws BadPacketException;
     }
 
-    private HashMap<String, Handlers> handlers;
+    private HashMap<String, PacketHandler> handlers;
 
-    public void addMethod(String packetType, PacketHandler handler, Class<? extends HandlerType> handlerType){
-        handlers.put(packetType, new Handlers(handler, handlerType));
+    public void addHandler(String packetType, PacketHandler handler){
+        handlers.put(packetType, handler);
     }
 
-    protected void handlePacket(GBSocket socket, Packet packet) throws BadPacketException {
-        if(handlers.containsKey(packet.packetType)){
-            try {
-                Handlers handler = handlers.get(packet.packetType);
-                handler.handler.handle(handler.handlerType.getDeclaredConstructor(GBSocket.class, Packet.class).newInstance(socket, packet));
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
+    protected void handlePacket(Packet packet) throws BadPacketException {
+        try{
+            handlers.get(packet.getPacketType()).handle(parent, new PacketOut(packet));
+        } catch (NullPointerException e){
+            throw new BadPacketException("The packet type supplied with a packet was a type the socket cannot handle");
         }
-        else{
-            throw new BadPacketException("The packet type was invalid. No action handler for this packet type exists.");
-        }
+    }
+
+    protected ActionHandler(GBSocket parent){
+        this.parent = parent;
     }
 }

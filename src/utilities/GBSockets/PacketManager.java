@@ -79,7 +79,7 @@ public class PacketManager {
 
     protected Packet heartBeat(){
         try {
-            return Packet.heartBeat(checkPacketValidity(null, "HeartBeat"));
+            return new Packet(null, null, "HeartBeat", this);
         } catch (BadPacketException e) {return null;}
     }
 }
