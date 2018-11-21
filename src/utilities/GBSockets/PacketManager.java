@@ -1,6 +1,7 @@
 package utilities.GBSockets;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,5 +82,9 @@ public class PacketManager {
         try {
             return new Packet(null, null, "HeartBeat", this);
         } catch (BadPacketException e) {return null;}
+    }
+
+    protected Packet ack(int[] ids, String originalPacketType){
+        return new Packet(ids, "Ack", originalPacketType);
     }
 }

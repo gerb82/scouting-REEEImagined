@@ -1,7 +1,6 @@
 package utilities.GBSockets;
 
-import utilities.GBUILibGlobals;
-
+import java.time.Instant;
 import java.util.HashMap;
 
 public class ActionHandler {
@@ -14,6 +13,7 @@ public class ActionHandler {
         private String packetType;
         private int[] IDs;
         private boolean errorChecked;
+        private Instant timestamp;
 
         private PacketOut(Packet packet){
             content = packet.getContent();
@@ -21,6 +21,7 @@ public class ActionHandler {
             packetType = packet.getPacketType();
             IDs = packet.getIds();
             errorChecked = packet.isErrorChecked();
+            timestamp = packet.getTimeStamp();
         }
 
         public Object getContent() {
@@ -42,6 +43,10 @@ public class ActionHandler {
         public boolean isErrorChecked() {
             return errorChecked;
         }
+
+        public Instant getTimestamp(){
+            return timestamp;
+        }
     }
 
     public interface PacketHandler{
@@ -62,7 +67,13 @@ public class ActionHandler {
         }
     }
 
-    protected ActionHandler(GBSocket parent){
+    protected ActionHandler(GBSocket parent, ActionHandlerRecipe... recipes){
         this.parent = parent;
+        handlers = new HashMap<>();
+        for(ActionHandlerRecipe recipe : recipes){
+            for(String key : recipe.getHandlers().keySet()){
+                handlers.putIfAbsent(key, recipe.getHandlers().get(key));
+            }
+        }
     }
 }

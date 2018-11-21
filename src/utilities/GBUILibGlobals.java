@@ -49,6 +49,10 @@ public class GBUILibGlobals {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), Boolean.class);
     }
 
+    public static Boolean alwaysHeartBeat() {
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT.toString(), Boolean.class);
+    }
+
     public static void addShutdownCommand(BlankMethod method) {
         ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), ArrayList.class).add(method);
     }

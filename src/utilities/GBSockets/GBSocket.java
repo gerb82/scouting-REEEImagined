@@ -14,12 +14,57 @@ import java.util.TimerTask;
 
 public class GBSocket implements AutoCloseable{
 
+    public class SocketConfig{
+        private Integer heartBeatDelay;
+        private Boolean alwaysBeat;
+        private Integer connectionTimeout;
+
+        public SocketConfig(Integer heartBeatDelay, Boolean alwaysBeat, Integer connectionTimeout) {
+            this.heartBeatDelay = heartBeatDelay;
+            this.alwaysBeat = alwaysBeat;
+            this.connectionTimeout = connectionTimeout;
+        }
+
+        public int getHeartBeatDelay() {
+            if(heartBeatDelay == null){
+                return GBUILibGlobals.getHeartBeatRate();
+            }
+            return heartBeatDelay;
+        }
+
+        protected void setHeartBeatDelay(int heartBeatDelay) {
+            this.heartBeatDelay = heartBeatDelay;
+        }
+
+        public boolean alwaysBeat() {
+            if(alwaysBeat == null){
+                return GBUILibGlobals.alwaysHeartBeat();
+            }
+            return alwaysBeat;
+        }
+
+        protected void setAlwaysBeat(boolean alwaysBeat) {
+            this.alwaysBeat = alwaysBeat;
+        }
+
+        public int isConnectionTimeout() {
+            if(connectionTimeout == null){
+                return GBUILibGlobals.getSocketTimeout();
+            }
+            return connectionTimeout;
+        }
+
+        protected void setConnectionTimeout(int connectionTimeout) {
+            this.connectionTimeout = connectionTimeout;
+        }
+    }
+
     private SelectorManager selector;
     private boolean isUnsafe;
     private PacketManager manager;
     private SocketChannel socket;
     private boolean autoReconnect;
-    private boolean connectionTimeout;
+    private int connectionTimeout;
     private boolean linger;
     private SocketAddress adress;
     private ObjectInputStream input;
@@ -33,7 +78,7 @@ public class GBSocket implements AutoCloseable{
         try {
             socket = SocketChannel.open();
             socket.socket().setReceiveBufferSize(GBUILibGlobals.getSocketReceiveStreamSize());
-            if(connectionTimeout) {
+            if(connectionTimeout != -1) {
                 socket.socket().setSoTimeout(GBUILibGlobals.getSocketTimeout());
             }
             if(socket.connect(adress)){
@@ -67,15 +112,22 @@ public class GBSocket implements AutoCloseable{
         close();
     }
 
+    // unsafe socket
     public GBSocket(){
         if(GBUILibGlobals.unsafeSockcets()) {
+            heartBeatDelay = -1;
+            alwaysBeat = false;
             isUnsafe = true;
         } else {
             throw new UnsafeSocketException("There was an attempt to create an unsafe socket, even though unsafe sockets are disabled");
         }
     }
 
-    public GBSocket(boolean autoReconnect, SelectorManager selector, ActionHandler handler){
+    // safe socket
+    public GBSocket(boolean autoReconnect, SelectorManager selector, ActionHandler handler, SocketConfig config){
+        this.heartBeatDelay = config.getHeartBeatDelay();
+        this.alwaysBeat = config.alwaysBeat();
+        this.connectionTimeout = config.connectionTimeout;
         this.selector = selector;
         isUnsafe = false;
     }
@@ -142,6 +194,10 @@ public class GBSocket implements AutoCloseable{
         @Override
         public void run() {
             if (alwaysBeat) {
+                heartBeat();
+                heart.schedule(new heartBeatTask(), heartBeatDelay);
+            }
+            else{
                 long sinceLast = Duration.between(lastSent, Instant.now()).toMillis();
                 if (sinceLast < heartBeatDelay){
                     heart.schedule(new heartBeatTask(), heartBeatDelay-sinceLast);
@@ -156,5 +212,10 @@ public class GBSocket implements AutoCloseable{
 
     private void heartBeat(){
         sendPacket(manager.heartBeat());
+        lastSent = Instant.now();
+    }
+
+    public void ack(int[] ids, String packetType){
+        manager.ack(ids, packetType);
     }
 }

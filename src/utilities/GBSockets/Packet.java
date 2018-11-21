@@ -2,6 +2,8 @@ package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
 
+import java.time.Instant;
+
 public class Packet {
 
     private Object content;
@@ -9,6 +11,7 @@ public class Packet {
     private String contentType;
     private int[] ids;
     private boolean errorChecked;
+    private Instant timeStamp;
 
     public Object getContentUnsafe() {
         if(GBUILibGlobals.unsafeSockcets()) {
@@ -34,6 +37,14 @@ public class Packet {
         }
     }
 
+    public Instant getTimeStampUnsafe() {
+        if(GBUILibGlobals.unsafeSockcets()) {
+            return timeStamp;
+        } else {
+            throw new UnsafeSocketException("There was an attempt to get a packet's time stamp directly, even though unsafe sockets are disabled");
+        }
+    }
+
     protected Object getContent() {
         return content;
     }
@@ -54,12 +65,17 @@ public class Packet {
         return errorChecked;
     }
 
+    protected Instant getTimeStamp(){
+        return timeStamp;
+    }
+
     public Packet(Object content, String contentType, String packetType){
         if(GBUILibGlobals.unsafeSockcets()) {
         this.content = content;
         this.contentType = contentType;
         this.packetType = packetType;
         this.errorChecked = false;
+        this.timeStamp = Instant.now();
         } else {
             throw new UnsafeSocketException("There was an attempt to create a packet directly, even though unsafe sockets are disabled");
         }
@@ -71,5 +87,13 @@ public class Packet {
         this.contentType = contentType;
         this.packetType = packetType;
         this.errorChecked = true;
+        this.timeStamp = Instant.now();
+    }
+
+    protected Packet(int[] ids, String packetType, String originalPacketType){
+        content = ids;
+        timeStamp = Instant.now();
+        contentType = originalPacketType;
+        this.packetType = packetType;
     }
 }
