@@ -8,23 +8,23 @@ public class GBUILibGlobals {
 
     public static void initalize(ProgramWideVariable.InsertMethod insertToMap) {
         //sockets
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), 30);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE.toString(), 8192);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), -1);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), 5);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT.toString(), false);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER.toString(), 120);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), 5);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), 30, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE.toString(), 8192, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), -1, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), 5, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT.toString(), false, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER.toString(), 120, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), 5, true);
 
         //console
-        insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true, true);
 
 
         //util
-        insertToMap.insert(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>());
+        insertToMap.insert(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), true);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            for (BlankMethod method : new ProgramWideVariable<ArrayList<BlankMethod>>(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), true, false).getValueSafe()) {
+            for (BlankMethod method : (ArrayList<BlankMethod>) ProgramWideVariable.getFinalVariable(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString())) {
                 method.execute();
             }
         }));
@@ -45,47 +45,39 @@ public class GBUILibGlobals {
         GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN
     }
 
-    public static Boolean getBooleanVar(GBUILibVariables key, boolean defaultValue) {
-        return (boolean) ProgramWideVariable.gerVariableWithDefaultSafe(key.toString(), defaultValue, Boolean.class);
-    }
-
     public static Boolean unsafeSockcets() {
-        return getBooleanVar(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE, false);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), Boolean.class);
     }
 
     public static void addShutdownCommand(BlankMethod method) {
-        ((ArrayList<BlankMethod>) ProgramWideVariable.gerVariableWithDefaultSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), ArrayList.class)).add(method);
+        ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), ArrayList.class).add(method);
     }
 
     public static void removeShutdownCommand(BlankMethod method) {
-        ((ArrayList<BlankMethod>) ProgramWideVariable.gerVariableWithDefaultSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), ArrayList.class)).remove(method);
-    }
-
-    public static Integer getIntVar(GBUILibVariables key, int defaultValue) {
-        return (Integer) ProgramWideVariable.gerVariableWithDefaultSafe(key.toString(), defaultValue, Integer.class);
+        ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), ArrayList.class).remove(method);
     }
 
     public static Integer getSocketTimeout() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER, 30);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), Integer.class);
     }
 
     public static Integer getSocketReceiveStreamSize() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE, 8192);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE.toString(), Integer.class);
     }
 
     public static Integer getMaxServerConnections() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS, -1);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), Integer.class);
     }
 
     public static Integer getHeartBeatRate() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE, 5);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), Integer.class);
     }
 
     public static Integer fullDeleteServerSocket() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER, 120);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER.toString(), Integer.class);
     }
 
     public static Integer getInputThreadCount() {
-        return getIntVar(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT, 5);
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), Integer.class);
     }
 }

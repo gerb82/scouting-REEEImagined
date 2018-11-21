@@ -4,108 +4,96 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ProgramWideVariable<T> {
+public class ProgramWideVariable {
 
     public interface InsertMethod{
-        void insert(String key, Object content);
+        void insert(String key, Object content, boolean finalVar);
     }
 
     public interface GlobalVariablesPreset{
         void initialize(InsertMethod insertToMap);
     }
 
-    private static Map<String, Object> variableMap = new HashMap<>()    ;
+    private static Map<String, Object> changingVariablesMap = new HashMap<>();
+    private static Map<String, Object> finalVariablesMap = new HashMap<>();
     private static Boolean initialized = false;
 
-    public static Set<String> dumpKeys(){
-        return variableMap.keySet();
+    private static void insert(String key, Object content, boolean finalVar){
+        if(finalVar){
+            finalVariablesMap.putIfAbsent(key, content);
+        }
+        else{
+            changingVariablesMap.putIfAbsent(key, content);
+        }
     }
 
-    public static boolean exists(String key){
-        return variableMap.containsKey(key);
+    public static Set<String> dumpFinalVarsKeys() {
+        initialized();
+        return finalVariablesMap.keySet();
+    }
+    public static Set<String> dumpChangingKeys(){
+        initialized();
+        return changingVariablesMap.keySet();
     }
 
-    public static void initalizeDefaults(GlobalVariablesPreset... presets){
+    public static boolean existsInChanging(String key){
+        initialized();
+        return changingVariablesMap.containsKey(key);
+    }
+    public static boolean existsInFinalVars(String key) {
+        initialized();
+        return finalVariablesMap.containsKey(key);
+    }
+
+    public static void initializeDefaults(GlobalVariablesPreset... presets){
         if(!initialized) {
-            GBUILibGlobals.initalize(variableMap::putIfAbsent);
+            GBUILibGlobals.initalize(ProgramWideVariable::insert);
             for (GlobalVariablesPreset gvp : presets) {
-                gvp.initialize(variableMap::putIfAbsent);
+                gvp.initialize(ProgramWideVariable::insert);
             }
             initialized = true;
         }
-    }
-
-    public static Object gerVariableWithDefaultSafe(String key, Object value, Class<?> type){
-        if(initialized) {
-            try {
-                Object result = type.cast(variableMap.putIfAbsent(key, value));
-                if (result == null) {
-                    return value;
-                }
-                return result;
-            } catch (ClassCastException e) {
-                throw new ProgramWideVariableInvalidType(key, type, variableMap.get(key).getClass());
-            }
-        }
-        return value;
-    }
-
-    private final String key;
-    private T value = null;
-    private Class<?> type;
-    private boolean changing;
-
-    public ProgramWideVariable(String key, T value, boolean changingVal, boolean override){
-        SmartAssert.makeSure(key != null, "Can't have a global variable name with an identifier of null");
-        if(initialized) {
-            this.key = key;
-            if (override) {
-                variableMap.put(key, value);
-            } else {
-                variableMap.putIfAbsent(key, value);
-            }
-            this.type = value.getClass();
-            this.changing = changingVal;
-            if (changingVal) {
-                try {
-                    this.value = (T) (variableMap.get(key));
-                } catch (ClassCastException e) {
-                    throw new ProgramWideVariableInvalidType(key, this.type, variableMap.get(key).getClass());
-                }
-            }
-        }
         else{
-            this.key = null;
-            this.changing = false;
-            this.value = value;
+            throw new Error("Cannot initialize global variables twice!");
         }
     }
 
-    public Object getValue(){
-        if(changing){
-            return variableMap.get(key);
+    public static Object getChangingVariable(String key){
+        initialized();
+        return changingVariablesMap.get(key);
+    }
+    public static <T> T getChangingVariableSafe(String key, Class<T> expectedType) throws ProgramWideVariableInvalidType{
+        Object ret = getChangingVariable(key);
+        if(expectedType.isAssignableFrom(ret.getClass()) || ret == null){
+            return expectedType.cast(ret);
         }
-        return value;
+        throw new ProgramWideVariableInvalidType("Attempted to get an object of type " + expectedType.getName() + " from the changing variables map in key " + key + " but ended up getting an object of type " + ret.getClass().getName());
+    }
+    public static Object getFinalVariable(String key){
+        initialized();
+        return finalVariablesMap.get(key);
+    }
+    public static <T> T getFinalVariableSafe(String key, Class<T> expectedType) throws ProgramWideVariableInvalidType{
+        Object ret = getFinalVariable(key);
+        if(expectedType.isAssignableFrom(ret.getClass()) || ret == null){
+            return expectedType.cast(ret);
+        }
+        throw new ProgramWideVariableInvalidType("Attempted to get an object of type " + expectedType.getName() + " from the final variables map in key " + key + " but ended up getting an object of type " + ret.getClass().getName());
     }
 
-    public T getValueSafe(){
-        if(changing){
-            try{
-                return (T)variableMap.get(key);
-            } catch (ClassCastException e){
-
-                throw new ProgramWideVariableInvalidType(key, type, variableMap.get(key).getClass());
-            }
-        }
-        return value;
+    public static void setValueInChangingVariablesMap(String key, Object value) {
+        initialized();
+        changingVariablesMap.put(key, value);
     }
 
-    public void changeValue(T value){
-        if(changing){
-            variableMap.put(key, value);
-        }
-        else{
-            this.value = value;
+    public static boolean putIfAbsentInChangingVariablesMap(String key, Object value){
+        initialized();
+        return null == changingVariablesMap.putIfAbsent(key, value);
+    }
+
+    private static void initialized(){
+        if(!initialized) {
+            throw new Error("Global variables have not been initialized!");
         }
     }
 }
