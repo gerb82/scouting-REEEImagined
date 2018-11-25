@@ -69,6 +69,11 @@ public class GBSocket implements AutoCloseable{
     private SocketAddress adress;
     private ObjectInputStream input;
     private ObjectOutputStream output;
+    private boolean server;
+
+    public boolean isServer(){
+        return server;
+    }
 
     protected SocketChannel getChannel(){
         return socket;
@@ -184,6 +189,10 @@ public class GBSocket implements AutoCloseable{
 
     }
 
+    protected void handShakeReceive(ActionHandler.PacketOut packet){
+
+    }
+
     private Timer heart;
     private Instant lastSent;
     private final long heartBeatDelay;
@@ -217,5 +226,15 @@ public class GBSocket implements AutoCloseable{
 
     public void ack(int[] ids, String packetType){
         manager.ack(ids, packetType);
+    }
+
+    public void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType, String ackContentType){
+        manager.smartAck(IDs, originalPacketType, content, packetType, contentType, ackContentType);
+    }
+
+    private boolean allowNoAck;
+
+    public boolean allowNoAck(){
+        return allowNoAck;
     }
 }

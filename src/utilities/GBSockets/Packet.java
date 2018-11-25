@@ -96,4 +96,26 @@ public class Packet {
         contentType = originalPacketType;
         this.packetType = packetType;
     }
+
+    protected Packet(Packet packet){
+        content = packet.getContent();
+        packetType = packet.getPacketType();
+        contentType = packet.getContentType();
+        ids = packet.getIds();
+        timeStamp = packet.getTimeStamp();
+        errorChecked = packet.isErrorChecked();
+    }
+
+    protected static class CustomAck {
+
+        protected Packet packet;
+        protected int[] IDs;
+        protected String originalPacketType;
+
+        protected CustomAck(Packet packet, int[] IDs, String originalPacketType) {
+            this.packet = packet;
+            this.IDs = IDs;
+            this.originalPacketType = originalPacketType;
+        }
+    }
 }

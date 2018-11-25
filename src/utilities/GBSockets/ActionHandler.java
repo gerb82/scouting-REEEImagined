@@ -5,52 +5,73 @@ import java.util.HashMap;
 
 public class ActionHandler {
 
+    protected enum DefaultPacketTypes{
+        Ack, SmartAck, HeartBeat, HandShake, Error
+    }
+
     private GBSocket parent;
 
-    public class PacketOut {
-        private Object content;
-        private String contentType;
-        private String packetType;
-        private int[] IDs;
-        private boolean errorChecked;
-        private Instant timestamp;
+    public class PacketOut extends Packet{
+        private boolean acked;
+        private GBSocket socket;
 
         private PacketOut(Packet packet){
-            content = packet.getContent();
-            contentType = packet.getContentType();
-            packetType = packet.getPacketType();
-            IDs = packet.getIds();
-            errorChecked = packet.isErrorChecked();
-            timestamp = packet.getTimeStamp();
+            super(packet);
+            acked = false;
+            this.socket = parent;
         }
 
+        public GBSocket getSocket() {
+            return socket;
+        }
+
+        @Override
         public Object getContent() {
-            return content;
+            return super.getContent();
         }
 
-        public String getContentType() {
-            return contentType;
-        }
-
+        @Override
         public String getPacketType() {
-            return packetType;
+            return super.getPacketType();
         }
 
-        public int[] getIDs() {
-            return IDs;
+        @Override
+        public String getContentType() {
+            return super.getContentType();
         }
 
+        @Override
+        public int[] getIds() {
+            return super.getIds();
+        }
+
+        @Override
         public boolean isErrorChecked() {
-            return errorChecked;
+            return super.isErrorChecked();
         }
 
-        public Instant getTimestamp(){
-            return timestamp;
+        @Override
+        public Instant getTimeStamp() {
+            return super.getTimeStamp();
+        }
+
+        public void ack(){
+            socket.ack(super.getIds(), super.getPacketType());
+            acked = true;
+        }
+
+        public void ack(Object content, String packetType, String contentType, String ackContentType){
+            socket.smartAck(super.getIds(), super.getPacketType(), content, packetType, contentType, ackContentType);
+            acked = true;
+        }
+
+        public void selfAcked(){
+            acked = true;
         }
     }
 
     public interface PacketHandler{
-        void handle(GBSocket socket, PacketOut packet) throws BadPacketException;
+        void handle(PacketOut packet) throws BadPacketException;
     }
 
     private HashMap<String, PacketHandler> handlers;
@@ -61,9 +82,13 @@ public class ActionHandler {
 
     protected void handlePacket(Packet packet) throws BadPacketException {
         try{
-            handlers.get(packet.getPacketType()).handle(parent, new PacketOut(packet));
+            PacketOut packetOut = new PacketOut(packet);
+            handlers.get(packet.getPacketType()).handle(packetOut);
+            if(!packetOut.acked && parent.allowNoAck()){
+                throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
+            }
         } catch (NullPointerException e){
-            throw new BadPacketException("The packet type supplied with a packet was a type the socket cannot handle");
+            throw new BadPacketException("The packet type supplied with a packet was a type the socket cannot handle.");
         }
     }
 
@@ -74,6 +99,32 @@ public class ActionHandler {
             for(String key : recipe.getHandlers().keySet()){
                 handlers.putIfAbsent(key, recipe.getHandlers().get(key));
             }
+        }
+        handlers.putIfAbsent(DefaultPacketTypes.HeartBeat.toString(), this::heartBeat);
+        handlers.putIfAbsent(DefaultPacketTypes.Ack.toString(), this::ack);
+        handlers.putIfAbsent(DefaultPacketTypes.SmartAck.toString(), this::smartAck);
+        handlers.putIfAbsent(DefaultPacketTypes.HandShake.toString(), parent::handShakeReceive);
+    }
+
+    private void heartBeat(PacketOut packet) throws BadPacketException {
+        if(parent.isServer()){
+            packet.ack();
+        }
+        else{
+            throw new BadPacketException("Received Heartbeat packet from server. Server should only be receiving HeartBeat packets from the clients, not vice-versa. More on why that is in the library documentation.", packet);
+        }
+    }
+
+    private void ack(PacketOut packet){
+        packet.selfAcked();
+    }
+
+    private void smartAck(PacketOut packet) throws BadPacketException {
+        try {
+            parent.receivePacket(((Packet.CustomAck) packet.getContent()).packet);
+            packet.selfAcked();
+        } catch (ClassCastException e){
+            throw new BadPacketException("Could not cast packet contents of a smart Ack packet content into a CustomAck Object.", packet);
         }
     }
 }

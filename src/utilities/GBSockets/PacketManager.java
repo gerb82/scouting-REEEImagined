@@ -11,7 +11,7 @@ public class PacketManager {
     // constructor
 
     protected PacketManager(int ManagerID, GBSocket socket,
-                            ActionHandler actionHandler){
+                            ActionHandler actionHandler) {
         // output
         this.socket = socket;
         this.managerID = ManagerID;
@@ -21,55 +21,52 @@ public class PacketManager {
 
     // outgoing packets
     private List<String> sendTypes = new ArrayList<>();
-    private Map<String, Integer> packetNumbers = new HashMap<String, Integer>(){{this.put("HeartBeat", 0);}};
+    private Map<String, Integer> packetNumbers = new HashMap<String, Integer>() {{
+        this.put(ActionHandler.DefaultPacketTypes.HeartBeat.toString(), 0);
+    }};
     private int packetTotal = 0;
     private final int managerID;
     private GBSocket socket;
 
-    protected void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
+    protected void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException {
         socket.sendPacket(new Packet(content, contentType, packetType, this));
     }
 
-    private synchronized int[] numerize(String packetType){
+    private synchronized int[] numerize(String packetType) {
         int[] output;
-        if(packetType != null){
+        if (packetType != null) {
             output = new int[]{packetTotal, packetNumbers.get(packetType), managerID};
             packetNumbers.put(packetType, output[1]++);
-        }
-        else{
+        } else {
             output = new int[]{packetTotal, managerID};
         }
         packetTotal++;
         return output;
     }
 
-    protected int[] checkPacketValidity(Object content, String packetType) throws BadPacketException{
+    protected int[] checkPacketValidity(Object content, String packetType) throws BadPacketException {
         try {
             assert (sendTypes.contains(packetType));
-        }
-        catch (AssertionError e){
+        } catch (AssertionError e) {
             throw new BadPacketException("The packet type for the packet" + formatPacketIDs(numerize(null), packetType) + " was of a type that cannot be sent.");
         }
         int[] packetNumbers = numerize(packetType);
         try {
-            if(content != null) {
+            if (content != null) {
                 assert (content instanceof Serializable);
             }
-        }
-        catch (AssertionError e){
+        } catch (AssertionError e) {
             throw new BadPacketException("The packet content for packet " + formatPacketIDs(packetNumbers, packetType) + " is invalid, because it can't be serialized.");
         }
         return packetNumbers;
     }
 
-    protected static String formatPacketIDs(int[] ids, String packetType) throws IllegalArgumentException{
-        if(ids.length == 2){
+    protected static String formatPacketIDs(int[] ids, String packetType) throws IllegalArgumentException {
+        if (ids.length == 2) {
             return "number" + ids[0] + " (total), in PacketManager number " + ids[1];
-        }
-        else if(ids.length == 3 && packetType != null){
+        } else if (ids.length == 3 && packetType != null) {
             return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in PacketManager number " + ids[2];
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("The method formatPacketIDs has been passed an Illegal argument. Either the \"ids\" array didn't have exactly 2 or 3 cells, or the packet type was null when there are 3 ids in the \"ids\" array.\nthe arguments - ids: " + ids.toString() + " packetType: " + packetType);
         }
     }
@@ -78,13 +75,19 @@ public class PacketManager {
 
     private ActionHandler actionHandler;
 
-    protected Packet heartBeat(){
+    protected Packet heartBeat() {
         try {
-            return new Packet(null, null, "HeartBeat", this);
-        } catch (BadPacketException e) {return null;}
+            return new Packet(null, null, ActionHandler.DefaultPacketTypes.HeartBeat.toString(), this);
+        } catch (BadPacketException e) {
+            return null;
+        }
     }
 
-    protected Packet ack(int[] ids, String originalPacketType){
-        return new Packet(ids, "Ack", originalPacketType);
+    protected void ack(int[] ids, String originalPacketType) {
+        socket.sendPacket(new Packet(ids, ActionHandler.DefaultPacketTypes.Ack.toString(), originalPacketType));
+    }
+
+    protected void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType, String ackContentType) {
+        socket.sendPacket(new Packet(new Packet.CustomAck(new Packet(content, contentType, packetType), IDs, originalPacketType), ackContentType, ActionHandler.DefaultPacketTypes.SmartAck.toString()));
     }
 }
