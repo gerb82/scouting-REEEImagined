@@ -18,7 +18,7 @@ public class ProgramWideVariable {
     private static Map<String, Object> finalVariablesMap = new HashMap<>();
     private static Boolean initialized = false;
 
-    private static void insert(String key, Object content, boolean finalVar){
+    private static void insertIfAbsent(String key, Object content, boolean finalVar){
         if(finalVar){
             finalVariablesMap.putIfAbsent(key, content);
         }
@@ -47,9 +47,9 @@ public class ProgramWideVariable {
 
     public static void initializeDefaults(GlobalVariablesPreset... presets){
         if(!initialized) {
-            GBUILibGlobals.initalize(ProgramWideVariable::insert);
+            GBUILibGlobals.initalize(ProgramWideVariable::insertIfAbsent);
             for (GlobalVariablesPreset gvp : presets) {
-                gvp.initialize(ProgramWideVariable::insert);
+                gvp.initialize(ProgramWideVariable::insertIfAbsent);
             }
             initialized = true;
         }

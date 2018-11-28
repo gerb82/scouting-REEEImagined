@@ -83,12 +83,14 @@ public class ActionHandler {
     protected void handlePacket(Packet packet) throws BadPacketException {
         try{
             PacketOut packetOut = new PacketOut(packet);
-            handlers.get(packet.getPacketType()).handle(packetOut);
+            PacketHandler handler = handlers.get(packet.getPacketType());
+            assert(handler != null);
+            handler.handle(packetOut);
             if(!packetOut.acked && parent.allowNoAck()){
                 throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
             }
-        } catch (NullPointerException e){
-            throw new BadPacketException("The packet type supplied with a packet was a type the socket cannot handle.");
+        } catch (AssertionError e){
+            throw new BadPacketException("The packet type supplied with the packet was a type that the socket cannot handle.", packet);
         }
     }
 
