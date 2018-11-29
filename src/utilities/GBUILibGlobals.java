@@ -16,6 +16,9 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT.toString(), false, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_FULLDELETETIMER.toString(), 120, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), 5, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), 2, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER.toString(), 5, true);
+
 
         //console
         insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true, true);
@@ -39,6 +42,8 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT,
         GBUILIB_GBSOCKET_FULLDELETETIMER,
         GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT,
+        GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER,
+        GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -83,5 +88,13 @@ public class GBUILibGlobals {
 
     public static Integer getInputThreadCount() {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), Integer.class);
+    }
+
+    public static Integer getLoggerCleanupTimer() {
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), Integer.class);
+    }
+
+    public static Integer getUnfinishedPacketDiscardTimer() {
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), Integer.class);
     }
 }

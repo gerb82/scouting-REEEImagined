@@ -3,9 +3,26 @@ package utilities.GBSockets;
 import javafx.beans.property.SimpleObjectProperty;
 
 import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class PacketLogger implements AutoCloseable{
 
+    private class PacketMap extends HashMap<String, LogLine>{
+
+        private LogLine getLine(boolean wasSent, Integer[] ids){
+            return get((wasSent ? "out" : "in") + ids.toString());
+        }
+
+        private void putLine(boolean wasSent, Integer[] ids, LogLine line){
+            put((wasSent ? "out" : "in") + ids.toString(), line);
+        }
+
+    }
+
+    private HashSet<Integer[]> receivedPackets;
+    private HashSet<Integer[]> sentPackets;
+    private PacketMap packets = new PacketMap();
     private FileOutputStream logFile;
 
     @Override
@@ -19,8 +36,19 @@ public class PacketLogger implements AutoCloseable{
 
     protected class LogLine{
 
+        private PacketStatus status;
+        private Packet packet;
+
         protected void discardToLog(){
 
+        }
+
+        protected PacketStatus getStatus(){
+            return status;
+        }
+
+        protected Packet getPacket(){
+            return packet;
         }
     }
 
@@ -30,10 +58,6 @@ public class PacketLogger implements AutoCloseable{
 
         public ObservablePacketStatus(LogLine parent){
             this.parent = parent;
-        }
-
-        public void finalize(){
-            parent.discardToLog();
         }
 
         public void discardToLog(){
@@ -49,23 +73,58 @@ public class PacketLogger implements AutoCloseable{
         return null;
     }
 
-    protected Packet[] getToBeSyncedPackets(){
-        return null;
+    protected HashSet<Packet> getToBeSyncedPackets(){
+        HashSet<Packet> output = new HashSet<>();
+        for(Integer[] ids : sentPackets){
+            LogLine inCheck = packets.getLine(true, ids);
+            if(inCheck.getStatus() == PacketStatus.TO_BE_SYNCED){
+                output.add(inCheck.getPacket());
+            }
+        }
+        return output;
     }
 
-    protected Packet[] getTimedOutPackets(){
-        return null;
+    protected HashSet<Packet> getTimedOutPackets(){
+        HashSet<Packet> output = new HashSet<>();
+        for(Integer[] ids : sentPackets){
+            LogLine inCheck = packets.getLine(true, ids);
+            if(inCheck.getStatus() == PacketStatus.TIMED_OUT){
+                output.add(inCheck.getPacket());
+            }
+        }
+        return output;
     }
 
-    protected Packet[] getErroredPackets(){
-        return null;
+    protected HashSet<Packet> getErroredPackets(){
+        HashSet<Packet> output = new HashSet<>();
+        for(Integer[] ids : sentPackets){
+            LogLine inCheck = packets.getLine(true, ids);
+            if(inCheck.getStatus() == PacketStatus.ERRORED){
+                output.add(inCheck.getPacket());
+            }
+        }
+        return output;
     }
 
-    protected Packet[] getAckedPackets(){
-        return null;
+    protected HashSet<Packet> getAckedPackets(){
+        HashSet<Packet> output = new HashSet<>();
+        for(Integer[] ids : sentPackets){
+            LogLine inCheck = packets.getLine(true, ids);
+            if(inCheck.getStatus() == PacketStatus.ACKED){
+                output.add(inCheck.getPacket());
+            }
+        }
+        return output;
     }
 
-    protected Packet[] getWaitingPackets(){
-        return null;
+    protected HashSet<Packet> getWaitingPackets(){
+        HashSet<Packet> output = new HashSet<>();
+        for(Integer[] ids : sentPackets){
+            LogLine inCheck = packets.getLine(true, ids);
+            if(inCheck.getStatus() == PacketStatus.WAITING){
+                output.add(inCheck.getPacket());
+            }
+        }
+        return output;
     }
 }
