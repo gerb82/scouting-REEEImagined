@@ -18,6 +18,7 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), 5, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), 2, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER.toString(), 5, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS.toString(), true, true);
 
 
         //console
@@ -44,6 +45,7 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT,
         GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER,
         GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER,
+        GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -96,5 +98,9 @@ public class GBUILibGlobals {
 
     public static Integer getUnfinishedPacketDiscardTimer() {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), Integer.class);
+    }
+
+    public static Boolean getAutoDiscardFinishedPackets(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS.toString(), Boolean.class);
     }
 }

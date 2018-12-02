@@ -1,12 +1,15 @@
 package utilities.GBSockets;
 
 import javafx.beans.property.SimpleObjectProperty;
+import utilities.GBUILibGlobals;
 
 import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 
 public class PacketLogger implements AutoCloseable{
+
+    private final GBSocket socket;
 
     private class PacketMap extends HashMap<String, LogLine>{
 
@@ -31,19 +34,20 @@ public class PacketLogger implements AutoCloseable{
     }
 
     public enum PacketStatus{
-        ACKED, ERRORED, WAITING, TIMED_OUT, TO_BE_SYNCED
+        READY, ACKED, ERRORED, WAITING, TIMED_OUT, TO_BE_SYNCED
     }
 
     protected class LogLine{
 
         private PacketStatus status;
         private Packet packet;
+        private boolean resend;
 
-        protected void discardToLog(){
+        public void discardToLog(){
 
         }
 
-        protected PacketStatus getStatus(){
+        public PacketStatus getStatus(){
             return status;
         }
 
@@ -52,21 +56,45 @@ public class PacketLogger implements AutoCloseable{
         }
     }
 
-    public static class ObservablePacketStatus extends SimpleObjectProperty<PacketStatus> {
+    public class ObservablePacketStatus extends SimpleObjectProperty<PacketStatus> {
 
         private LogLine parent;
 
-        public ObservablePacketStatus(LogLine parent){
+        @Override
+        public void set(PacketStatus newValue){
+            switch (newValue){
+                case TIMED_OUT:
+                    if(parent.resend){
+                        newValue = PacketStatus.READY;
+                        break;
+                    }
+                case ACKED:
+                case ERRORED:
+                    super.set(newValue);
+                    if(GBUILibGlobals.getAutoDiscardFinishedPackets()){
+                        parent.discardToLog();
+                    }
+                    break;
+                case WAITING:
+                case TO_BE_SYNCED:
+                    super.set(newValue);
+                    break;
+                case READY:
+                    super.set(socket.sendPacket(parent.getPacket()));
+            }
+        }
+
+        protected ObservablePacketStatus(LogLine parent){
             this.parent = parent;
         }
 
-        public void discardToLog(){
-            parent.discardToLog();
+        protected LogLine getParent() {
+            return parent;
         }
     }
 
-    protected PacketLogger(){
-
+    protected PacketLogger(GBSocket socket){
+        this.socket = socket;
     }
 
     protected ObservablePacketStatus getLivePacketStatus(int[] packetIDs){

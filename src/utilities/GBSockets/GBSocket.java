@@ -147,13 +147,15 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
-    protected synchronized void sendPacket(Packet packet){
+    protected synchronized PacketLogger.PacketStatus sendPacket(Packet packet){
         try {
             output.writeObject(packet);
             output.flush();
+            return PacketLogger.PacketStatus.WAITING;
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return PacketLogger.PacketStatus.ERRORED;
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
