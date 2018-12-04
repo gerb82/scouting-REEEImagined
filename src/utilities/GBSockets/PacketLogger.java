@@ -28,7 +28,7 @@ public class PacketLogger implements AutoCloseable{
     private HashSet<int[]> sentPackets;
     private PacketMap packets = new PacketMap();
     private FileOutputStream logFile;
-    protected File logsRepository;
+    protected static File logsRepository;
 
     @Override
     public void close() throws Exception {

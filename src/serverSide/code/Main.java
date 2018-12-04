@@ -25,6 +25,7 @@ public class Main extends Application{
         //reader.readDictionaries(new File("C:\\Users\\User\\IdeaProjects\\scouting REEEimagined\\src\\serverSide\\code\\gbdtest.txt"));
         primaryStage.setScene(scene);
         primaryStage.show();
+
     }
 
     public static void main(String args[]){

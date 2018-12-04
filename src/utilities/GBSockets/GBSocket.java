@@ -3,14 +3,10 @@ package utilities.GBSockets;
 import utilities.GBUILibGlobals;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Timer;
@@ -128,7 +124,7 @@ public class GBSocket implements AutoCloseable{
 
     // unsafe socket
     public GBSocket(){
-        if(GBUILibGlobals.unsafeSockcets()) {
+        if(GBUILibGlobals.unsafeSockets()) {
             heartBeatDelay = -1;
             alwaysBeat = false;
             isUnsafe = true;
@@ -147,7 +143,7 @@ public class GBSocket implements AutoCloseable{
     }
 
     public synchronized void sendPacket(Packet... packets){
-        if(GBUILibGlobals.unsafeSockcets() && isUnsafe){
+        if(GBUILibGlobals.unsafeSockets() && isUnsafe){
             for(Packet packet : packets){
                 sendPacket(packet);
             }
@@ -167,7 +163,7 @@ public class GBSocket implements AutoCloseable{
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
-        if(!GBUILibGlobals.unsafeSockcets() && !isUnsafe) {
+        if(!GBUILibGlobals.unsafeSockets() && !isUnsafe) {
             manager.sendAsPacket(content, contentType, packetType);
         }
         else {

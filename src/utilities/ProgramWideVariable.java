@@ -47,7 +47,7 @@ public class ProgramWideVariable {
 
     public static void initializeDefaults(GlobalVariablesPreset... presets){
         if(!initialized) {
-            GBUILibGlobals.initalize(ProgramWideVariable::insertIfAbsent);
+            GBUILibGlobals.initialize(ProgramWideVariable::insertIfAbsent);
             for (GlobalVariablesPreset gvp : presets) {
                 gvp.initialize(ProgramWideVariable::insertIfAbsent);
             }
@@ -90,6 +90,8 @@ public class ProgramWideVariable {
         initialized();
         return null == changingVariablesMap.putIfAbsent(key, value);
     }
+
+    public static boolean
 
     private static void initialized(){
         if(!initialized) {

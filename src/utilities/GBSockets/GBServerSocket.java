@@ -290,7 +290,7 @@ public class GBServerSocket implements AutoCloseable{
 
     public synchronized void sendPacket(GBSocket socket, Packet packet){
         if(selectionKeys.keySet().contains(socket)) {
-            if (GBUILibGlobals.unsafeSockcets() && isUnsafe) {
+            if (GBUILibGlobals.unsafeSockets() && isUnsafe) {
                 socket.sendPacket(packet);
             } else {
                 throw new UnsafeSocketException("There was an attempt to send a packet directly and not through a packet manager, even though unsafe sockets are disabled");

@@ -16,7 +16,7 @@ public class Packet {
     private boolean isAck;
 
     public Object getContentUnsafe() {
-        if(GBUILibGlobals.unsafeSockcets()) {
+        if(GBUILibGlobals.unsafeSockets()) {
             return content;
         } else {
             throw new UnsafeSocketException("There was an attempt to get a packet's content directly, even though unsafe sockets are disabled");
@@ -24,7 +24,7 @@ public class Packet {
     }
 
     public String getContentTypeUnsafe() {
-        if(GBUILibGlobals.unsafeSockcets()) {
+        if(GBUILibGlobals.unsafeSockets()) {
             return contentType;
         } else {
             throw new UnsafeSocketException("There was an attempt to get a packet's content type identifier directly, even though unsafe sockets are disabled");
@@ -32,7 +32,7 @@ public class Packet {
     }
 
     public String getPacketTypeUnsafe() {
-        if(GBUILibGlobals.unsafeSockcets()) {
+        if(GBUILibGlobals.unsafeSockets()) {
             return packetType;
         } else {
             throw new UnsafeSocketException("There was an attempt to get a packet's type identifier directly, even though unsafe sockets are disabled");
@@ -40,7 +40,7 @@ public class Packet {
     }
 
     public Instant getTimeStampUnsafe() {
-        if(GBUILibGlobals.unsafeSockcets()) {
+        if(GBUILibGlobals.unsafeSockets()) {
             return timeStamp;
         } else {
             throw new UnsafeSocketException("There was an attempt to get a packet's time stamp directly, even though unsafe sockets are disabled");
@@ -82,7 +82,7 @@ public class Packet {
     // Unsafe
     public Packet(Object content, String contentType, String packetType){
         this(content, null, contentType, packetType, false);
-        if(!GBUILibGlobals.unsafeSockcets()) {
+        if(!GBUILibGlobals.unsafeSockets()) {
             throw new UnsafeSocketException("There was an attempt to create a packet directly, even though unsafe sockets are disabled");
         }
     }

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class GBUILibGlobals {
 
-    public static void initalize(ProgramWideVariable.InsertMethod insertToMap) {
+    public static void initialize(ProgramWideVariable.InsertMethod insertToMap) {
         //sockets
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), 30, true);
@@ -52,7 +52,7 @@ public class GBUILibGlobals {
         GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN
     }
 
-    public static Boolean unsafeSockcets() {
+    public static Boolean unsafeSockets() {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), Boolean.class);
     }
 
