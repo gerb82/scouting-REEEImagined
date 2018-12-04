@@ -88,6 +88,6 @@ public class PacketManager {
     }
 
     protected void smartAck(int[] IDs, String originalPacketType, Object content, String contentType) throws BadPacketException{
-        socket.sendPacket(new Packet(new Packet(content, contentType, originalPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType);
+        socket.sendPacket(new Packet(new Packet(content, contentType, originalPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType));
     }
 }

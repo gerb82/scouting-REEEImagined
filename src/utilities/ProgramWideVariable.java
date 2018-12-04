@@ -91,7 +91,10 @@ public class ProgramWideVariable {
         return null == changingVariablesMap.putIfAbsent(key, value);
     }
 
-    public static boolean
+    public static boolean putIfAbsentInFinalVariablesMap(String key, Object value){
+        initialized();
+        return null == finalVariablesMap.putIfAbsent(key, value);
+    }
 
     private static void initialized(){
         if(!initialized) {
