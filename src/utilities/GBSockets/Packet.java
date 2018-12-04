@@ -12,6 +12,8 @@ public class Packet {
     private int[] ids;
     private boolean errorChecked;
     private Instant timeStamp;
+    private transient boolean resend;
+    private boolean isAck;
 
     public Object getContentUnsafe() {
         if(GBUILibGlobals.unsafeSockcets()) {
@@ -69,53 +71,50 @@ public class Packet {
         return timeStamp;
     }
 
+    protected boolean getResend() {
+        return resend;
+    }
+
+    protected boolean getIsAck(){
+        return isAck;
+    }
+
+    // Unsafe
     public Packet(Object content, String contentType, String packetType){
-        if(GBUILibGlobals.unsafeSockcets()) {
-        this.content = content;
-        this.contentType = contentType;
-        this.packetType = packetType;
-        this.errorChecked = false;
-        this.timeStamp = Instant.now();
-        } else {
+        this(content, null, contentType, packetType, false);
+        if(!GBUILibGlobals.unsafeSockcets()) {
             throw new UnsafeSocketException("There was an attempt to create a packet directly, even though unsafe sockets are disabled");
         }
     }
 
-    protected Packet(Object content, String contentType, String packetType, PacketManager parent) throws BadPacketException{
-        this.ids = parent.checkPacketValidity(content, packetType);
+    // Normal
+    protected Packet(Object content, String contentType, String packetType, PacketManager parent, boolean resend) throws BadPacketException{
+        this(content, parent.checkPacketValidity(content, packetType), contentType, packetType, true);
+        this.resend = resend;
+        this.isAck = false;
+    }
+
+    // Base Constructor
+    private Packet(Object content, int[] ids, String contentType, String packetType, boolean errorChecked){
         this.content = content;
+        this.ids = ids;
         this.contentType = contentType;
         this.packetType = packetType;
-        this.errorChecked = true;
+        this.errorChecked = errorChecked;
         this.timeStamp = Instant.now();
     }
 
-    protected Packet(int[] ids, String packetType, String originalPacketType){
-        content = ids;
-        timeStamp = Instant.now();
-        contentType = originalPacketType;
-        this.packetType = packetType;
+    // ACK
+    protected Packet(Object content, int[] ids, String packetType, String originalPacketType){
+        this(content, ids, originalPacketType, packetType, true);
+        this.resend = false;
+        this.isAck = true;
     }
 
-    protected Packet(Packet packet){
-        content = packet.getContent();
-        packetType = packet.getPacketType();
-        contentType = packet.getContentType();
-        ids = packet.getIds();
-        timeStamp = packet.getTimeStamp();
-        errorChecked = packet.isErrorChecked();
-    }
-
-    protected static class CustomAck {
-
-        protected Packet packet;
-        protected int[] IDs;
-        protected String originalPacketType;
-
-        protected CustomAck(Packet packet, int[] IDs, String originalPacketType) {
-            this.packet = packet;
-            this.IDs = IDs;
-            this.originalPacketType = originalPacketType;
-        }
+    // HeartBeat
+    protected Packet(PacketManager parent) throws BadPacketException {
+        this(null, parent.checkPacketValidity(null, ActionHandler.DefaultPacketTypes.HeartBeat.toString()), null, ActionHandler.DefaultPacketTypes.HeartBeat.toString(), true);
+        this.resend = false;
+        this.isAck = false;
     }
 }

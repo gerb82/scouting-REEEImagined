@@ -5,7 +5,11 @@ import utilities.GBUILibGlobals;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.time.Instant;
@@ -62,38 +66,43 @@ public class GBSocket implements AutoCloseable{
     private SelectorManager selector;
     private boolean isUnsafe;
     private PacketManager manager;
-    private SocketChannel socket;
-    private boolean autoReconnect;
+    private DatagramChannel socket;
     private int connectionTimeout;
-    private boolean linger;
     private SocketAddress adress;
-    private ObjectInputStream input;
-    private ObjectOutputStream output;
     private boolean server;
+
+    private boolean autoReconnect;
 
     public boolean isServer(){
         return server;
     }
 
-    protected SocketChannel getChannel(){
+    protected DatagramChannel getChannel(){
         return socket;
     }
 
     protected void SocketConnect(){
         try {
-            socket = SocketChannel.open();
-            socket.socket().setReceiveBufferSize(GBUILibGlobals.getSocketReceiveStreamSize());
-            if(connectionTimeout != -1) {
-                socket.socket().setSoTimeout(GBUILibGlobals.getSocketTimeout());
-            }
-            if(socket.connect(adress)){
-                output = new ObjectOutputStream(socket.socket().getOutputStream());
-                input = new ObjectInputStream(socket.socket().getInputStream());
+            socket = DatagramChannel.open();
+            if(connect(adress)){
                 selector.registerSocket(this);
             }
         } catch (IOException e) {
             new IOException("Couldn't connect the GBSocket", e).printStackTrace();
         }
+    }
+
+    private boolean connect(SocketAddress address){
+        try {
+            socket.connect(adress);
+            handShake();
+            return ;
+        } catch (ClosedChannelException e) {
+            new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.SocketConnect()");
+        } catch (IOException e) {
+            new IOException("Something went wrong with the socket ;-;", e);
+        }
+        return false;
     }
 
     public void startConnection(){
@@ -149,13 +158,12 @@ public class GBSocket implements AutoCloseable{
 
     protected synchronized PacketLogger.PacketStatus sendPacket(Packet packet){
         try {
-            output.writeObject(packet);
-            output.flush();
+            socket.write(ByteBuffer.wrap(packet.toString().getBytes()));
             return PacketLogger.PacketStatus.WAITING;
         } catch (IOException e) {
             e.printStackTrace();
+            return PacketLogger.PacketStatus.ERRORED;
         }
-        return PacketLogger.PacketStatus.ERRORED;
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{

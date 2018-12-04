@@ -3,6 +3,7 @@ package utilities.GBSockets;
 import javafx.beans.property.SimpleObjectProperty;
 import utilities.GBUILibGlobals;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,20 +14,21 @@ public class PacketLogger implements AutoCloseable{
 
     private class PacketMap extends HashMap<String, LogLine>{
 
-        private LogLine getLine(boolean wasSent, Integer[] ids){
+        private LogLine getLine(boolean wasSent, int[] ids){
             return get((wasSent ? "out" : "in") + ids.toString());
         }
 
-        private void putLine(boolean wasSent, Integer[] ids, LogLine line){
+        private void putLine(boolean wasSent, int[] ids, LogLine line){
             put((wasSent ? "out" : "in") + ids.toString(), line);
         }
 
     }
 
-    private HashSet<Integer[]> receivedPackets;
-    private HashSet<Integer[]> sentPackets;
+    private HashSet<int[]> receivedPackets;
+    private HashSet<int[]> sentPackets;
     private PacketMap packets = new PacketMap();
     private FileOutputStream logFile;
+    protected File logsRepository;
 
     @Override
     public void close() throws Exception {
@@ -41,7 +43,11 @@ public class PacketLogger implements AutoCloseable{
 
         private PacketStatus status;
         private Packet packet;
-        private boolean resend;
+
+        private LogLine(Packet packet, PacketStatus status){
+            this.packet = packet;
+            this.status = status;
+        }
 
         public void discardToLog(){
 
@@ -97,13 +103,17 @@ public class PacketLogger implements AutoCloseable{
         this.socket = socket;
     }
 
+    protected void followPacket(PacketStatus status, Packet packet, boolean sent){
+        packets.putLine(sent, packet.getIds(), new LogLine(packet, status));
+    }
+
     protected ObservablePacketStatus getLivePacketStatus(int[] packetIDs){
         return null;
     }
 
     protected HashSet<Packet> getToBeSyncedPackets(){
         HashSet<Packet> output = new HashSet<>();
-        for(Integer[] ids : sentPackets){
+        for(int[] ids : sentPackets){
             LogLine inCheck = packets.getLine(true, ids);
             if(inCheck.getStatus() == PacketStatus.TO_BE_SYNCED){
                 output.add(inCheck.getPacket());
@@ -114,7 +124,7 @@ public class PacketLogger implements AutoCloseable{
 
     protected HashSet<Packet> getTimedOutPackets(){
         HashSet<Packet> output = new HashSet<>();
-        for(Integer[] ids : sentPackets){
+        for(int[] ids : sentPackets){
             LogLine inCheck = packets.getLine(true, ids);
             if(inCheck.getStatus() == PacketStatus.TIMED_OUT){
                 output.add(inCheck.getPacket());
@@ -125,7 +135,7 @@ public class PacketLogger implements AutoCloseable{
 
     protected HashSet<Packet> getErroredPackets(){
         HashSet<Packet> output = new HashSet<>();
-        for(Integer[] ids : sentPackets){
+        for(int[] ids : sentPackets){
             LogLine inCheck = packets.getLine(true, ids);
             if(inCheck.getStatus() == PacketStatus.ERRORED){
                 output.add(inCheck.getPacket());
@@ -136,7 +146,7 @@ public class PacketLogger implements AutoCloseable{
 
     protected HashSet<Packet> getAckedPackets(){
         HashSet<Packet> output = new HashSet<>();
-        for(Integer[] ids : sentPackets){
+        for(int[] ids : sentPackets){
             LogLine inCheck = packets.getLine(true, ids);
             if(inCheck.getStatus() == PacketStatus.ACKED){
                 output.add(inCheck.getPacket());
@@ -147,7 +157,7 @@ public class PacketLogger implements AutoCloseable{
 
     protected HashSet<Packet> getWaitingPackets(){
         HashSet<Packet> output = new HashSet<>();
-        for(Integer[] ids : sentPackets){
+        for(int[] ids : sentPackets){
             LogLine inCheck = packets.getLine(true, ids);
             if(inCheck.getStatus() == PacketStatus.WAITING){
                 output.add(inCheck.getPacket());
