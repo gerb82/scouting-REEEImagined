@@ -3,7 +3,7 @@ package utilities.GBSockets;
 import utilities.GBUILibGlobals;
 import utilities.SmartAssert;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -63,8 +63,14 @@ public class GBSocket implements AutoCloseable{
     private SocketAddress adress;
     private boolean server;
     private GBServerSocket parent;
+    private int maxReceiveSize;
+
 
     private boolean autoReconnect;
+
+    protected DatagramChannel getChannel(){
+        return socket;
+    }
 
     // done
     public boolean isServer(){
@@ -135,6 +141,13 @@ public class GBSocket implements AutoCloseable{
         this.connectionTimeout = config.connectionTimeout;
         this.selector = selector;
         isUnsafe = false;
+        try {
+            input = new PipedInputStream();
+            output = new PipedOutputStream();
+            objInput = new ObjectInputStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // unsafe, done
@@ -171,16 +184,24 @@ public class GBSocket implements AutoCloseable{
     protected void receivePacket(Packet packet){
 
     }
+    private PipedInputStream input;
+    private PipedOutputStream output;
+    private ObjectInputStream objInput;
 
-    protected Packet readPacket() throws BadPacketException, IOException {
+    protected Packet readPacket() throws BadPacketException {
         try {
-            return (Packet) input.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new BadPacketException("Received packet of an unknown type. Also means IT IS NOT a GBPacket. In fact, it is of an unidentified class that does not exist on this side.");
-        } catch (ClassCastException e) {
+            ByteBuffer buffer = ByteBuffer.allocate(maxReceiveSize);
+            socket.read(buffer);
+            output.write(buffer.array());
+            output.flush();
+            return (Packet) objInput.readObject();
+        } catch (ClassCastException | ClassNotFoundException e) {
             throw new BadPacketException("Received packet of an unexpected type. It is not of type GBPacket.");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
 
     private void handShake(){
         SmartAssert.makeSure(packet.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");

@@ -1,8 +1,5 @@
 package utilities.GBSockets;
 
-import utilities.AssertionYouDimwitException;
-import utilities.SmartAssert;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,11 +11,12 @@ public class PacketManager {
 
     PacketLogger logger;
 
-    protected PacketManager(int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
+    protected PacketManager(List<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
         this.logger = logger;
         // output
         this.socket = socket;
         this.connectionID = connectionID;
+        this.sendTypes = sendTypes;
         // input
         this.actionHandler = actionHandler;
     }
@@ -33,7 +31,9 @@ public class PacketManager {
     // done
     protected boolean heartBeat() {
         try {
-            socket.sendPacket(new Packet(this));
+            Packet packet = new Packet(this);
+            socket.sendPacket(packet);
+            logger.beat(packet.getIds());
             return true;
         } catch (BadPacketException e) {
             return false;
@@ -42,7 +42,9 @@ public class PacketManager {
 
     // done
     protected void ack(int[] ids, String originalPacketType) {
-        socket.sendPacket(new Packet(null, ids, ActionHandler.DefaultPacketTypes.Ack.toString(), originalPacketType));
+        Packet packet = new Packet(null, ids, ActionHandler.DefaultPacketTypes.Ack.toString(), originalPacketType);
+        socket.sendPacket(packet);
+        logger.setResponse(ids, packet);
     }
 
     // done
@@ -56,7 +58,9 @@ public class PacketManager {
      * @throws BadPacketException If the packet failed to create.
      */
     protected void smartAck(int[] IDs, String originalPacketType, Object content, String contentType, String newPacketType) throws BadPacketException{
-        socket.sendPacket(new Packet(new Packet(content, contentType, newPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType));
+        Packet packet = new Packet(new Packet(content, contentType, newPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType);
+        socket.sendPacket(packet);
+        logger.setResponse(IDs, packet);
     }
 
     // done
@@ -67,7 +71,9 @@ public class PacketManager {
 
     // done
     private void error(Object reason, int[] ids, String originalPacketType){
-        socket.sendPacket(new Packet(reason, ids, ActionHandler.DefaultPacketTypes.Error.toString(), originalPacketType));
+        Packet packet = new Packet(reason, ids, ActionHandler.DefaultPacketTypes.Error.toString(), originalPacketType);
+        socket.sendPacket(packet);
+        logger.setResponse(ids, packet);
     }
 
     // done
@@ -118,12 +124,13 @@ public class PacketManager {
 
     protected void receivePacket(Packet packet){
         try {
-            if(logger.isPacketFollowed(packet)){
-                if(packet.getIsAck()) {
-                    Packet originalAck = logger.packets.getLine(true, packet.getIds()).getPacket();
-                    if(originalAck != null){
-                        logger.packetDidntSend(originalAck);
-                    }
+            if(logger.isPacketFollowedOut(packet) && packet.getIsAck()){
+                logger.packetReturned(packet);
+                return;
+            } else if(logger.isPacketFollowedIn(packet)){
+                Packet response = logger.packetAlreadyReceived(packet);
+                if(response != null){
+                    socket.sendPacket(response);
                 }
                 return;
             }

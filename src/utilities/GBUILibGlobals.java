@@ -19,6 +19,7 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER.toString(), 2, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER.toString(), 5, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS.toString(), true, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), 65507, true);
 
 
         //console
@@ -46,6 +47,7 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_LOGGERCLEANUPTIMER,
         GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER,
         GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS,
+        GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -102,5 +104,9 @@ public class GBUILibGlobals {
 
     public static Boolean getAutoDiscardFinishedPackets(){
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS.toString(), Boolean.class);
+    }
+
+    public static int getMaxReceivePacketSize(){
+        return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), Integer.class);
     }
 }

@@ -2,6 +2,7 @@ package utilities.GBSockets;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Set;
 
 public class ActionHandler {
 
@@ -16,8 +17,8 @@ public class ActionHandler {
         private GBSocket socket;
 
         private PacketOut(Packet packet){
-            super(packet);
-            acked = false;
+            super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
+            acked = packet.getResend();
             this.socket = parent;
         }
 
@@ -56,15 +57,26 @@ public class ActionHandler {
         }
 
         public void ack(){
-            socket.ack(super.getIds(), super.getPacketType());
-            acked = true;
+            if(!acked) {
+                socket.ack(super.getIds(), super.getPacketType());
+                acked = true;
+            }
         }
 
-        public void ack(Object content, String packetType, String contentType, String ackContentType){
-            socket.smartAck(super.getIds(), super.getPacketType(), content, packetType, contentType, ackContentType);
-            acked = true;
+        // done
+        public boolean shouldAck(){
+            return !acked;
         }
 
+        // done
+        public void ack(Object content, String packetType, String contentType, String ackContentType) throws BadPacketException {
+            if(!acked) {
+                socket.smartAck(super.getIds(), super.getPacketType(), content, packetType, contentType);
+                acked = true;
+            }
+        }
+
+        // done
         public void selfAcked(){
             acked = true;
         }
@@ -74,12 +86,19 @@ public class ActionHandler {
         void handle(PacketOut packet) throws BadPacketException;
     }
 
+    private boolean started;
     private HashMap<String, PacketHandler> handlers;
 
-    public void addHandler(String packetType, PacketHandler handler){
-        handlers.put(packetType, handler);
+    // done
+    public void setHandler(String packetType, PacketHandler handler){
+        if(!started) {
+            handlers.put(packetType, handler);
+        } else {
+            throw new IllegalStateException("Can't add a handler to a socket that is already running");
+        }
     }
 
+    // done
     protected void handlePacket(Packet packet) throws BadPacketException {
         try{
             PacketOut packetOut = new PacketOut(packet);
@@ -94,6 +113,7 @@ public class ActionHandler {
         }
     }
 
+    // done
     protected ActionHandler(GBSocket parent, ActionHandlerRecipe... recipes){
         this.parent = parent;
         handlers = new HashMap<>();
@@ -106,6 +126,16 @@ public class ActionHandler {
         handlers.putIfAbsent(DefaultPacketTypes.Ack.toString(), this::ack);
         handlers.putIfAbsent(DefaultPacketTypes.SmartAck.toString(), this::smartAck);
         handlers.putIfAbsent(DefaultPacketTypes.HandShake.toString(), parent::handShakeReceive);
+        handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), this::error);
+    }
+
+    protected Set<String> getHandledTypes(){
+        started = true;
+        return handlers.keySet();
+    }
+
+    private void error(PacketOut packet){
+
     }
 
     private void heartBeat(PacketOut packet) throws BadPacketException {
@@ -118,13 +148,11 @@ public class ActionHandler {
     }
 
     private void ack(PacketOut packet){
-        packet.selfAcked();
     }
 
     private void smartAck(PacketOut packet) throws BadPacketException {
         try {
-            parent.receivePacket(((Packet.CustomAck) packet.getContent()).packet);
-            packet.selfAcked();
+            parent.receivePacket((Packet)packet.getContent());
         } catch (ClassCastException e){
             throw new BadPacketException("Could not cast packet contents of a smart Ack packet content into a CustomAck Object.", packet);
         }

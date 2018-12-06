@@ -95,7 +95,7 @@ public class Packet {
     }
 
     // Base Constructor
-    private Packet(Object content, int[] ids, String contentType, String packetType, boolean errorChecked){
+    protected Packet(Object content, int[] ids, String contentType, String packetType, boolean errorChecked){
         this.content = content;
         this.ids = ids;
         this.contentType = contentType;
@@ -104,10 +104,10 @@ public class Packet {
         this.timeStamp = Instant.now();
     }
 
-    // ACK
+    // ACK/ERROR/SMARTACK
     protected Packet(Object content, int[] ids, String packetType, String originalPacketType){
         this(content, ids, originalPacketType, packetType, true);
-        this.resend = true;
+        this.resend = false;
         this.isAck = true;
     }
 
