@@ -11,10 +11,20 @@ import java.util.HashSet;
 public class PacketLogger implements AutoCloseable{
 
     private final GBSocket socket;
+    
+    // done
+    protected boolean isPacketFollowed(Packet packet){
+        return packets.getLine(false, packet.getIds()) == null;
+    }
+    
+    // done
+    protected void packetDidntSend(Packet packet){
+        packets.getLine(true, packet.getIds()).setStatus(PacketStatus.READY);
+    }
 
-    private class PacketMap extends HashMap<String, LogLine>{
+    protected class PacketMap extends HashMap<String, LogLine>{
 
-        private LogLine getLine(boolean wasSent, int[] ids){
+        protected LogLine getLine(boolean wasSent, int[] ids){
             return get((wasSent ? "out" : "in") + ids.toString());
         }
 
@@ -26,7 +36,7 @@ public class PacketLogger implements AutoCloseable{
 
     private HashSet<int[]> receivedPackets;
     private HashSet<int[]> sentPackets;
-    private PacketMap packets = new PacketMap();
+    protected PacketMap packets = new PacketMap();
     private FileOutputStream logFile;
     protected static File logsRepository;
 
@@ -36,17 +46,17 @@ public class PacketLogger implements AutoCloseable{
     }
 
     public enum PacketStatus{
-        READY, ACKED, ERRORED, WAITING, TIMED_OUT, TO_BE_SYNCED
+        READY, ACKED, ERRORED, WAITING, TIMED_OUT, TO_BE_SYNCED, RECEIVED
     }
 
     protected class LogLine{
 
-        private PacketStatus status;
+        private ObservablePacketStatus status;
         private Packet packet;
 
-        private LogLine(Packet packet, PacketStatus status){
+        private LogLine(Packet packet){
             this.packet = packet;
-            this.status = status;
+            this.status = new ObservablePacketStatus(this);
         }
 
         public void discardToLog(){
@@ -54,11 +64,15 @@ public class PacketLogger implements AutoCloseable{
         }
 
         public PacketStatus getStatus(){
-            return status;
+            return status.getValue();
         }
 
         protected Packet getPacket(){
             return packet;
+        }
+        
+        protected void setStatus(PacketStatus status){
+            this.status.set(status);
         }
     }
 
@@ -70,7 +84,7 @@ public class PacketLogger implements AutoCloseable{
         public void set(PacketStatus newValue){
             switch (newValue){
                 case TIMED_OUT:
-                    if(parent.resend){
+                    if(parent.getPacket().getResend()){
                         newValue = PacketStatus.READY;
                         break;
                     }
@@ -103,14 +117,14 @@ public class PacketLogger implements AutoCloseable{
         this.socket = socket;
     }
 
+    // done
     protected void followPacket(PacketStatus status, Packet packet, boolean sent){
-        packets.putLine(sent, packet.getIds(), new LogLine(packet, status));
+        LogLine logLine = new LogLine(packet);
+        packets.putLine(sent, packet.getIds(), logLine);
+        logLine.setStatus(status);
     }
 
-    protected ObservablePacketStatus getLivePacketStatus(int[] packetIDs){
-        return null;
-    }
-
+    // done
     protected HashSet<Packet> getToBeSyncedPackets(){
         HashSet<Packet> output = new HashSet<>();
         for(int[] ids : sentPackets){
@@ -122,6 +136,7 @@ public class PacketLogger implements AutoCloseable{
         return output;
     }
 
+    // done
     protected HashSet<Packet> getTimedOutPackets(){
         HashSet<Packet> output = new HashSet<>();
         for(int[] ids : sentPackets){
@@ -133,6 +148,7 @@ public class PacketLogger implements AutoCloseable{
         return output;
     }
 
+    // done
     protected HashSet<Packet> getErroredPackets(){
         HashSet<Packet> output = new HashSet<>();
         for(int[] ids : sentPackets){
@@ -144,6 +160,7 @@ public class PacketLogger implements AutoCloseable{
         return output;
     }
 
+    // done
     protected HashSet<Packet> getAckedPackets(){
         HashSet<Packet> output = new HashSet<>();
         for(int[] ids : sentPackets){
@@ -155,6 +172,7 @@ public class PacketLogger implements AutoCloseable{
         return output;
     }
 
+    // done
     protected HashSet<Packet> getWaitingPackets(){
         HashSet<Packet> output = new HashSet<>();
         for(int[] ids : sentPackets){

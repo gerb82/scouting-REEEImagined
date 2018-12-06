@@ -11,5 +11,9 @@ public class BadPacketException extends Exception {
         this.packet = packet;
     }
 
+    public Packet getPacket(){
+        return packet;
+    }
+
     private Packet packet;
 }

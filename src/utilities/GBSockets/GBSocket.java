@@ -1,6 +1,7 @@
 package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
+import utilities.SmartAssert;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -14,16 +15,11 @@ import java.util.TimerTask;
 
 public class GBSocket implements AutoCloseable{
 
-    public class SocketConfig{
+    // done
+    public static class SocketConfig{
         private Integer heartBeatDelay;
         private Boolean alwaysBeat;
         private Integer connectionTimeout;
-
-        public SocketConfig(Integer heartBeatDelay, Boolean alwaysBeat, Integer connectionTimeout) {
-            this.heartBeatDelay = heartBeatDelay;
-            this.alwaysBeat = alwaysBeat;
-            this.connectionTimeout = connectionTimeout;
-        }
 
         public int getHeartBeatDelay() {
             if(heartBeatDelay == null){
@@ -47,7 +43,7 @@ public class GBSocket implements AutoCloseable{
             this.alwaysBeat = alwaysBeat;
         }
 
-        public int isConnectionTimeout() {
+        public int shouldConnectionTimeout() {
             if(connectionTimeout == null){
                 return GBUILibGlobals.getSocketTimeout();
             }
@@ -66,15 +62,13 @@ public class GBSocket implements AutoCloseable{
     private int connectionTimeout;
     private SocketAddress adress;
     private boolean server;
+    private GBServerSocket parent;
 
     private boolean autoReconnect;
 
+    // done
     public boolean isServer(){
         return server;
-    }
-
-    protected DatagramChannel getChannel(){
-        return socket;
     }
 
     protected void SocketConnect(){
@@ -101,25 +95,26 @@ public class GBSocket implements AutoCloseable{
         return false;
     }
 
-    public void startConnection(){
-        GBUILibGlobals.addShutdownCommand(this::dropConnection);
+    // done
+    public void finalize(){
+        close();
     }
 
-    public void stopAutoReConnection(){
+    // done
+    @Override
+    public void close(){
         autoReconnect = false;
-    }
-
-    public void dropConnection(){
-        stopAutoReConnection();
         try {
-            socket.finishConnect();
+            socket.close();
         } catch (IOException e) {
             new IOException("Failed to close the socket.", e).printStackTrace();
         }
     }
 
-    public void finalize(){
-        close();
+    public void stopServerConnection(){
+        if(server){
+            parent.removeSelectorChannel(this);
+        }
     }
 
     // unsafe socket
@@ -142,16 +137,18 @@ public class GBSocket implements AutoCloseable{
         isUnsafe = false;
     }
 
-    public synchronized void sendPacket(Packet... packets){
+    // unsafe, done
+    public synchronized void sendPackets(Packet... packets) throws IOException {
         if(GBUILibGlobals.unsafeSockets() && isUnsafe){
             for(Packet packet : packets){
-                sendPacket(packet);
+                socket.write(ByteBuffer.wrap(packet.toString().getBytes()));
             }
         } else {
             throw new UnsafeSocketException("There was an attempt to send a packet directly and not through a packet manager, even though unsafe sockets are disabled");
         }
     }
 
+    // done
     protected synchronized PacketLogger.PacketStatus sendPacket(Packet packet){
         try {
             socket.write(ByteBuffer.wrap(packet.toString().getBytes()));
@@ -185,14 +182,8 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
-    @Override
-    public void close(){
-        dropConnection();
-        GBUILibGlobals.removeShutdownCommand(this::dropConnection);
-    }
-
     private void handShake(){
-
+        SmartAssert.makeSure(packet.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
     }
 
     protected void handShakeReceive(ActionHandler.PacketOut packet){
@@ -204,6 +195,7 @@ public class GBSocket implements AutoCloseable{
     private final long heartBeatDelay;
     private final boolean alwaysBeat;
 
+    // done
     private class heartBeatTask extends TimerTask{
 
         @Override
@@ -225,17 +217,21 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
+    // done
     private void heartBeat(){
-        sendPacket(manager.heartBeat());
-        lastSent = Instant.now();
+        if(manager.heartBeat()){
+            lastSent = Instant.now();
+        }
     }
 
+    // done
     public void ack(int[] ids, String packetType){
         manager.ack(ids, packetType);
     }
 
-    public void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType, String ackContentType){
-        manager.smartAck(IDs, originalPacketType, content, packetType, contentType, ackContentType);
+    // done
+    public void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType) throws BadPacketException {
+        manager.smartAck(IDs, originalPacketType, content, contentType, packetType);
     }
 
     private boolean allowNoAck;

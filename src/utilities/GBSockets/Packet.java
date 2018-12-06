@@ -107,7 +107,7 @@ public class Packet {
     // ACK
     protected Packet(Object content, int[] ids, String packetType, String originalPacketType){
         this(content, ids, originalPacketType, packetType, true);
-        this.resend = false;
+        this.resend = true;
         this.isAck = true;
     }
 

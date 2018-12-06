@@ -2,6 +2,7 @@ package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
 
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 public class GBServerSocket implements AutoCloseable{
 
+    // done
     @Override
     public void close() {
         for(ProcessingThread fred : processingThreads){
@@ -21,11 +23,13 @@ public class GBServerSocket implements AutoCloseable{
         }
     }
 
+    // done
     @Override
-    protected void finalize() throws Throwable {
+    protected void finalize() {
         close();
     }
 
+    // done
     /**
      * A subclass of {@link Timer} used to check for when sockets time out and notify the containing {@link GBServerSocket} about such events.
      */
@@ -48,8 +52,8 @@ public class GBServerSocket implements AutoCloseable{
 
             /**
              * Constructor used to create the first test on a socket.
-             * @param socket - The socket being checked.
-             * @param time - The time to check it.
+             * @param socket The socket being checked.
+             * @param time The time to check it.
              */
             private SocketWaitTime(GBSocket socket, long time){
                 this.time = time;
@@ -58,7 +62,7 @@ public class GBServerSocket implements AutoCloseable{
 
             /**
              * The method used to set the next test time on the socket (to avoid constantly creating new instances).
-             * @param time - Time for the next check.
+             * @param time Time for the next check.
              */
             private void setTime(long time) {
                 this.time = time;
@@ -66,7 +70,7 @@ public class GBServerSocket implements AutoCloseable{
 
             /**
              * The method used to get the time for the next test.
-             * @return - The time for the next test.
+             * @return The time for the next test.
              */
             private long getTime() {
                 return time;
@@ -74,7 +78,7 @@ public class GBServerSocket implements AutoCloseable{
 
             /**
              * The method used to get the socket being checked.
-             * @return - The socket being checked.
+             * @return The socket being checked.
              */
             private GBSocket getSocket() {
                 return socket;
@@ -117,7 +121,7 @@ public class GBServerSocket implements AutoCloseable{
 
         /**
          * The method used to remove a socket from being followed.
-         * @param socket - The socket to stop following.
+         * @param socket The socket to stop following.
          */
         private void removeSocket(GBSocket socket){
             sockets.remove(socket);
@@ -126,8 +130,8 @@ public class GBServerSocket implements AutoCloseable{
 
         /**
          * The method used to add a socket to be followed.
-         * @param socket - The socket to start following.
-         * @return - If the socket was successfully added.
+         * @param socket The socket to start following.
+         * @return If the socket was successfully added.
          */
         private boolean addSocket(GBSocket socket){
             if(active) {
@@ -141,7 +145,7 @@ public class GBServerSocket implements AutoCloseable{
 
         /**
          * The method used to notify this {@link SelectorTimeOutThread} that a socket just received an ack.
-         * @param socket - The socket that just received the ack.
+         * @param socket The socket that just received the ack.
          */
         private void ack(GBSocket socket){
             if (ack.containsKey(socket)) {
@@ -151,7 +155,7 @@ public class GBServerSocket implements AutoCloseable{
 
         /**
          * The method used to schedule a test for  if the socket is not timed out.
-         * @param ackCheck - The {@link SocketWaitTime} that defines which socket will be checked and when.
+         * @param ackCheck The {@link SocketWaitTime} that defines which socket will be checked and when.
          */
         private void scheduleAckCheck(SocketWaitTime ackCheck){
             if(active){
@@ -190,7 +194,7 @@ public class GBServerSocket implements AutoCloseable{
 
         /**
          * The method used to calculate how much time has passed since {@link SelectorTimeOutThread#start} in milliseconds.
-         * @return - The amount of time since {@link SelectorTimeOutThread#start} in milliseconds.
+         * @return The amount of time since {@link SelectorTimeOutThread#start} in milliseconds.
          */
         private long calculateTime(){
             return Duration.between(start, Instant.now()).toMillis();
@@ -202,6 +206,7 @@ public class GBServerSocket implements AutoCloseable{
     private SelectorManager selector;
     private boolean isUnsafe;
 
+    // done
     protected boolean initSelector(){
         if(selector != null) {
             if (!isUnsafe) {
@@ -214,6 +219,7 @@ public class GBServerSocket implements AutoCloseable{
         return false;
     }
 
+    // done
     protected boolean addSelectorChannel(GBSocket socket) {
         if (timeOutThread.addSocket(socket)) {
             SelectionKey key = selector.registerSocket(socket);
@@ -225,10 +231,12 @@ public class GBServerSocket implements AutoCloseable{
         return false;
     }
 
+    // done
     protected boolean removeSelectorChannel(GBSocket socket){
         try{
             selectionKeys.remove(socket).cancel();
             timeOutThread.removeSocket(socket);
+            socket.close();
             return true;
         } catch (NullPointerException e){
             return false;
@@ -237,6 +245,7 @@ public class GBServerSocket implements AutoCloseable{
 
 
 
+    // done
     //PacketSplittingOnInput
     protected static class PacketToProcess{
 
@@ -256,6 +265,7 @@ public class GBServerSocket implements AutoCloseable{
         }
     }
 
+    // done
     protected class ProcessingThread extends Thread{
 
         @Override
@@ -274,13 +284,18 @@ public class GBServerSocket implements AutoCloseable{
     protected PriorityBlockingQueue<PacketToProcess> toBeProcessed;
     protected ArrayList<ProcessingThread> processingThreads;
 
+    // done
     private void initializeReceiveSplit(){
         toBeProcessed = new PriorityBlockingQueue<>();
         int receiveThreadCount = GBUILibGlobals.getInputThreadCount();
         for(int i = 0; i < receiveThreadCount; i++){
-            new ProcessingThread().start();
+            processingThreads.add(new ProcessingThread());
+        }
+        for(int i = 0; i < processingThreads.size(); i++){
+            processingThreads.get(i).start();
         }
     }
+
 
     public synchronized void sendAsPacket(GBSocket socket, Object content, String contentType, String packetType) throws BadPacketException{
         if(selectionKeys.keySet().contains(socket)) {
@@ -288,10 +303,11 @@ public class GBServerSocket implements AutoCloseable{
         }
     }
 
-    public synchronized void sendPacket(GBSocket socket, Packet packet){
+    // unsafe, done
+    public synchronized void sendPacket(GBSocket socket, Packet packet) throws IOException {
         if(selectionKeys.keySet().contains(socket)) {
             if (GBUILibGlobals.unsafeSockets() && isUnsafe) {
-                socket.sendPacket(packet);
+                socket.sendPackets(packet);
             } else {
                 throw new UnsafeSocketException("There was an attempt to send a packet directly and not through a packet manager, even though unsafe sockets are disabled");
             }
@@ -302,7 +318,13 @@ public class GBServerSocket implements AutoCloseable{
 
     }
 
-    private void ack(GBSocket socket, int[] IDs){
-        socket.sendPacket();
+    // safe
+    public GBServerSocket(){
+
+    }
+
+    // unsafe
+    public GBServerSocket(boolean unsafe){
+
     }
 }
