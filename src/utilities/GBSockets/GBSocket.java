@@ -64,6 +64,7 @@ public class GBSocket implements AutoCloseable{
     private boolean server;
     private GBServerSocket parent;
     private int maxReceiveSize;
+    private int maxSendSize;
 
 
     private boolean autoReconnect;
@@ -112,6 +113,8 @@ public class GBSocket implements AutoCloseable{
         autoReconnect = false;
         try {
             socket.close();
+            input.close();
+            output.close();
         } catch (IOException e) {
             new IOException("Failed to close the socket.", e).printStackTrace();
         }
@@ -141,6 +144,7 @@ public class GBSocket implements AutoCloseable{
         this.connectionTimeout = config.connectionTimeout;
         this.selector = selector;
         isUnsafe = false;
+        buffer = ByteBuffer.allocate(maxReceiveSize);
         try {
             input = new PipedInputStream();
             output = new PipedOutputStream();
@@ -162,19 +166,27 @@ public class GBSocket implements AutoCloseable{
     }
 
     // done
-    protected synchronized PacketLogger.PacketStatus sendPacket(Packet packet){
+    protected synchronized void sendPacket(PacketLogger.LogLine logLine) throws BadPacketException {
+        boolean wasSent = logLine.getWasSent();
         try {
-            socket.write(ByteBuffer.wrap(packet.toString().getBytes()));
-            return PacketLogger.PacketStatus.WAITING;
+            Packet toSend = wasSent ? logLine.getPacket() : logLine.getResponse();
+            byte[] bytes = toSend.toString().getBytes();
+            if(bytes.length < maxSendSize) {
+                socket.write(ByteBuffer.wrap(bytes));
+            } else{
+                logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
+                throw new BadPacketException("Packet is too big to be sent");
+            }
+            logLine.setStatus(wasSent ? PacketLogger.PacketStatus.WAITING : PacketLogger.PacketStatus.RECEIVED_DONE);
         } catch (IOException e) {
             e.printStackTrace();
-            return PacketLogger.PacketStatus.ERRORED;
+            logLine.setStatus(wasSent ? PacketLogger.PacketStatus.SEND_ERRORED : PacketLogger.PacketStatus.RECEIVED_ERRORED);
         }
     }
 
-    public void sendAsPacket(Object content, String contentType, String packetType) throws BadPacketException{
+    public void sendAsPacket(Object content, String contentType, String packetType, boolean mustArrive) throws BadPacketException{
         if(!GBUILibGlobals.unsafeSockets() && !isUnsafe) {
-            manager.sendAsPacket(content, contentType, packetType);
+            manager.sendAsPacket(content, contentType, packetType, mustArrive);
         }
         else {
             throw new UnsafeSocketException("Cannot send the content as a packet, as this socket is not a proper GBSocket, and as such, does not have a PacketManager. To send a packet, you will have to construct and send it yourself");
@@ -182,26 +194,29 @@ public class GBSocket implements AutoCloseable{
     }
 
     protected void receivePacket(Packet packet){
-
+        manager.receivePacket(packet);
     }
+
     private PipedInputStream input;
     private PipedOutputStream output;
     private ObjectInputStream objInput;
+    private ByteBuffer buffer;
 
-    protected Packet readPacket() throws BadPacketException {
+    protected synchronized Packet readPacket() throws BadPacketException {
         try {
-            ByteBuffer buffer = ByteBuffer.allocate(maxReceiveSize);
             socket.read(buffer);
+            buffer.flip();
             output.write(buffer.array());
             output.flush();
+            buffer.clear();
             return (Packet) objInput.readObject();
         } catch (ClassCastException | ClassNotFoundException e) {
             throw new BadPacketException("Received packet of an unexpected type. It is not of type GBPacket.");
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
-
 
     private void handShake(){
         SmartAssert.makeSure(packet.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
@@ -246,7 +261,7 @@ public class GBSocket implements AutoCloseable{
     }
 
     // done
-    public void ack(int[] ids, String packetType){
+    public void ack(int[] ids, String packetType) throws BadPacketException {
         manager.ack(ids, packetType);
     }
 

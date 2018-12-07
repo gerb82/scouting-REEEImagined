@@ -1,10 +1,12 @@
 package utilities.GBSockets;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import utilities.GBUILibGlobals;
+
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 
 public class PacketManager {
     // constructor
@@ -19,21 +21,85 @@ public class PacketManager {
         this.sendTypes = sendTypes;
         // input
         this.actionHandler = actionHandler;
+        this.timeToDiscard = GBUILibGlobals.getTimeToPacketTimeout();
+        this.attemptsPerPacket = GBUILibGlobals.getPacketSendAttempts();
     }
 
     // outgoing packets
-    private List<String> sendTypes = new ArrayList<>();
+    private List<String> sendTypes;
     private Map<String, Integer> packetNumbers = new HashMap<>();
     private int packetTotal = 0;
     private final int connectionID;
     private GBSocket socket;
+    private ChangeListener<PacketLogger.PacketStatus> changeManager = new ChangeListener<PacketLogger.PacketStatus>() {
+        @Override
+        public void changed(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus oldValue, PacketLogger.PacketStatus newValue) {
+            PacketLogger.LogLine logLine = ((PacketLogger.ObservablePacketStatus)observable).getParent();
+            switch(newValue){
+                case TIMED_OUT:
+                case SEND_ERRORED:
+                case RECEIVED_ERRORED:
+                case ACKED:
+                case RECEIVED_DONE:
+                    logLine.setAttemptsLeftToSend(attemptsPerPacket);
+                    scheduleDiscardCheckup(logLine, 0);
+                    break;
+            }
+        }
+    };
+
+    private final int timeToDiscard;
+    private final int attemptsPerPacket;
+    private Timer discarder = new Timer();
+    private HashMap<PacketLogger.LogLine, DiscardCheckup> discardTimers = new HashMap<>();
+
+    private class DiscardCheckup extends TimerTask{
+
+        private PacketLogger.LogLine toCheck;
+        private Instant scheduledAt;
+
+        private DiscardCheckup(PacketLogger.LogLine toCheck, Instant scheduledAt){
+            this.toCheck = toCheck;
+            this.scheduledAt = scheduledAt;
+        }
+
+        @Override
+        public void run() {
+            if(discardTimers.get(toCheck) == this){
+                if (toCheck.getAttemptsLeftToSend() == 0) {
+                    toCheck.discardToLog();
+                    return;
+                } else {
+                    toCheck.setAttemptsLeftToSend(toCheck.getAttemptsLeftToSend() - 1);
+                }
+                scheduleDiscardCheckup(toCheck, 0);
+            } else if(discardTimers.get(toCheck) != null){
+                scheduleDiscardCheckup(toCheck, (int)Instant.now().toEpochMilli() - (int)discardTimers.get(toCheck).scheduledAt.toEpochMilli());
+            }
+            if(toCheck.getStatus() == PacketLogger.PacketStatus.WAITING){
+                try {
+                    socket.sendPacket(toCheck);
+                } catch (BadPacketException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+    private void scheduleDiscardCheckup(PacketLogger.LogLine line, int time){
+        if(discardTimers.containsKey(line)){
+            discardTimers.remove(line).cancel();
+        }
+        discardTimers.put(line, new DiscardCheckup(line, Instant.now()));
+        discarder.schedule(discardTimers.get(line), ((1000*timeToDiscard)/attemptsPerPacket)-time);
+    }
 
     // done
     protected boolean heartBeat() {
         try {
             Packet packet = new Packet(this);
-            socket.sendPacket(packet);
-            logger.beat(packet.getIds());
+            socket.sendPacket(logger.beat(packet));
             return true;
         } catch (BadPacketException e) {
             return false;
@@ -41,10 +107,9 @@ public class PacketManager {
     }
 
     // done
-    protected void ack(int[] ids, String originalPacketType) {
+    protected void ack(int[] ids, String originalPacketType) throws BadPacketException {
         Packet packet = new Packet(null, ids, ActionHandler.DefaultPacketTypes.Ack.toString(), originalPacketType);
-        socket.sendPacket(packet);
-        logger.setResponse(ids, packet);
+        socket.sendPacket(logger.setResponse(ids, packet));
     }
 
     // done
@@ -59,21 +124,21 @@ public class PacketManager {
      */
     protected void smartAck(int[] IDs, String originalPacketType, Object content, String contentType, String newPacketType) throws BadPacketException{
         Packet packet = new Packet(new Packet(content, contentType, newPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType);
-        socket.sendPacket(packet);
-        logger.setResponse(IDs, packet);
+        socket.sendPacket(logger.setResponse(IDs, packet));
     }
 
     // done
     protected void sendAsPacket(Object content, String contentType, String packetType, boolean important) throws BadPacketException {
         Packet packet = new Packet(content, contentType, packetType, this, important);
-        logger.followPacket(socket.sendPacket(packet), packet, true);
+        PacketLogger.LogLine line = logger.followPacket(packet, true);
+        line.getStatusProperty().addListener(changeManager);
+        socket.sendPacket(line);
     }
 
     // done
-    private void error(Object reason, int[] ids, String originalPacketType){
+    private void error(Object reason, int[] ids, String originalPacketType) throws BadPacketException {
         Packet packet = new Packet(reason, ids, ActionHandler.DefaultPacketTypes.Error.toString(), originalPacketType);
-        socket.sendPacket(packet);
-        logger.setResponse(ids, packet);
+        socket.sendPacket(logger.setResponse(ids, packet));
     }
 
     // done
@@ -128,17 +193,21 @@ public class PacketManager {
                 logger.packetReturned(packet);
                 return;
             } else if(logger.isPacketFollowedIn(packet)){
-                Packet response = logger.packetAlreadyReceived(packet);
-                if(response != null){
-                    socket.sendPacket(response);
+                PacketLogger.LogLine origin = logger.packetAlreadyReceived(packet);
+                if(origin != null){
+                    socket.sendPacket(origin);
                 }
                 return;
             }
-            logger.followPacket(PacketLogger.PacketStatus.RECEIVED, packet, false);
+            logger.followPacket(packet, false);
             actionHandler.handlePacket(packet);
         } catch (BadPacketException e) {
             if(packet.getIsAck()){
-                error(e.getMessage(), packet.getIds(), packet.getPacketType());
+                try {
+                    error(e.getMessage(), packet.getIds(), packet.getPacketType());
+                } catch (BadPacketException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
     }

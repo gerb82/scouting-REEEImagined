@@ -20,6 +20,8 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER.toString(), 5, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS.toString(), true, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), 65507, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER.toString(), 24, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), 8, true);
 
 
         //console
@@ -48,6 +50,8 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_KEEPUNFINISHEDPACKETTIMER,
         GBUILIB_GBSOCKET_AUTODISCARDACKEDPACKETS,
         GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE,
+        GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER,
+        GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -108,5 +112,13 @@ public class GBUILibGlobals {
 
     public static int getMaxReceivePacketSize(){
         return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), Integer.class);
+    }
+
+    public static int getTimeToPacketTimeout(){
+        return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER.toString(), Integer.class);
+    }
+
+    public static int getPacketSendAttempts(){
+        return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), Integer.class);
     }
 }

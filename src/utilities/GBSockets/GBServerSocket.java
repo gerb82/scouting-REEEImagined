@@ -297,9 +297,9 @@ public class GBServerSocket implements AutoCloseable{
     }
 
 
-    public synchronized void sendAsPacket(GBSocket socket, Object content, String contentType, String packetType) throws BadPacketException{
+    public synchronized void sendAsPacket(GBSocket socket, Object content, String contentType, String packetType, boolean mustArrive) throws BadPacketException{
         if(selectionKeys.keySet().contains(socket)) {
-            socket.sendAsPacket(content, contentType, packetType);
+            socket.sendAsPacket(content, contentType, packetType, mustArrive);
         }
     }
 
