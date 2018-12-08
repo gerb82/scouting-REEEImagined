@@ -1,8 +1,10 @@
 package utilities.GBSockets;
 
 import javafx.beans.property.SimpleObjectProperty;
+import utilities.GBUILibGlobals;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
@@ -10,7 +12,7 @@ import java.util.HashMap;
 public class PacketLogger implements AutoCloseable{
 
     private final GBSocket socket;
-    
+
     // done
     protected boolean isPacketFollowedOut(Packet packet){
         return packets.getLine(true, packet.getIds()) == null;
@@ -64,12 +66,15 @@ public class PacketLogger implements AutoCloseable{
     protected static File logsRepository;
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
+        for (String key : packets.keySet()){
+            packets.get(key).discardToLog();
+        }
         logFile.close();
     }
 
     public enum PacketStatus{
-        SEND_READY, ACKED, SEND_ERRORED, WAITING, TIMED_OUT,
+        SEND_READY, ACKED, SEND_ERRORED, WAITING, TIMED_OUT, SENT,
         RECEIVED, RECEIVED_ERRORED, RECEIVED_DONE
     }
 
@@ -89,10 +94,13 @@ public class PacketLogger implements AutoCloseable{
 
         public void discardToLog() {
             packets.remove((wasSent ? "out" : "in") + packet.getIds());
-            try {
-                logFile.writeUTF("Packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType()) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The serialized packet was: " + packet + ", and " + (response != null ? (response.getContent().getClass().isAssignableFrom(Packet.class) ? "the response was the packet with the ids: " + response.getIds() : "the response was the packet: " + response) : "there was no response") + ".");
-            } catch (IOException e) {
-                e.printStackTrace();
+            if(writeToLog) {
+                try {
+                    logFile.writeUTF("Packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType()) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The serialized packet was: " + packet + ", and " + (response != null ? (response.getContent().getClass().isAssignableFrom(Packet.class) ? "the response was the packet with the ids: " + response.getIds() : "the response was the packet: " + response) : "there was no response") + ".");
+                    logFile.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -103,7 +111,7 @@ public class PacketLogger implements AutoCloseable{
         protected Packet getPacket(){
             return packet;
         }
-        
+
         protected void setStatus(PacketStatus status){
             this.status.set(status);
         }
@@ -146,8 +154,15 @@ public class PacketLogger implements AutoCloseable{
 
     }
 
-    protected PacketLogger(GBSocket socket){
+    boolean writeToLog;
+    protected PacketLogger(GBSocket socket) throws IOException {
         this.socket = socket;
+        writeToLog = GBUILibGlobals.writePacketsToFile();
+        if(writeToLog) {
+            File file = new File(logsRepository.getAbsolutePath() + File.separator + socket.socketID + ".txt");
+            file.createNewFile();
+            logFile = new ObjectOutputStream(new FileOutputStream(file));
+        }
     }
 
     // done

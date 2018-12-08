@@ -20,6 +20,7 @@ public class SelectorManager implements AutoCloseable{
             if(server) {
                 this.serverQueue = queue;
             }
+            new SelectorThread().start();
         } catch (IOException e) {
             new IOException("Selector could not be opened", e).printStackTrace();
         }
@@ -32,6 +33,11 @@ public class SelectorManager implements AutoCloseable{
         } catch (IOException e) {
             return null;
         }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        close();
     }
 
     @Override
@@ -69,7 +75,7 @@ public class SelectorManager implements AutoCloseable{
                                     if(socket.isServer()){
                                         socket.stopServerConnection();
                                     } else {
-                                        socket.close();
+                                        socket.stop();
                                     }
                                 }
                             }

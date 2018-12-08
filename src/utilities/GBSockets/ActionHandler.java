@@ -1,7 +1,12 @@
 package utilities.GBSockets;
 
+import com.sun.javafx.collections.ObservableSetWrapper;
+import javafx.collections.ObservableSet;
+
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 public class ActionHandler {
@@ -10,16 +15,14 @@ public class ActionHandler {
         Ack, SmartAck, HeartBeat, HandShake, Error
     }
 
-    private GBSocket parent;
-
     public class PacketOut extends Packet{
         private boolean acked;
         private GBSocket socket;
 
-        private PacketOut(Packet packet){
+        private PacketOut(Packet packet, GBSocket socket){
             super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
             acked = packet.getResend();
-            this.socket = parent;
+            this.socket = socket;
         }
 
         public GBSocket getSocket() {
@@ -56,7 +59,7 @@ public class ActionHandler {
             return super.getTimeStamp();
         }
 
-        public void ack(){
+        public void ack() throws BadPacketException {
             if(!acked) {
                 socket.ack(super.getIds(), super.getPacketType());
                 acked = true;
@@ -86,36 +89,36 @@ public class ActionHandler {
         void handle(PacketOut packet) throws BadPacketException;
     }
 
-    private boolean started;
     private HashMap<String, PacketHandler> handlers;
+    private List<GBSocket> sockets = new ArrayList<>();
 
     // done
     public void setHandler(String packetType, PacketHandler handler){
-        if(!started) {
+        if(sockets.isEmpty()) {
             handlers.put(packetType, handler);
         } else {
-            throw new IllegalStateException("Can't add a handler to a socket that is already running");
+            throw new IllegalStateException("Can't add a handler to an ActionHandler that is being used by a running socket.");
         }
     }
 
     // done
-    protected void handlePacket(Packet packet) throws BadPacketException {
+    protected void handlePacket(Packet packet, GBSocket socket) throws BadPacketException {
         try{
-            PacketOut packetOut = new PacketOut(packet);
+            assert(sockets.contains(socket));
+            PacketOut packetOut = new PacketOut(packet, socket);
             PacketHandler handler = handlers.get(packet.getPacketType());
             assert(handler != null);
             handler.handle(packetOut);
-            if(!packetOut.acked && parent.allowNoAck()){
+            if(!packetOut.acked && socket.allowNoAck()){
                 throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
             }
         } catch (AssertionError e){
-            throw new BadPacketException("The packet type supplied with the packet was a type that the socket cannot handle.", packet);
+            throw new BadPacketException("The packet type supplied with the packet was a type that the socket cannot handle, or this actionHandler is not associated with this socket.", packet);
         }
     }
 
     // done
-    protected ActionHandler(GBSocket parent, ActionHandlerRecipe... recipes){
-        this.parent = parent;
+    protected ActionHandler(ActionHandlerRecipe... recipes){
         handlers = new HashMap<>();
         for(ActionHandlerRecipe recipe : recipes){
             for(String key : recipe.getHandlers().keySet()){
@@ -125,13 +128,16 @@ public class ActionHandler {
         handlers.putIfAbsent(DefaultPacketTypes.HeartBeat.toString(), this::heartBeat);
         handlers.putIfAbsent(DefaultPacketTypes.Ack.toString(), this::ack);
         handlers.putIfAbsent(DefaultPacketTypes.SmartAck.toString(), this::smartAck);
-        handlers.putIfAbsent(DefaultPacketTypes.HandShake.toString(), parent::handShakeReceive);
         handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), this::error);
     }
 
-    protected Set<String> getHandledTypes(){
-        started = true;
-        return handlers.keySet();
+    protected ObservableSet<String> getHandledTypes(GBSocket socket){
+        sockets.add(socket);
+        return new ObservableSetWrapper<>(handlers.keySet());
+    }
+
+    protected void connectionClosed(GBSocket socket){
+        sockets.remove(socket);
     }
 
     private void error(PacketOut packet){
@@ -139,7 +145,7 @@ public class ActionHandler {
     }
 
     private void heartBeat(PacketOut packet) throws BadPacketException {
-        if(parent.isServer()){
+        if(packet.socket.isServer()){
             packet.ack();
         }
         else{
@@ -152,7 +158,7 @@ public class ActionHandler {
 
     private void smartAck(PacketOut packet) throws BadPacketException {
         try {
-            parent.receivePacket((Packet)packet.getContent());
+            packet.socket.receivePacket((Packet)packet.getContent());
         } catch (ClassCastException e){
             throw new BadPacketException("Could not cast packet contents of a smart Ack packet content into a CustomAck Object.", packet);
         }

@@ -2,18 +2,22 @@ package utilities.GBSockets;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableSet;
 import utilities.GBUILibGlobals;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class PacketManager {
     // constructor
 
     PacketLogger logger;
 
-    protected PacketManager(List<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
+    protected PacketManager(ObservableSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
         this.logger = logger;
         // output
         this.socket = socket;
@@ -26,7 +30,7 @@ public class PacketManager {
     }
 
     // outgoing packets
-    private List<String> sendTypes;
+    private ObservableSet<String> sendTypes;
     private Map<String, Integer> packetNumbers = new HashMap<>();
     private int packetTotal = 0;
     private final int connectionID;
@@ -41,6 +45,7 @@ public class PacketManager {
                 case RECEIVED_ERRORED:
                 case ACKED:
                 case RECEIVED_DONE:
+                case WAITING:
                     logLine.setAttemptsLeftToSend(attemptsPerPacket);
                     scheduleDiscardCheckup(logLine, 0);
                     break;
@@ -67,6 +72,10 @@ public class PacketManager {
         public void run() {
             if(discardTimers.get(toCheck) == this){
                 if (toCheck.getAttemptsLeftToSend() == 0) {
+                    toCheck.getStatusProperty().removeListener(changeManager);
+                    if (toCheck.getStatus() == PacketLogger.PacketStatus.WAITING) {
+                        toCheck.setStatus(PacketLogger.PacketStatus.TIMED_OUT);
+                    }
                     toCheck.discardToLog();
                     return;
                 } else {
@@ -191,6 +200,8 @@ public class PacketManager {
         try {
             if(logger.isPacketFollowedOut(packet) && packet.getIsAck()){
                 logger.packetReturned(packet);
+                PacketLogger.LogLine origin = logger.packets.getLine(true, packet.getIds());
+                socket.pingInMillis.set((int)(origin.getResponse().getTimeStamp().toEpochMilli() - origin.getPacket().getTimeStamp().toEpochMilli()));
                 return;
             } else if(logger.isPacketFollowedIn(packet)){
                 PacketLogger.LogLine origin = logger.packetAlreadyReceived(packet);
@@ -200,7 +211,7 @@ public class PacketManager {
                 return;
             }
             logger.followPacket(packet, false);
-            actionHandler.handlePacket(packet);
+            actionHandler.handlePacket(packet, socket);
         } catch (BadPacketException e) {
             if(packet.getIsAck()){
                 try {

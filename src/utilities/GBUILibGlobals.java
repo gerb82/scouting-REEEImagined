@@ -2,6 +2,7 @@ package utilities;
 
 import utilities.MethodTypes.BlankMethod;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class GBUILibGlobals {
@@ -10,7 +11,6 @@ public class GBUILibGlobals {
         //sockets
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), 30, true);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE.toString(), 8192, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), -1, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), 5, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT.toString(), false, true);
@@ -22,6 +22,9 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), 65507, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER.toString(), 24, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), 8, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), 0, false);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_SOCKETSLOGSDIRECTORY.toString(), new File(System.getProperty("user.dir")), true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_WRITEPACKETSTOLOG.toString(), true, true);
 
 
         //console
@@ -40,7 +43,6 @@ public class GBUILibGlobals {
     public enum GBUILibVariables {
         GBUILIB_GBSOCKET_ALLOWUNSAFE,
         GBUILIB_GBSOCKET_TIMEOUTTIMER,
-        GBUILIB_GBSOCKET_RECEIVESTREAMSIZE,
         GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS,
         GBUILIB_GBSOCKET_HEARTBEATRATE,
         GBUILIB_GBSOCKET_ALLWAYSHEARTBEAT,
@@ -52,6 +54,9 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE,
         GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER,
         GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND,
+        GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS,
+        GBUILIB_GBSOCKET_SOCKETSLOGSDIRECTORY,
+        GBUILIB_GBSOCKET_WRITEPACKETSTOLOG,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -78,9 +83,6 @@ public class GBUILibGlobals {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), Integer.class);
     }
 
-    public static Integer getSocketReceiveStreamSize() {
-        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_RECEIVESTREAMSIZE.toString(), Integer.class);
-    }
 
     public static Integer getMaxServerConnections() {
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), Integer.class);
@@ -120,5 +122,19 @@ public class GBUILibGlobals {
 
     public static int getPacketSendAttempts(){
         return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), Integer.class);
+    }
+
+    public static int newSocketFormed(){
+        int counter = ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), Integer.class);
+        ProgramWideVariable.setValueInChangingVariablesMap(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), counter++);
+        return counter;
+    }
+
+    public static File getSocketLogsDirectory(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_SOCKETSLOGSDIRECTORY.toString(), File.class);
+    }
+
+    public static boolean writePacketsToFile(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_WRITEPACKETSTOLOG.toString(), Boolean.class);
     }
 }

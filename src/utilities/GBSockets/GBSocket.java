@@ -1,25 +1,35 @@
 package utilities.GBSockets;
 
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableSet;
+import utilities.AssertionYouDimwitException;
 import utilities.GBUILibGlobals;
 import utilities.SmartAssert;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
-import java.time.Duration;
+import java.nio.channels.SelectionKey;
 import java.time.Instant;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class GBSocket implements AutoCloseable{
 
+
     // done
     public static class SocketConfig{
         private Integer heartBeatDelay;
-        private Boolean alwaysBeat;
         private Integer connectionTimeout;
+        private Integer maxReceiveSize;
 
         public int getHeartBeatDelay() {
             if(heartBeatDelay == null){
@@ -28,19 +38,8 @@ public class GBSocket implements AutoCloseable{
             return heartBeatDelay;
         }
 
-        protected void setHeartBeatDelay(int heartBeatDelay) {
+        public void setHeartBeatDelay(int heartBeatDelay) {
             this.heartBeatDelay = heartBeatDelay;
-        }
-
-        public boolean alwaysBeat() {
-            if(alwaysBeat == null){
-                return GBUILibGlobals.alwaysHeartBeat();
-            }
-            return alwaysBeat;
-        }
-
-        protected void setAlwaysBeat(boolean alwaysBeat) {
-            this.alwaysBeat = alwaysBeat;
         }
 
         public int shouldConnectionTimeout() {
@@ -50,24 +49,42 @@ public class GBSocket implements AutoCloseable{
             return connectionTimeout;
         }
 
-        protected void setConnectionTimeout(int connectionTimeout) {
+        public void setConnectionTimeout(int connectionTimeout) {
             this.connectionTimeout = connectionTimeout;
+        }
+
+        public int getMaxPacketReceiveSize() {
+            if(maxReceiveSize == null){
+                return GBUILibGlobals.getMaxReceivePacketSize();
+            }
+            return maxReceiveSize;
+        }
+
+        public void setMaxReceiveSize(int maxReceiveSize){
+            this.maxReceiveSize = maxReceiveSize;
         }
     }
 
     private SelectorManager selector;
+    private SelectionKey key;
+    private PacketLogger logger;
+    private ActionHandler handler;
     private boolean isUnsafe;
     private PacketManager manager;
-    private DatagramChannel socket;
+    protected DatagramChannel socket;
+    protected int socketID = -1;
     private int connectionTimeout;
-    private SocketAddress adress;
+    private SocketAddress address;
     private boolean server;
     private GBServerSocket parent;
     private int maxReceiveSize;
     private int maxSendSize;
-
-
+    private ObservableSet<String> sendTypes;
     private boolean autoReconnect;
+    private String connectionType;
+    private Instant lastReceived;
+    protected SimpleIntegerProperty pingInMillis = new SimpleIntegerProperty(0);
+    public ObservableValue<Integer> ping = pingInMillis.asObject();
 
     protected DatagramChannel getChannel(){
         return socket;
@@ -78,28 +95,56 @@ public class GBSocket implements AutoCloseable{
         return server;
     }
 
-    protected void SocketConnect(){
-        try {
-            socket = DatagramChannel.open();
-            if(connect(adress)){
-                selector.registerSocket(this);
+    protected synchronized boolean socketConnect(Packet packet) throws IllegalArgumentException{
+        if(connected.get()) {
+            try {
+                logger = new PacketLogger(this);
+                if(!server) {
+                    socket = DatagramChannel.open();
+                }
+                if (connect(address)) {
+                    socketID = GBUILibGlobals.newSocketFormed();
+                    if (PacketLogger.logsRepository == null) {
+                        PacketLogger.logsRepository = GBUILibGlobals.getSocketLogsDirectory();
+                    }
+                    logger = new PacketLogger(this);
+                    if(server ? !serverHandShake(packet) : !handShake()){
+                        socketID = -1;
+                        logger.close();
+                        return false;
+                    }
+                    manager = new PacketManager(sendTypes, socketID, this, handler, logger);
+                    if(!server) {
+                        key = selector.registerSocket(this);
+                        heart = new Timer();
+                        heart.schedule(new HeartBeatTask(), heartBeatDelay);
+                    }
+                    connected.set(true);
+                    return true;
+                } else {
+                    throw new IllegalArgumentException("The given SocketAddress could not complete the handshake");
+                }
+            } catch (IOException e) {
+                new IOException("Couldn't connect the GBSocket", e).printStackTrace();
             }
-        } catch (IOException e) {
-            new IOException("Couldn't connect the GBSocket", e).printStackTrace();
         }
+        throw new IllegalStateException("Cannot connect an already connected socket");
     }
 
-    private boolean connect(SocketAddress address){
+    private synchronized boolean connect(SocketAddress address){
         try {
-            socket.connect(adress);
-            handShake();
-            return ;
+            socket.connect(address);
+            return true;
         } catch (ClosedChannelException e) {
-            new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.SocketConnect()");
+            new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.socketConnect()");
         } catch (IOException e) {
             new IOException("Something went wrong with the socket ;-;", e);
         }
         return false;
+    }
+
+    public void startConnection(){
+        socketConnect(null);
     }
 
     // done
@@ -107,17 +152,35 @@ public class GBSocket implements AutoCloseable{
         close();
     }
 
+    public void stop(){
+        try {
+            heart.cancel();
+            handler.connectionClosed(this);
+            socket.close();
+            key.cancel();
+            logger.close();
+            logger = null;
+            socketID = -1;
+            connected.set(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private SimpleBooleanProperty connected = new SimpleBooleanProperty(false);
+    public ObservableValue<Boolean> isConnected = connected.asObject();
+
     // done
     @Override
     public void close(){
         autoReconnect = false;
         try {
-            socket.close();
             input.close();
             output.close();
         } catch (IOException e) {
             new IOException("Failed to close the socket.", e).printStackTrace();
         }
+        stop();
     }
 
     public void stopServerConnection(){
@@ -127,24 +190,57 @@ public class GBSocket implements AutoCloseable{
     }
 
     // unsafe socket
-    public GBSocket(){
+    public GBSocket(SocketAddress address){
         if(GBUILibGlobals.unsafeSockets()) {
             heartBeatDelay = -1;
-            alwaysBeat = false;
             isUnsafe = true;
+            this.address = address;
         } else {
             throw new UnsafeSocketException("There was an attempt to create an unsafe socket, even though unsafe sockets are disabled");
         }
     }
 
+    public DatagramChannel getSocket() {
+        if(isUnsafe){
+            return socket;
+        }
+        throw new UnsafeSocketException("There was an attempt to directly access the DatagramChannel of the socket, even though it is not an unsafe socket.");
+    }
+
+    public void setAddress(SocketAddress address) throws IllegalAccessException {
+        if(connected.get()){
+            this.address = address;
+            return;
+        }
+        throw new IllegalAccessException("Cannot set the address on an already connected socket.");
+    }
+
     // safe socket
-    public GBSocket(boolean autoReconnect, SelectorManager selector, ActionHandler handler, SocketConfig config){
-        this.heartBeatDelay = config.getHeartBeatDelay();
-        this.alwaysBeat = config.alwaysBeat();
-        this.connectionTimeout = config.connectionTimeout;
+
+    public GBSocket(SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, GBServerSocket parent, boolean allowNoAck){
+        if(parent != null){
+            server = true;
+            this.parent = parent;
+            heartBeatDelay = -1;
+        } else {
+            this.heartBeatDelay = config.getHeartBeatDelay();
+            this.autoReconnect = autoReconnectArg;
+            this.connected.addListener((observable, oldValue, newValue) -> {
+                if(!newValue && autoReconnect){
+                    socketConnect(null);
+                }
+            });
+            this.connectionTimeout = config.shouldConnectionTimeout();
+            this.allowNoAck = allowNoAck;
+            server = false;
+            buffer = ByteBuffer.allocate(maxReceiveSize);
+        }
+        this.connectionType = connectionType;
         this.selector = selector;
+        this.address = address;
+        this.handler = handler;
         isUnsafe = false;
-        buffer = ByteBuffer.allocate(maxReceiveSize);
+        maxReceiveSize = config.getMaxPacketReceiveSize();
         try {
             input = new PipedInputStream();
             output = new PipedOutputStream();
@@ -154,9 +250,13 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
+    protected void setKey(SelectionKey key) {
+        this.key = key;
+    }
+
     // unsafe, done
     public synchronized void sendPackets(Packet... packets) throws IOException {
-        if(GBUILibGlobals.unsafeSockets() && isUnsafe){
+        if(isUnsafe){
             for(Packet packet : packets){
                 socket.write(ByteBuffer.wrap(packet.toString().getBytes()));
             }
@@ -177,7 +277,11 @@ public class GBSocket implements AutoCloseable{
                 logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
                 throw new BadPacketException("Packet is too big to be sent");
             }
-            logLine.setStatus(wasSent ? PacketLogger.PacketStatus.WAITING : PacketLogger.PacketStatus.RECEIVED_DONE);
+            if(!logLine.getPacket().getResend()){
+                logLine.setStatus(PacketLogger.PacketStatus.SENT);
+            } else {
+                logLine.setStatus(wasSent ? PacketLogger.PacketStatus.WAITING : PacketLogger.PacketStatus.RECEIVED_DONE);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             logLine.setStatus(wasSent ? PacketLogger.PacketStatus.SEND_ERRORED : PacketLogger.PacketStatus.RECEIVED_ERRORED);
@@ -185,8 +289,12 @@ public class GBSocket implements AutoCloseable{
     }
 
     public void sendAsPacket(Object content, String contentType, String packetType, boolean mustArrive) throws BadPacketException{
-        if(!GBUILibGlobals.unsafeSockets() && !isUnsafe) {
-            manager.sendAsPacket(content, contentType, packetType, mustArrive);
+        if(!isUnsafe) {
+            if(connected.get()) {
+                manager.sendAsPacket(content, contentType, packetType, mustArrive);
+            } else {
+                throw new IllegalStateException("Socket is not connected, cannot send packet");
+            }
         }
         else {
             throw new UnsafeSocketException("Cannot send the content as a packet, as this socket is not a proper GBSocket, and as such, does not have a PacketManager. To send a packet, you will have to construct and send it yourself");
@@ -200,15 +308,19 @@ public class GBSocket implements AutoCloseable{
     private PipedInputStream input;
     private PipedOutputStream output;
     private ObjectInputStream objInput;
-    private ByteBuffer buffer;
+    protected ByteBuffer buffer;
 
     protected synchronized Packet readPacket() throws BadPacketException {
         try {
-            socket.read(buffer);
+            int counter = socket.read(buffer);
+            if(counter == 0){
+                return null;
+            }
             buffer.flip();
             output.write(buffer.array());
             output.flush();
             buffer.clear();
+            lastReceived = Instant.now();
             return (Packet) objInput.readObject();
         } catch (ClassCastException | ClassNotFoundException e) {
             throw new BadPacketException("Received packet of an unexpected type. It is not of type GBPacket.");
@@ -218,46 +330,118 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
-    private void handShake(){
-        SmartAssert.makeSure(packet.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
+    private synchronized boolean handShake(){
+        try {
+            Packet packet = new Packet(new Object[]{handler.getHandledTypes(this), maxReceiveSize}, new int[]{-1}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe);
+            PacketLogger.LogLine toSend = logger.followPacket(packet, true);
+            int attempts = GBUILibGlobals.getPacketSendAttempts();
+            int intervals = (1000*GBUILibGlobals.getTimeToPacketTimeout()/attempts);
+            Packet receivedShake = null;
+            for(int i = 0; i < attempts; i++) {
+                sendPacket(toSend);
+                Instant start = Instant.now();
+                while(Instant.now().toEpochMilli() - start.toEpochMilli() < intervals){
+                    try {
+                        Thread.sleep(intervals - (Instant.now().toEpochMilli() - start.toEpochMilli()));
+                    } catch (InterruptedException e) {}
+                }
+                receivedShake = readPacket();
+                if(receivedShake != null){
+                    break;
+                }
+                if(i == attempts-1){
+                    handler.connectionClosed(this);
+                    return false;
+                }
+            }
+            toSend.setResponse(receivedShake);
+            SmartAssert.makeSure(ActionHandler.DefaultPacketTypes.valueOf(receivedShake.getPacketType()).equals(ActionHandler.DefaultPacketTypes.HandShake), "Received a non-handshake packet before handshake was complete");
+            SmartAssert.makeSure(receivedShake.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
+            SmartAssert.makeSure(connectionType == receivedShake.getContentType(), "Connection type must match between both sockets in order to avoid unexpected behaviour");
+            sendTypes = ((ObservableSet<String>) ((Object[])(receivedShake.getContent()))[0]);
+            maxSendSize = (int) ((Object[])(receivedShake.getContent()))[1];
+            PacketLogger.LogLine response = logger.followPacket(receivedShake, false);
+            response.setResponse(new Packet(null, new int[]{-1}, ActionHandler.DefaultPacketTypes.Ack.toString(), ActionHandler.DefaultPacketTypes.HandShake.toString()));
+            sendPacket(response);
+            return true;
+        } catch (BadPacketException e) {
+            throw new IllegalStateException("The handshake created a packet that could not be sent.", e);
+        } catch (AssertionYouDimwitException e) {
+            e.printStackTrace();
+            handler.connectionClosed(this);
+            return false;
+        }
     }
 
-    protected void handShakeReceive(ActionHandler.PacketOut packet){
-
+    private boolean serverHandShake(Packet receivedShake) {
+        try {
+            SmartAssert.makeSure(ActionHandler.DefaultPacketTypes.valueOf(receivedShake.getPacketType()).equals(ActionHandler.DefaultPacketTypes.HandShake), "Received a non-handshake packet before handshake was complete");
+            SmartAssert.makeSure(receivedShake.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
+            SmartAssert.makeSure(parent.connectionTypes.containsKey(receivedShake.getContentType()), "Connection type must match between both sockets in order to avoid unexpected behaviour");
+            connectionType = receivedShake.getContentType();
+            handler = parent.connectionTypes.get(connectionType);
+            sendTypes = ((ObservableSet<String>) ((Object[])(receivedShake.getContent()))[0]);
+            maxSendSize = (int) ((Object[])(receivedShake.getContent()))[1];
+            PacketLogger.LogLine response = logger.followPacket(receivedShake, false);
+            response.setResponse(new Packet(new Object[]{handler.getHandledTypes(this), maxReceiveSize}, new int[]{-1}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe));
+            PacketLogger.LogLine toSend = logger.followPacket(response.getResponse(), true);
+            int attempts = GBUILibGlobals.getPacketSendAttempts();
+            int intervals = (1000 * GBUILibGlobals.getTimeToPacketTimeout() / attempts);
+            Packet ack = null;
+            for (int i = 0; i < attempts; i++) {
+                sendPacket(toSend);
+                Instant start = Instant.now();
+                while (Instant.now().toEpochMilli() - start.toEpochMilli() < intervals) {
+                    try {
+                        Thread.sleep(intervals - (Instant.now().toEpochMilli() - start.toEpochMilli()));
+                    } catch (InterruptedException e) {
+                    }
+                }
+                ack = readPacket();
+                while(ack != null){
+                    if(ack.getPacketType().equals(ActionHandler.DefaultPacketTypes.Ack)){
+                        break;
+                    }
+                    else {
+                        ack = readPacket();
+                    }
+                }
+                if (i == attempts - 1) {
+                    handler.connectionClosed(this);
+                    return false;
+                }
+            }
+            toSend.setResponse(ack);
+            return true;
+        } catch (BadPacketException e) {
+            throw new IllegalStateException("The handshake created a packet that could not be sent.", e);
+        } catch (AssertionYouDimwitException e) {
+            e.printStackTrace();
+            handler.connectionClosed(this);
+            return false;
+        }
     }
 
     private Timer heart;
-    private Instant lastSent;
     private final long heartBeatDelay;
-    private final boolean alwaysBeat;
 
     // done
-    private class heartBeatTask extends TimerTask{
+    private class HeartBeatTask extends TimerTask{
 
         @Override
         public void run() {
-            if (alwaysBeat) {
-                heartBeat();
-                heart.schedule(new heartBeatTask(), heartBeatDelay);
+            heartBeat();
+            if(Instant.now().toEpochMilli() - lastReceived.toEpochMilli() >= connectionTimeout*1000){
+                stop();
             }
-            else{
-                long sinceLast = Duration.between(lastSent, Instant.now()).toMillis();
-                if (sinceLast < heartBeatDelay){
-                    heart.schedule(new heartBeatTask(), heartBeatDelay-sinceLast);
-                }
-                else{
-                    heartBeat();
-                    heart.schedule(new heartBeatTask(), heartBeatDelay);
-                }
-            }
+            heart.schedule(new HeartBeatTask(), heartBeatDelay);
+
         }
     }
 
     // done
     private void heartBeat(){
-        if(manager.heartBeat()){
-            lastSent = Instant.now();
-        }
+        manager.heartBeat();
     }
 
     // done
