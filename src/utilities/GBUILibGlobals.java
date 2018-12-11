@@ -124,6 +124,10 @@ public class GBUILibGlobals {
         return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), Integer.class);
     }
 
+    public static int getSocketCount(){
+        return ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), Integer.class);
+    }
+
     public static int newSocketFormed(){
         int counter = ProgramWideVariable.getChangingVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), Integer.class);
         ProgramWideVariable.setValueInChangingVariablesMap(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), counter++);

@@ -117,7 +117,7 @@ public class GBSocket implements AutoCloseable{
                     if(!server) {
                         key = selector.registerSocket(this);
                         heart = new Timer();
-                        heart.schedule(new HeartBeatTask(), heartBeatDelay);
+                        heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay, heartBeatDelay);
                     }
                     connected.set(true);
                     return true;
@@ -430,18 +430,11 @@ public class GBSocket implements AutoCloseable{
 
         @Override
         public void run() {
-            heartBeat();
-            if(Instant.now().toEpochMilli() - lastReceived.toEpochMilli() >= connectionTimeout*1000){
+            manager.heartBeat();
+            if(Instant.now().toEpochMilli() - lastReceived.toEpochMilli() >= connectionTimeout*1000) {
                 stop();
             }
-            heart.schedule(new HeartBeatTask(), heartBeatDelay);
-
         }
-    }
-
-    // done
-    private void heartBeat(){
-        manager.heartBeat();
     }
 
     // done
