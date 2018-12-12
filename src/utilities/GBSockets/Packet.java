@@ -2,9 +2,10 @@ package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public class Packet {
+public class Packet implements Serializable{
 
     private Object content;
     private String packetType;

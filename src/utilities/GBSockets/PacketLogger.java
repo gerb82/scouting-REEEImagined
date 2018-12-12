@@ -85,6 +85,7 @@ public class PacketLogger implements AutoCloseable{
         private Packet response;
         private boolean wasSent;
         private int attemptsLeftToSend;
+        private int initialAttemptsAmount;
 
         private LogLine(Packet packet, boolean wasSent){
             this.packet = packet;
@@ -96,7 +97,20 @@ public class PacketLogger implements AutoCloseable{
             packets.remove((wasSent ? "out" : "in") + packet.getIds());
             if(writeToLog) {
                 try {
-                    logFile.writeUTF("Packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType()) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The serialized packet was: " + packet + ", and " + (response != null ? (response.getContent().getClass().isAssignableFrom(Packet.class) ? "the response was the packet with the ids: " + response.getIds() : "the response was the packet: " + response) : "there was no response") + ".");
+                    logFile.writeUTF("The serialized packet was: ");
+                    logFile.writeObject(packet);
+                    logFile.writeUTF(", and ");
+                    if(response != null) {
+                        if(response.getContent().getClass().isAssignableFrom(Packet.class)) {
+                            logFile.writeUTF("the response was the packet with the ids: " + response.getIds());
+                        } else {
+                            logFile.writeUTF("the response was the packet: ");
+                            logFile.writeObject(response);
+                        }
+                    } else {
+                        logFile.writeUTF("there was no response");
+                    }
+                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType()) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent.");
                     logFile.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -133,6 +147,9 @@ public class PacketLogger implements AutoCloseable{
         }
 
         protected void setAttemptsLeftToSend(int i){
+            if(attemptsLeftToSend != i+1) {
+                initialAttemptsAmount = i;
+            }
             attemptsLeftToSend = i;
         }
 

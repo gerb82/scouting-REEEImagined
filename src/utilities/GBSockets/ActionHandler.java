@@ -4,9 +4,7 @@ import com.sun.javafx.collections.ObservableSetWrapper;
 import javafx.collections.ObservableSet;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ActionHandler {
 
@@ -116,6 +114,34 @@ public class ActionHandler {
         }
     }
 
+    public void setAuthProtocol(CheckConnectionAuth checker, CreateConnectionAuth creator){
+        if(checker == null || creator == null){
+            throw new IllegalArgumentException("Cannot set the authentication checker or creator to null");
+        }
+        authChecker = checker;
+        authMaker = creator;
+    }
+
+    public interface CheckConnectionAuth {
+        boolean check(Stack<Object> params, boolean server);
+    }
+
+    private CheckConnectionAuth authChecker;
+    protected boolean checkConnectionData(Stack<Object> params, boolean server) {
+        return authChecker == null ? true : authChecker.check(params, server);
+    }
+
+    public interface CreateConnectionAuth {
+        void make(Stack<Object> stack, boolean server);
+    }
+
+    private CreateConnectionAuth authMaker;
+    protected void getConnectionData(Stack<Object> stack, boolean server){
+        if(authMaker != null){
+            authMaker.make(stack, server);
+        }
+    }
+
     // done
     protected ActionHandler(ActionHandlerRecipe... recipes){
         handlers = new HashMap<>();
@@ -130,9 +156,9 @@ public class ActionHandler {
         handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), this::error);
     }
 
-    protected ObservableSet<String> getHandledTypes(GBSocket socket){
+    protected HashSet<String> getHandledTypes(GBSocket socket){
         sockets.add(socket);
-        return new ObservableSetWrapper<>(handlers.keySet());
+        return new HashSet<String>(handlers.keySet());
     }
 
     protected void connectionClosed(GBSocket socket){

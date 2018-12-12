@@ -332,7 +332,7 @@ public class GBServerSocket implements AutoCloseable{
         @Override
         public void run(){
             try{
-                if(potentialConnections != maxConnections) {
+                if(potentialConnections != maxConnections && listenToConnections) {
                     potentialConnections++;
                     DatagramChannel channel = DatagramChannel.open();
                     channel.socket().setReuseAddress(true);

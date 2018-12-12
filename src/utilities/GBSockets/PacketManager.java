@@ -7,17 +7,14 @@ import utilities.GBUILibGlobals;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class PacketManager {
     // constructor
 
     PacketLogger logger;
 
-    protected PacketManager(ObservableSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
+    protected PacketManager(HashSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
         this.logger = logger;
         // output
         this.socket = socket;
@@ -27,10 +24,11 @@ public class PacketManager {
         this.actionHandler = actionHandler;
         this.timeToDiscard = GBUILibGlobals.getTimeToPacketTimeout();
         this.attemptsPerPacket = GBUILibGlobals.getPacketSendAttempts();
+        this.timeToSendPacketOver = GBUILibGlobals.getTimeToSendPacket();
     }
 
     // outgoing packets
-    private ObservableSet<String> sendTypes;
+    private HashSet<String> sendTypes;
     private Map<String, Integer> packetNumbers = new HashMap<>();
     private int packetTotal = 0;
     private final int connectionID;
@@ -55,6 +53,7 @@ public class PacketManager {
 
     private final int timeToDiscard;
     private final int attemptsPerPacket;
+    private final int timeToSendPacketOver;
     private Timer discarder = new Timer();
     private HashMap<PacketLogger.LogLine, DiscardCheckup> discardTimers = new HashMap<>();
 
@@ -101,7 +100,7 @@ public class PacketManager {
             discardTimers.remove(line).cancel();
         }
         discardTimers.put(line, new DiscardCheckup(line, Instant.now()));
-        discarder.schedule(discardTimers.get(line), ((1000*timeToDiscard)/attemptsPerPacket)-time);
+        discarder.schedule(discardTimers.get(line), ((1000*timeToSendPacketOver)/attemptsPerPacket)-time);
     }
 
     // done

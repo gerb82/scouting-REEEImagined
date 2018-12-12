@@ -25,6 +25,7 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS.toString(), 0, false);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_SOCKETSLOGSDIRECTORY.toString(), new File(System.getProperty("user.dir")), true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_WRITEPACKETSTOLOG.toString(), true, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMETOSENDPACKET.toString(), 5, true);
 
 
         //console
@@ -54,6 +55,7 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE,
         GBUILIB_GBSOCKET_PACKETTIMEOUTTIMER,
         GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND,
+        GBUILIB_GBSOCKET_TIMETOSENDPACKET,
         GBUILIB_GBSOCKET_AMOUNTOFSOCKETCONNECTIONS,
         GBUILIB_GBSOCKET_SOCKETSLOGSDIRECTORY,
         GBUILIB_GBSOCKET_WRITEPACKETSTOLOG,
@@ -140,5 +142,9 @@ public class GBUILibGlobals {
 
     public static boolean writePacketsToFile(){
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_WRITEPACKETSTOLOG.toString(), Boolean.class);
+    }
+
+    public static int getTimeToSendPacket(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_TIMETOSENDPACKET.toString(), Integer.class);
     }
 }
