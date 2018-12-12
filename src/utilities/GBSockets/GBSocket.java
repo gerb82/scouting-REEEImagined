@@ -178,6 +178,8 @@ public class GBSocket implements AutoCloseable{
         try {
             input.close();
             output.close();
+            sendObjInput.close();
+            sendOut.close();
         } catch (IOException e) {
             new IOException("Failed to close the socket.", e).printStackTrace();
         }
