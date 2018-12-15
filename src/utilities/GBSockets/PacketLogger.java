@@ -110,7 +110,7 @@ public class PacketLogger implements AutoCloseable{
                     } else {
                         logFile.writeUTF("there was no response");
                     }
-                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType()) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent.");
+                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent.");
                     logFile.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -176,7 +176,7 @@ public class PacketLogger implements AutoCloseable{
         this.socket = socket;
         writeToLog = GBUILibGlobals.writePacketsToFile();
         if(writeToLog) {
-            File file = new File(logsRepository.getAbsolutePath() + File.separator + socket.socketID + ".txt");
+            File file = new File(logsRepository.getAbsolutePath() + File.separator + socket.socketIDServerSide + ".txt");
             file.createNewFile();
             logFile = new ObjectOutputStream(new FileOutputStream(file));
         }

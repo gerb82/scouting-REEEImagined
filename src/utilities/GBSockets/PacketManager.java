@@ -167,7 +167,7 @@ public class PacketManager {
         try {
             assert (sendTypes.contains(packetType));
         } catch (AssertionError e) {
-            throw new BadPacketException("The packet type for the packet" + formatPacketIDs(numerize(null), packetType) + " was of a type that cannot be sent.");
+            throw new BadPacketException("The packet type for the packet" + formatPacketIDs(numerize(null), packetType, socket.programWideSocketID) + " was of a type that cannot be sent.");
         }
         int[] packetNumbers = numerize(packetType);
         try {
@@ -175,17 +175,17 @@ public class PacketManager {
                 assert (content instanceof Serializable);
             }
         } catch (AssertionError e) {
-            throw new BadPacketException("The packet content for packet " + formatPacketIDs(packetNumbers, packetType) + " is invalid, because it can't be serialized.");
+            throw new BadPacketException("The packet content for packet " + formatPacketIDs(packetNumbers, packetType, socket.programWideSocketID) + " is invalid, because it can't be serialized.");
         }
         return packetNumbers;
     }
 
     // done
-    protected static String formatPacketIDs(int[] ids, String packetType) throws IllegalArgumentException {
+    protected static String formatPacketIDs(int[] ids, String packetType, int globalSocketID) throws IllegalArgumentException {
         if (ids.length == 2) {
-            return "number" + ids[0] + " (total), in connection number " + ids[1];
+            return "number" + ids[0] + " (total), in connection number " + ids[1] + " server side, and " + globalSocketID + " client side";
         } else if (ids.length == 3 && packetType != null) {
-            return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in connection number " + ids[2];
+            return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in connection number " + ids[2] + " server side, and " + globalSocketID + " client side";
         } else {
             throw new IllegalArgumentException("The method formatPacketIDs has been passed an Illegal argument. Either the \"ids\" array didn't have exactly 2 or 3 cells, or the packet type was null when there are 3 ids in the \"ids\" array." + System.lineSeparator() + "the arguments ids: " + ids.toString() + " packetType: " + packetType);
         }

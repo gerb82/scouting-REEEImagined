@@ -3,12 +3,9 @@ package utilities.GBSockets;
 import utilities.GBUILibGlobals;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.SocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.time.Duration;
@@ -25,11 +22,10 @@ public class GBServerSocket implements AutoCloseable{
         for(ProcessingThread fred : processingThreads){
             fred.interrupt();
         }
-        selector.close();
-        for(GBSocket socket : selectionKeys.keySet()){
-            socket.stop();
+        for(int id : activeConnectionsMap.keySet()){
+            activeConnectionsMap.get(id).close();
         }
-        connector.cancel();
+        selector.close();
     }
 
     // done
@@ -163,7 +159,7 @@ public class GBServerSocket implements AutoCloseable{
         }
 
         /**
-         * The method used to schedule a test for  if the socket is not timed out.
+         * The method used to schedule a test for if the socket is not timed out.
          * @param ackCheck The {@link SocketWaitTime} that defines which socket will be checked and when.
          */
         private void scheduleAckCheck(SocketWaitTime ackCheck){
@@ -211,7 +207,7 @@ public class GBServerSocket implements AutoCloseable{
     }
 
     private SelectorTimeOutThread timeOutThread = new SelectorTimeOutThread();
-    private HashMap<GBSocket, SelectionKey> selectionKeys = new HashMap<>();
+    private SelectionKey readerKey;
     private SelectorManager selector;
 
     // done
@@ -228,12 +224,8 @@ public class GBServerSocket implements AutoCloseable{
     // done
     protected boolean addSelectorChannel(GBSocket socket) {
         if (timeOutThread.addSocket(socket)) {
-            SelectionKey key = selector.registerSocket(socket);
-            socket.setKey(key);
-            if (key != null) {
-                selectionKeys.put(socket, key);
-                return true;
-            }
+            activeConnectionsMap.put(socket.socketIDServerSide, socket);
+            return true;
         }
         return false;
     }
@@ -241,12 +233,8 @@ public class GBServerSocket implements AutoCloseable{
     // done
     protected boolean removeSelectorChannel(GBSocket socket){
         try{
-            selectionKeys.remove(socket).cancel();
+            activeConnectionsMap.remove(socket.socketIDServerSide, socket);
             timeOutThread.removeSocket(socket);
-            socket.stop();
-            if(potentialConnections == maxConnections){
-                connector.schedule(new ConnectionListener(), 0);
-            }
             potentialConnections--;
             return true;
         } catch (NullPointerException e){
@@ -259,18 +247,18 @@ public class GBServerSocket implements AutoCloseable{
     protected static class PacketToProcess{
 
         private Packet packet;
-        private GBSocket socket;
-        protected PacketToProcess(Packet packet, GBSocket socket){
+        private GBServerSocket socket;
+        protected PacketToProcess(Packet packet, GBServerSocket socket){
             this.packet = packet;
             this.socket = socket;
         }
 
-        protected GBSocket getSocket() {
-            return socket;
-        }
-
         protected Packet getPacket() {
             return packet;
+        }
+
+        protected GBSocket getSocket() {
+             return socket.activeConnectionsMap.get(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1]);
         }
     }
 
@@ -307,53 +295,62 @@ public class GBServerSocket implements AutoCloseable{
 
 
     public synchronized void sendAsPacket(GBSocket socket, Object content, String contentType, String packetType, boolean mustArrive) throws BadPacketException{
-        if(selectionKeys.keySet().contains(socket)) {
+        if(activeConnectionsMap.containsKey(socket.socketIDServerSide)) {
             socket.sendAsPacket(content, contentType, packetType, mustArrive);
+        } else {
+            throw new IllegalArgumentException("The selected socket is not connected through this GBServerSocket.");
         }
     }
 
     // SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, GBServerSocket parent
 
     private int port;
+    private int sendersPort;
     private int maxReceiveSize;
     private int maxConnections;
     private int potentialConnections;
+    private int connectionCount;
     private boolean allowNoAck;
     private GBServerSocket current = this;
+    private GBSocket reader = new GBSocket(port, this, maxReceiveSize);
     protected HashMap<String, ActionHandler> connectionTypes = new HashMap<>();
+    protected HashMap<Integer, GBSocket> activeConnectionsMap = new HashMap<>();
     // safe
     public GBServerSocket(){
 
     }
 
-    private Timer connector = new Timer();
-    private class ConnectionListener extends TimerTask{
+    protected void createNewConnection(Packet packet){
+        try {
+            if (potentialConnections != maxConnections && listenToConnections) {
+                potentialConnections++;
+                DatagramChannel channel = DatagramChannel.open();
+                channel.socket().setReuseAddress(true);
+                channel.bind(new InetSocketAddress(sendersPort));
+                ByteBuffer buf = ByteBuffer.allocate(maxReceiveSize);
+                SocketAddress address = packet.receivedFrom;
+                channel.configureBlocking(false);
+                GBSocket.SocketConfig config = new GBSocket.SocketConfig();
+                config.setMaxReceiveSize(maxReceiveSize);
+                GBSocket socket = new GBSocket(address, null, false, selector, new ActionHandler(), config, current, allowNoAck);
+                socket.socket = channel;
+                socket.buffer = buf;
+                Thread fred = new Thread(() -> {
+                    if(socket.socketConnect(packet)){
+                        addSelectorChannel(socket);
+                    }
+                    else {
+                        socket.close();
+                        potentialConnections--;
+                    }
+                });
+                fred.start();
+            }
+        } catch (IOException e){
 
-        @Override
-        public void run(){
-            try{
-                if(potentialConnections != maxConnections && listenToConnections) {
-                    potentialConnections++;
-                    DatagramChannel channel = DatagramChannel.open();
-                    channel.socket().setReuseAddress(true);
-                    channel.bind(new InetSocketAddress(port));
-                    channel.configureBlocking(true);
-                    ByteBuffer buf = ByteBuffer.allocate(maxReceiveSize);
-                    SocketAddress address = channel.receive(buf);
-                    connector.schedule(new ConnectionListener(), 0);
-                    channel.configureBlocking(false);
-                    GBSocket.SocketConfig config = new GBSocket.SocketConfig();
-                    config.setMaxReceiveSize(maxReceiveSize);
-                    GBSocket socket = new GBSocket(address, null, false, selector, new ActionHandler(), config, current, allowNoAck);
-                    socket.socket = channel;
-                    socket.buffer = buf;
-                    Packet packet = socket.readPacket();
-                    socket.socketConnect(packet);
-                    addSelectorChannel(socket);
-                }
-            } catch (Exception e){}
         }
     }
 
     private boolean listenToConnections;
+
 }

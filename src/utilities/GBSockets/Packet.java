@@ -3,6 +3,7 @@ package utilities.GBSockets;
 import utilities.GBUILibGlobals;
 
 import java.io.Serializable;
+import java.net.SocketAddress;
 import java.time.Instant;
 
 public class Packet implements Serializable{
@@ -15,6 +16,7 @@ public class Packet implements Serializable{
     private Instant timeStamp;
     private transient boolean resend;
     private boolean isAck;
+    protected transient SocketAddress receivedFrom;
 
     public Object getContentUnsafe() {
         if(GBUILibGlobals.unsafeSockets()) {

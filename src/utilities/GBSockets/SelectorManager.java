@@ -36,7 +36,7 @@ public class SelectorManager implements AutoCloseable{
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    protected void finalize() {
         close();
     }
 
@@ -67,7 +67,16 @@ public class SelectorManager implements AutoCloseable{
                                         continue;
                                     }
                                     if (server) {
-                                        serverQueue.add(new GBServerSocket.PacketToProcess(packet, socket));
+                                        if(packet.getIds()[0] == -1){
+                                            if(packet.getPacketType() == ActionHandler.DefaultPacketTypes.HandShake.toString()){
+                                                socket.parent.createNewConnection(packet);
+                                            } else {
+                                                socket.parent.activeConnectionsMap.get(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1]).logger.packets.getLine(true, packet.getIds()).setResponse(packet);
+                                            }
+                                            break;
+                                        } else {
+                                            serverQueue.add(new GBServerSocket.PacketToProcess(packet, socket.parent));
+                                        }
                                     } else {
                                         socket.receivePacket(packet);
                                     }

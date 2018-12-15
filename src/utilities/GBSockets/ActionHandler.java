@@ -3,6 +3,8 @@ package utilities.GBSockets;
 import com.sun.javafx.collections.ObservableSetWrapper;
 import javafx.collections.ObservableSet;
 
+import java.io.IOException;
+import java.net.SocketAddress;
 import java.time.Instant;
 import java.util.*;
 
@@ -92,6 +94,9 @@ public class ActionHandler {
     // done
     public void setHandler(String packetType, PacketHandler handler){
         if(sockets.isEmpty()) {
+            if(packetType == DefaultPacketTypes.HandShake.toString()){
+                throw new IllegalArgumentException("Cannot use type HandShake for a packet handler, as it is reserved for GBSocket functions");
+            }
             handlers.put(packetType, handler);
         } else {
             throw new IllegalStateException("Can't add a handler to an ActionHandler that is being used by a running socket.");
@@ -147,7 +152,7 @@ public class ActionHandler {
         handlers = new HashMap<>();
         for(ActionHandlerRecipe recipe : recipes){
             for(String key : recipe.getHandlers().keySet()){
-                handlers.putIfAbsent(key, recipe.getHandlers().get(key));
+                setHandler(key, recipe.getHandlers().get(key));
             }
         }
         handlers.putIfAbsent(DefaultPacketTypes.HeartBeat.toString(), this::heartBeat);
@@ -158,7 +163,7 @@ public class ActionHandler {
 
     protected HashSet<String> getHandledTypes(GBSocket socket){
         sockets.add(socket);
-        return new HashSet<String>(handlers.keySet());
+        return new HashSet<>(handlers.keySet());
     }
 
     protected void connectionClosed(GBSocket socket){
