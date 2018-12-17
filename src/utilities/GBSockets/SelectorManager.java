@@ -82,7 +82,7 @@ public class SelectorManager implements AutoCloseable{
                                     }
                                 } catch (BadPacketException e) {
                                     if(socket.isServer()){
-                                        socket.stopServerConnection();
+                                        socket.stopServerSideConnection();
                                     } else {
                                         socket.stop();
                                     }

@@ -191,7 +191,7 @@ public class GBSocket implements AutoCloseable{
         stop();
     }
 
-    public void stopServerConnection(){
+    public void stopServerSideConnection(){
         if(server){
             parent.removeSelectorChannel(this);
             close();
@@ -359,6 +359,9 @@ public class GBSocket implements AutoCloseable{
     protected void receivePacket(Packet packet){
         if(packet.receivedFrom != address && socketIDServerSide == (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])){
             changeAddress(packet.receivedFrom);
+        }
+        if(server){
+            parent.ackSocket(this);
         }
         manager.receivePacket(packet);
     }

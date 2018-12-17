@@ -207,9 +207,11 @@ public class GBServerSocket implements AutoCloseable{
     }
 
     private SelectorTimeOutThread timeOutThread = new SelectorTimeOutThread();
-    private SelectionKey readerKey;
     private SelectorManager selector;
 
+    protected void ackSocket(GBSocket socket){
+        timeOutThread.ack(socket);
+    }
     // done
     protected boolean initSelector(){
         if(selector != null) {
@@ -258,7 +260,7 @@ public class GBServerSocket implements AutoCloseable{
         }
 
         protected GBSocket getSocket() {
-             return socket.activeConnectionsMap.get(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1]);
+            return socket.activeConnectionsMap.get(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1]);
         }
     }
 
@@ -302,31 +304,47 @@ public class GBServerSocket implements AutoCloseable{
         }
     }
 
-    // SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, GBServerSocket parent
+    // String connectionType, SelectorManager selector, ActionHandler handler
 
     private int port;
-    private int sendersPort;
     private int maxReceiveSize;
     private int maxConnections;
     private int potentialConnections;
     private int connectionCount;
     private boolean allowNoAck;
     private GBServerSocket current = this;
-    private GBSocket reader = new GBSocket(port, this, maxReceiveSize);
+    private GBSocket reader;
     protected HashMap<String, ActionHandler> connectionTypes = new HashMap<>();
     protected HashMap<Integer, GBSocket> activeConnectionsMap = new HashMap<>();
+    protected List<Packet> currentlyConnecting = new ArrayList<>();
     // safe
-    public GBServerSocket(){
-
+    public GBServerSocket(int port, Integer maxReceiveSize, Integer maxConnections, Boolean allowNoAck){
+        this.port = port;
+        this.maxReceiveSize = maxReceiveSize != null ? maxReceiveSize : GBUILibGlobals.getMaxReceivePacketSize();
+        this.maxConnections = maxConnections != null ? maxConnections : GBUILibGlobals.getMaxServerConnections();
+        this.allowNoAck = allowNoAck != null ? allowNoAck : false;
+        reader = new GBSocket(port, this, maxReceiveSize);
+        reader.setKey(this.selector.registerSocket(reader));
     }
 
-    protected void createNewConnection(Packet packet){
+    public void addConnectionType(String string, ActionHandler handler){
+        if(connectionTypes.putIfAbsent(string, handler) != null){
+            throw new IllegalArgumentException("The connection type " + string + " was already set on this server socket");
+        }
+    }
+
+    public boolean removeConnectionType(String string, ActionHandler handler){
+        return connectionTypes.remove(string, handler);
+    }
+
+    protected synchronized void createNewConnection(Packet packet){
         try {
-            if (potentialConnections != maxConnections && listenToConnections) {
+            if (potentialConnections != maxConnections && listenToConnections && !currentlyConnecting.contains(packet)) {
+                currentlyConnecting.add(packet);
                 potentialConnections++;
                 DatagramChannel channel = DatagramChannel.open();
                 channel.socket().setReuseAddress(true);
-                channel.bind(new InetSocketAddress(sendersPort));
+                channel.bind(new InetSocketAddress(port));
                 ByteBuffer buf = ByteBuffer.allocate(maxReceiveSize);
                 SocketAddress address = packet.receivedFrom;
                 channel.configureBlocking(false);
@@ -335,6 +353,7 @@ public class GBServerSocket implements AutoCloseable{
                 GBSocket socket = new GBSocket(address, null, false, selector, new ActionHandler(), config, current, allowNoAck);
                 socket.socket = channel;
                 socket.buffer = buf;
+                socket.socketIDServerSide = connectionCount++;
                 Thread fred = new Thread(() -> {
                     if(socket.socketConnect(packet)){
                         addSelectorChannel(socket);
@@ -343,14 +362,23 @@ public class GBServerSocket implements AutoCloseable{
                         socket.close();
                         potentialConnections--;
                     }
+                    currentlyConnecting.remove(packet);
                 });
                 fred.start();
             }
         } catch (IOException e){
-
+            System.err.println("A ServerSocket could not connect because it threw an IOException.");
+            e.printStackTrace();
         }
     }
 
     private boolean listenToConnections;
 
+    public boolean isListeningToConnections() {
+        return listenToConnections;
+    }
+
+    public void setListenToConnections(boolean listenToConnections) {
+        this.listenToConnections = listenToConnections;
+    }
 }
