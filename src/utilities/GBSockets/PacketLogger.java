@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.SocketAddress;
+import java.time.Instant;
 import java.util.HashMap;
 
 public class PacketLogger implements AutoCloseable{
@@ -110,7 +112,7 @@ public class PacketLogger implements AutoCloseable{
                     } else {
                         logFile.writeUTF("there was no response");
                     }
-                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent.");
+                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
                     logFile.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -175,11 +177,30 @@ public class PacketLogger implements AutoCloseable{
     protected PacketLogger(GBSocket socket) throws IOException {
         this.socket = socket;
         writeToLog = GBUILibGlobals.writePacketsToFile();
+        File file = new File(logsRepository.getAbsolutePath());
         if(writeToLog) {
-            File file = new File(logsRepository.getAbsolutePath() + File.separator + socket.socketIDServerSide + ".txt");
+            if(socket.isServer()){
+                file = new File(logsRepository.getAbsolutePath() + File.separator + socket.parent.name);
+                file.createNewFile();
+            }
+            file = socket.socketIDServerSide != -1 ? new File(file.getAbsoluteFile() + File.separator + socket.socketIDServerSide + ".txt") : file;
             file.createNewFile();
             logFile = new ObjectOutputStream(new FileOutputStream(file));
         }
+    }
+
+
+    protected static void suspiciousPacket(SocketAddress address, GBSocket socket) {
+        File file = new File(logsRepository.getAbsoluteFile() + File.separator + (socket.isServer() ? socket.parent.name + File.separator : "") + "SuspiciousPackets.txt");
+        try {
+            file.createNewFile();
+            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(file));
+            writer.writeUTF("A suspicious packet was received from the address: " + address + (socket.isServer() ? " by the sever socket " : " by the socket numbered: " + socket.programWideSocketID + " program-wide, and " + socket.socketIDServerSide + " by it's connected server ") + "at " + Instant.now());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     // done

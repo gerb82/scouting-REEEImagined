@@ -299,6 +299,10 @@ public class GBSocket implements AutoCloseable{
         this.key = key;
     }
 
+    protected SelectionKey getKey() {
+        return key;
+    }
+
     // unsafe, done
     public synchronized void sendPackets(byte[]... packets) throws IOException {
         if(isUnsafe){
@@ -372,21 +376,31 @@ public class GBSocket implements AutoCloseable{
     protected ByteBuffer buffer;
 
     protected synchronized Packet readPacket() throws BadPacketException {
-        try {
-            SocketAddress senderAddress = socket.receive(buffer);
-            buffer.flip();
-            output.write(buffer.array());
-            output.flush();
-            buffer.clear();
-            lastReceived = Instant.now();
-            Packet output = (Packet) objInput.readObject();
-            output.receivedFrom = senderAddress;
-            return output;
-        } catch (ClassCastException | ClassNotFoundException e) {
-            throw new BadPacketException("Received packet of an unexpected type. It is not of type GBPacket.");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        SocketAddress senderAddress = null;
+        while(true) {
+            try {
+                senderAddress = socket.receive(buffer);
+                buffer.flip();
+                output.write(buffer.array());
+                output.flush();
+                buffer.clear();
+                lastReceived = Instant.now();
+                Packet output;
+                try {
+                    output = (Packet) objInput.readObject();
+                } catch (ClassCastException | ClassNotFoundException e) {
+                    logger.suspiciousPacket(senderAddress, this);
+                    while(objInput.available() != 0) {
+                        objInput.read(new byte[objInput.available()]);
+                    }
+                    continue;
+                }
+                output.receivedFrom = senderAddress;
+                return output;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
         }
     }
 

@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectionKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -19,11 +18,12 @@ public class GBServerSocket implements AutoCloseable{
     @Override
     public void close() {
         listenToConnections = false;
+        reader.getKey().cancel();
         for(ProcessingThread fred : processingThreads){
             fred.interrupt();
         }
         for(int id : activeConnectionsMap.keySet()){
-            activeConnectionsMap.get(id).close();
+            activeConnectionsMap.get(id).stopServerSideConnection();
         }
         selector.close();
     }
@@ -316,15 +316,17 @@ public class GBServerSocket implements AutoCloseable{
     private GBSocket reader;
     protected HashMap<String, ActionHandler> connectionTypes = new HashMap<>();
     protected HashMap<Integer, GBSocket> activeConnectionsMap = new HashMap<>();
+    protected String name;
     protected List<Packet> currentlyConnecting = new ArrayList<>();
     // safe
-    public GBServerSocket(int port, Integer maxReceiveSize, Integer maxConnections, Boolean allowNoAck){
+    public GBServerSocket(int port, Integer maxReceiveSize, Integer maxConnections, Boolean allowNoAck, String name){
         this.port = port;
         this.maxReceiveSize = maxReceiveSize != null ? maxReceiveSize : GBUILibGlobals.getMaxReceivePacketSize();
         this.maxConnections = maxConnections != null ? maxConnections : GBUILibGlobals.getMaxServerConnections();
         this.allowNoAck = allowNoAck != null ? allowNoAck : false;
         reader = new GBSocket(port, this, maxReceiveSize);
         reader.setKey(this.selector.registerSocket(reader));
+        this.name = name;
     }
 
     public void addConnectionType(String string, ActionHandler handler){
