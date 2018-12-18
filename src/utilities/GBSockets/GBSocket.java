@@ -388,7 +388,7 @@ public class GBSocket implements AutoCloseable{
                 Packet output;
                 try {
                     output = (Packet) objInput.readObject();
-                } catch (ClassCastException | ClassNotFoundException e) {
+                } catch (Exception e) {
                     logger.suspiciousPacket(senderAddress, this);
                     while(objInput.available() != 0) {
                         objInput.read(new byte[objInput.available()]);
