@@ -17,19 +17,22 @@ public class PacketManager {
     protected PacketManager(HashSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
         this.logger = logger;
         // output
+        this.packetNumbers = new HashMap<>();
+        for(String string : sendTypes){
+            packetNumbers.put(string, 0);
+        }
         this.socket = socket;
         this.connectionID = connectionID;
         this.sendTypes = sendTypes;
         // input
         this.actionHandler = actionHandler;
-        this.timeToDiscard = GBUILibGlobals.getTimeToPacketTimeout();
         this.attemptsPerPacket = GBUILibGlobals.getPacketSendAttempts();
         this.timeToSendPacketOver = GBUILibGlobals.getTimeToSendPacket();
     }
 
     // outgoing packets
     private HashSet<String> sendTypes;
-    private Map<String, Integer> packetNumbers = new HashMap<>();
+    private Map<String, Integer> packetNumbers;
     private int packetTotal = 0;
     private final int connectionID;
     private GBSocket socket;
@@ -38,11 +41,13 @@ public class PacketManager {
         public void changed(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus oldValue, PacketLogger.PacketStatus newValue) {
             PacketLogger.LogLine logLine = ((PacketLogger.ObservablePacketStatus)observable).getParent();
             switch(newValue){
-                case TIMED_OUT:
                 case SEND_ERRORED:
                 case RECEIVED_ERRORED:
                 case ACKED:
                 case RECEIVED_DONE:
+                    logLine.getStatusProperty().removeListener(changeManager);
+                    logLine.discardToLog();
+                    break;
                 case WAITING:
                     logLine.setAttemptsLeftToSend(attemptsPerPacket);
                     scheduleDiscardCheckup(logLine, 0);
@@ -51,7 +56,6 @@ public class PacketManager {
         }
     };
 
-    private final int timeToDiscard;
     private final int attemptsPerPacket;
     private final int timeToSendPacketOver;
     private Timer discarder = new Timer();
@@ -69,7 +73,7 @@ public class PacketManager {
 
         @Override
         public void run() {
-            if(discardTimers.get(toCheck) == this){
+            if(discardTimers.get(toCheck).equals(this)){
                 if (toCheck.getAttemptsLeftToSend() == 0) {
                     toCheck.getStatusProperty().removeListener(changeManager);
                     if (toCheck.getStatus() == PacketLogger.PacketStatus.WAITING) {
@@ -186,6 +190,8 @@ public class PacketManager {
             return "number" + ids[0] + " (total), in connection number " + ids[1] + " server side, and " + globalSocketID + " client side";
         } else if (ids.length == 3 && packetType != null) {
             return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in connection number " + ids[2] + " server side, and " + globalSocketID + " client side";
+        } else if (ids[0] == -1) {
+            return "handshake packet ";
         } else {
             throw new IllegalArgumentException("The method formatPacketIDs has been passed an Illegal argument. Either the \"ids\" array didn't have exactly 2 or 3 cells, or the packet type was null when there are 3 ids in the \"ids\" array." + System.lineSeparator() + "the arguments ids: " + ids.toString() + " packetType: " + packetType);
         }

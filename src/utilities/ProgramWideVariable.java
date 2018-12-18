@@ -7,7 +7,7 @@ import java.util.Set;
 public class ProgramWideVariable {
 
     public interface InsertMethod{
-        void insert(String key, Object content, boolean finalVar);
+        Object insert(String key, Object content, boolean finalVar);
     }
 
     public interface GlobalVariablesPreset{
@@ -18,12 +18,12 @@ public class ProgramWideVariable {
     private static Map<String, Object> finalVariablesMap = new HashMap<>();
     private static Boolean initialized = false;
 
-    private static void insertIfAbsent(String key, Object content, boolean finalVar){
+    private static Object insertIfAbsent(String key, Object content, boolean finalVar){
         if(finalVar){
-            finalVariablesMap.putIfAbsent(key, content);
+            return finalVariablesMap.putIfAbsent(key, content);
         }
         else{
-            changingVariablesMap.putIfAbsent(key, content);
+            return changingVariablesMap.putIfAbsent(key, content);
         }
     }
 
@@ -47,10 +47,10 @@ public class ProgramWideVariable {
 
     public static void initializeDefaults(GlobalVariablesPreset... presets){
         if(!initialized) {
-            GBUILibGlobals.initialize(ProgramWideVariable::insertIfAbsent);
             for (GlobalVariablesPreset gvp : presets) {
                 gvp.initialize(ProgramWideVariable::insertIfAbsent);
             }
+            GBUILibGlobals.initialize(ProgramWideVariable::insertIfAbsent);
             initialized = true;
         }
         else{

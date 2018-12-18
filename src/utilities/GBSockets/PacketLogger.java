@@ -3,10 +3,7 @@ package utilities.GBSockets;
 import javafx.beans.property.SimpleObjectProperty;
 import utilities.GBUILibGlobals;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.SocketAddress;
 import java.time.Instant;
 import java.util.HashMap;
@@ -17,12 +14,12 @@ public class PacketLogger implements AutoCloseable{
 
     // done
     protected boolean isPacketFollowedOut(Packet packet){
-        return packets.getLine(true, packet.getIds()) == null;
+        return packets.getLine(true, packet.getIds()) != null;
     }
 
     // done
     protected boolean isPacketFollowedIn(Packet packet) {
-        return packets.getLine(false, packet.getIds()) == null;
+        return packets.getLine(false, packet.getIds()) != null;
     }
 
     // done
@@ -54,25 +51,36 @@ public class PacketLogger implements AutoCloseable{
     protected class PacketMap extends HashMap<String, LogLine>{
 
         protected LogLine getLine(boolean wasSent, int[] ids){
-            return get((wasSent ? "out" : "in") + ids.toString());
+            return get((wasSent ? "out" : "in") + arrayToString(ids));
         }
 
         private void putLine(boolean wasSent, int[] ids, LogLine line){
-            put((wasSent ? "out" : "in") + ids.toString(), line);
+            put((wasSent ? "out" : "in") + arrayToString(ids), line);
         }
 
     }
 
+    private static String arrayToString(int[] ids){
+        String output = Integer.toString(ids[0]);
+        for (int i = 1; i<ids.length; i++){
+            output += "," + Integer.toString(ids[i]);
+        }
+        return output;
+    }
+
     protected PacketMap packets = new PacketMap();
-    private ObjectOutputStream logFile;
+    private ObjectOutputStream logFileStream = null;
     protected static File logsRepository;
+    protected File logFile;
 
     @Override
     public void close() throws IOException {
         for (String key : packets.keySet()){
             packets.get(key).discardToLog();
         }
-        logFile.close();
+        if(logFileStream != null){
+            logFileStream.close();
+        }
     }
 
     public enum PacketStatus{
@@ -97,23 +105,25 @@ public class PacketLogger implements AutoCloseable{
 
         public void discardToLog() {
             packets.remove((wasSent ? "out" : "in") + packet.getIds());
-            if(writeToLog) {
+            if(writeToLog && logFileStream != null) {
                 try {
-                    logFile.writeUTF("The serialized packet was: ");
-                    logFile.writeObject(packet);
-                    logFile.writeUTF(", and ");
+                    logFileStream.writeUTF("The serialized packet was: ");
+                    logFileStream.writeObject(packet);
+                    logFileStream.writeUTF(", and ");
                     if(response != null) {
-                        if(response.getContent().getClass().isAssignableFrom(Packet.class)) {
-                            logFile.writeUTF("the response was the packet with the ids: " + response.getIds());
-                        } else {
-                            logFile.writeUTF("the response was the packet: ");
-                            logFile.writeObject(response);
+                        if(response.getContent() != null) {
+                            if (response.getContent().getClass().isAssignableFrom(Packet.class)) {
+                                logFileStream.writeUTF("the response was the packet with the ids: " + response.getIds());
+                            } else {
+                                logFileStream.writeUTF("the response was the packet: ");
+                                logFileStream.writeObject(response);
+                            }
                         }
                     } else {
-                        logFile.writeUTF("there was no response");
+                        logFileStream.writeUTF("there was no response");
                     }
-                    logFile.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
-                    logFile.flush();
+                    logFileStream.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
+                    logFileStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -173,22 +183,33 @@ public class PacketLogger implements AutoCloseable{
 
     }
 
+    public static void setDirectory(File file){
+        if(logsRepository == null) {
+            logsRepository = file == null ? GBUILibGlobals.getSocketLogsDirectory() : file;
+            logsRepository.mkdirs();
+            System.out.println(logsRepository);
+            return;
+        }
+        throw new IllegalStateException("The logs repository is already set!");
+    }
+
     boolean writeToLog;
     protected PacketLogger(GBSocket socket) throws IOException {
         this.socket = socket;
         writeToLog = GBUILibGlobals.writePacketsToFile();
-        File file = new File(logsRepository.getAbsolutePath());
         if(writeToLog) {
+            logFile = new File(logsRepository.getAbsolutePath());
             if(socket.isServer()){
-                file = new File(logsRepository.getAbsolutePath() + File.separator + socket.parent.name);
-                file.createNewFile();
+                logFile = new File(logsRepository.getAbsolutePath() + File.separator + socket.parent.name);
+                logFile.mkdirs();
             }
-            file = socket.socketIDServerSide != -1 ? new File(file.getAbsoluteFile() + File.separator + socket.socketIDServerSide + ".txt") : file;
-            file.createNewFile();
-            logFile = new ObjectOutputStream(new FileOutputStream(file));
         }
     }
 
+    protected void setSocketID(int socketID) throws IOException {
+        logFile = socket.socketIDServerSide != -1 ? new File(logFile.getPath() + File.separator + socketID + ".txt") : logFile;
+        logFile.createNewFile();logFileStream = new ObjectOutputStream(new FileOutputStream(logFile));
+    }
 
     protected static void suspiciousPacket(SocketAddress address, GBSocket socket) {
         File file = new File(logsRepository.getAbsoluteFile() + File.separator + (socket.isServer() ? socket.parent.name + File.separator : "") + "SuspiciousPackets.txt");

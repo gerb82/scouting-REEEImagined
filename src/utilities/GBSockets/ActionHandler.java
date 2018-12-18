@@ -20,7 +20,7 @@ public class ActionHandler {
 
         private PacketOut(Packet packet, GBSocket socket){
             super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
-            acked = packet.getResend();
+            acked = !packet.getResend() && !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
             this.socket = socket;
         }
 
@@ -77,11 +77,6 @@ public class ActionHandler {
                 acked = true;
             }
         }
-
-        // done
-        public void selfAcked(){
-            acked = true;
-        }
     }
 
     public interface PacketHandler{
@@ -111,7 +106,7 @@ public class ActionHandler {
             PacketHandler handler = handlers.get(packet.getPacketType());
             assert(handler != null);
             handler.handle(packetOut);
-            if(!packetOut.acked && socket.allowNoAck()){
+            if(!packetOut.acked && !socket.allowNoAck()){
                 throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
             }
         } catch (AssertionError e){
@@ -148,17 +143,17 @@ public class ActionHandler {
     }
 
     // done
-    protected ActionHandler(ActionHandlerRecipe... recipes){
+    public ActionHandler(ActionHandlerRecipe... recipes){
         handlers = new HashMap<>();
         for(ActionHandlerRecipe recipe : recipes){
             for(String key : recipe.getHandlers().keySet()){
                 setHandler(key, recipe.getHandlers().get(key));
             }
         }
-        handlers.putIfAbsent(DefaultPacketTypes.HeartBeat.toString(), this::heartBeat);
-        handlers.putIfAbsent(DefaultPacketTypes.Ack.toString(), this::ack);
-        handlers.putIfAbsent(DefaultPacketTypes.SmartAck.toString(), this::smartAck);
-        handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), this::error);
+        handlers.putIfAbsent(DefaultPacketTypes.HeartBeat.toString(), ActionHandler::heartBeat);
+        handlers.putIfAbsent(DefaultPacketTypes.Ack.toString(), ActionHandler::ack);
+        handlers.putIfAbsent(DefaultPacketTypes.SmartAck.toString(), ActionHandler::smartAck);
+        handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), ActionHandler::error);
     }
 
     protected HashSet<String> getHandledTypes(GBSocket socket){
@@ -170,11 +165,11 @@ public class ActionHandler {
         sockets.remove(socket);
     }
 
-    private void error(PacketOut packet){
+    private static void error(PacketOut packet){
 
     }
 
-    private void heartBeat(PacketOut packet) throws BadPacketException {
+    private static void heartBeat(PacketOut packet) throws BadPacketException {
         if(packet.socket.isServer()){
             packet.ack();
         }
@@ -183,14 +178,22 @@ public class ActionHandler {
         }
     }
 
-    private void ack(PacketOut packet){
+    private static void ack(PacketOut packet){
     }
 
-    private void smartAck(PacketOut packet) throws BadPacketException {
+    private static void smartAck(PacketOut packet) throws BadPacketException {
         try {
             packet.socket.receivePacket((Packet)packet.getContent());
         } catch (ClassCastException e){
             throw new BadPacketException("Could not cast packet contents of a smart Ack packet content into a CustomAck Object.", packet);
+        }
+    }
+
+    public static void takeNestedPacket(PacketOut packet){
+        try {
+            packet.socket.receivePacket((Packet) packet.getContent());
+        } catch (ClassCastException e){
+            throw new IllegalArgumentException("The PacketOut supplied to the function had content that is not of type Packet.");
         }
     }
 }

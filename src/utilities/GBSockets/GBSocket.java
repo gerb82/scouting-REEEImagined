@@ -81,6 +81,7 @@ public class GBSocket implements AutoCloseable{
     private boolean autoReconnect;
     private String connectionType;
     private Instant lastReceived;
+    private int port;
     protected SimpleIntegerProperty pingInMillis = new SimpleIntegerProperty(0);
     public ObservableValue<Integer> ping = pingInMillis.asObject();
 
@@ -97,29 +98,28 @@ public class GBSocket implements AutoCloseable{
         return server;
     }
 
-    protected synchronized boolean socketConnect(Packet packet) throws IllegalArgumentException{
-        if(connected.get()) {
+    protected boolean socketConnect(Packet packet) throws IllegalArgumentException{
+        if(!connected.get()) {
             try {
+                if (PacketLogger.logsRepository == null) {
+                    PacketLogger.logsRepository = GBUILibGlobals.getSocketLogsDirectory();
+                    PacketLogger.logsRepository.createNewFile();
+                }
                 logger = new PacketLogger(this);
                 if(!server) {
                     socket = DatagramChannel.open();
                     socket.configureBlocking(false);
                 }
                 if (connect(address)) {
-                    if (PacketLogger.logsRepository == null) {
-                        PacketLogger.logsRepository = GBUILibGlobals.getSocketLogsDirectory();
-                    }
-                    logger = new PacketLogger(this);
                     if(server ? !serverHandShake(packet) : !handShake()){
                         socketIDServerSide = -1;
-                        programWideSocketID = -1;
                         logger.close();
                         return false;
                     }
-                    programWideSocketID = GBUILibGlobals.newSocketFormed();
+                    logger.setSocketID(socketIDServerSide);
                     manager = new PacketManager(sendTypes, socketIDServerSide, this, handler, logger);
                     if(!server) {
-                        key = selector.registerSocket(this);
+                        selector.registerSocket(this);
                         heart = new Timer();
                         heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay, heartBeatDelay);
                     }
@@ -135,9 +135,11 @@ public class GBSocket implements AutoCloseable{
         throw new IllegalStateException("Cannot connect an already connected socket");
     }
 
-    private synchronized boolean connect(SocketAddress address){
+    private boolean connect(SocketAddress address){
         try {
-            socket.connect(address);
+            if(!server) {
+                socket.connect(address);
+            }
             return true;
         } catch (ClosedChannelException e) {
             new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.socketConnect()");
@@ -147,8 +149,8 @@ public class GBSocket implements AutoCloseable{
         return false;
     }
 
-    public void startConnection(){
-        socketConnect(null);
+    public boolean startConnection(){
+        return socketConnect(null);
     }
 
     // done
@@ -180,14 +182,6 @@ public class GBSocket implements AutoCloseable{
     @Override
     public void close(){
         autoReconnect = false;
-        try {
-            input.close();
-            output.close();
-            sendObjInput.close();
-            sendOut.close();
-        } catch (IOException e) {
-            new IOException("Failed to close the socket.", e).printStackTrace();
-        }
         stop();
     }
 
@@ -226,8 +220,9 @@ public class GBSocket implements AutoCloseable{
 
     // safe socket
 
-    public GBSocket(SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, boolean allowNoAck){
+    public GBSocket(int port, SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, boolean allowNoAck){
         this(address, connectionType, autoReconnectArg, selector, handler, config, null, allowNoAck);
+        this.port = port;
     }
 
     // actual socket constructor
@@ -247,27 +242,14 @@ public class GBSocket implements AutoCloseable{
             this.connectionTimeout = config.shouldConnectionTimeout();
             this.allowNoAck = allowNoAck;
             server = false;
-            buffer = ByteBuffer.allocate(maxReceiveSize);
         }
         this.connectionType = connectionType;
         this.selector = selector;
         this.address = address;
         this.handler = handler;
         isUnsafe = false;
+        programWideSocketID = GBUILibGlobals.newSocketFormed();
         maxReceiveSize = config.getMaxPacketReceiveSize();
-        try {
-            input = new PipedInputStream();
-            output = new PipedOutputStream();
-            objInput = new ObjectInputStream(input);
-            input.connect(output);
-
-            sendOut = new PipedInputStream();
-            sendInput = new PipedOutputStream();
-            sendObjInput = new ObjectOutputStream(sendInput);
-            sendOut.connect(sendInput);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     // serverSocket reader
@@ -279,17 +261,9 @@ public class GBSocket implements AutoCloseable{
         isUnsafe = false;
         this.maxReceiveSize = maxReceiveSize;
         try {
-            input = new PipedInputStream();
-            output = new PipedOutputStream();
-            objInput = new ObjectInputStream(input);
-            input.connect(output);
-
-            sendOut = new PipedInputStream();
-            sendInput = new PipedOutputStream();
-            sendObjInput = new ObjectOutputStream(sendInput);
-            sendOut.connect(sendInput);
             this.socket = DatagramChannel.open();
-            this.buffer = ByteBuffer.wrap(new byte[maxReceiveSize]);
+            this.socket.socket().setReuseAddress(true);
+            this.socket.bind(address);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -314,21 +288,24 @@ public class GBSocket implements AutoCloseable{
         }
     }
 
-    private PipedOutputStream sendInput;
-    private ObjectOutputStream sendObjInput;
-    private PipedInputStream sendOut;
-
     // done
     protected synchronized void sendPacket(PacketLogger.LogLine logLine) throws BadPacketException {
         boolean wasSent = logLine.getWasSent();
         try {
             Packet toSend = wasSent ? logLine.getPacket() : logLine.getResponse();
+            ByteArrayOutputStream sendInput = new ByteArrayOutputStream();
+            ObjectOutputStream sendObjInput = new ObjectOutputStream(sendInput);
             sendObjInput.writeObject(toSend);
             sendObjInput.flush();
-            byte[] bytes = new byte[sendOut.available()];
-            sendOut.read(bytes);
+            byte[] bytes = sendInput.toByteArray();
+            sendObjInput.close();
+            System.out.println(toSend.getPacketType() + " was sent by " + (server ? "server." : "client."));
             if(bytes.length < maxSendSize) {
-                socket.write(ByteBuffer.wrap(bytes));
+                if(server){
+                    socket.send(ByteBuffer.wrap(bytes), address);
+                } else {
+                    socket.write(ByteBuffer.wrap(bytes));
+                }
             } else{
                 logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
                 throw new BadPacketException("Packet is too big to be sent");
@@ -370,38 +347,31 @@ public class GBSocket implements AutoCloseable{
         manager.receivePacket(packet);
     }
 
-    private PipedInputStream input;
-    private PipedOutputStream output;
-    private ObjectInputStream objInput;
-    protected ByteBuffer buffer;
-
-    protected synchronized Packet readPacket() throws BadPacketException {
-        SocketAddress senderAddress = null;
+    protected synchronized Packet readPacket() {
+        SocketAddress senderAddress;
+        Packet output;
         while(true) {
             try {
+                ByteBuffer buffer = ByteBuffer.wrap(new byte[maxReceiveSize]);
                 senderAddress = socket.receive(buffer);
-                buffer.flip();
-                output.write(buffer.array());
-                output.flush();
-                buffer.clear();
+                int position = buffer.position();
+                buffer.rewind();
+                byte[] bytes = new byte[position];
+                buffer.get(bytes, 0, position);
                 lastReceived = Instant.now();
-                Packet output;
-                try {
-                    output = (Packet) objInput.readObject();
+                try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
+                    output = (Packet) input.readObject();
+                    output.receivedFrom = senderAddress;
+                    break;
                 } catch (Exception e) {
                     logger.suspiciousPacket(senderAddress, this);
-                    while(objInput.available() != 0) {
-                        objInput.read(new byte[objInput.available()]);
-                    }
-                    continue;
                 }
-                output.receivedFrom = senderAddress;
-                return output;
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
             }
         }
+        return output;
     }
 
     private void getAuthData(Stack<Object> stack){
@@ -412,14 +382,18 @@ public class GBSocket implements AutoCloseable{
         return handler.checkConnectionData(params, server);
     }
 
-    private synchronized boolean handShake(){
+    private boolean handShake(){
         try {
-            GBSocket thisSocket = this;
-            Packet packet = new Packet(new Stack<Object>(){{getAuthData(this); add(maxReceiveSize); add(handler.getHandledTypes(thisSocket).toArray());}}, new int[]{-1}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe);
+            Stack<Object> stack = new Stack<>();
+            getAuthData(stack);
+            stack.add(maxReceiveSize);
+            stack.add(handler.getHandledTypes(this));
+            Packet packet = new Packet(stack, new int[]{-1}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe);
             PacketLogger.LogLine toSend = logger.followPacket(packet, true);
             int attempts = GBUILibGlobals.getPacketSendAttempts();
             int intervals = (1000*GBUILibGlobals.getTimeToSendPacket()/attempts);
             Packet receivedShake = null;
+            maxSendSize = maxReceiveSize;
             for(int i = 0; i < attempts; i++) {
                 sendPacket(toSend);
                 Instant start = Instant.now();
@@ -429,7 +403,7 @@ public class GBSocket implements AutoCloseable{
                     } catch (InterruptedException e) {}
                 }
                 receivedShake = readPacket();
-                if(receivedShake != null && receivedShake.getPacketType() == ActionHandler.DefaultPacketTypes.HandShake.toString()){
+                if(receivedShake != null && receivedShake.getPacketType().equals(ActionHandler.DefaultPacketTypes.HandShake.toString())){
                     break;
                 }
                 if(i == attempts-1){
@@ -442,8 +416,8 @@ public class GBSocket implements AutoCloseable{
             SmartAssert.makeSure(receivedShake.isErrorChecked(), "A safe socket CANNOT handle a non-errorChecked packet. The safe sockets place equal trust on both sides for error-checking their sockets, and as such cannot work if the sending side didn't error check it's own packets.");
             SmartAssert.makeSure(connectionType == receivedShake.getContentType(), "Connection type must match between both sockets in order to avoid unexpected behaviour");
             Stack responseContent = (Stack) receivedShake.getContent();
-            maxSendSize = (int) responseContent.pop();
             sendTypes = (HashSet<String>)responseContent.pop();
+            maxSendSize = (Integer) responseContent.pop();
             socketIDServerSide = receivedShake.getIds()[1];
             SmartAssert.makeSure(validateAuthData(responseContent), "The authentication data sent from the server did not match the expected authentication data for this connection type");
             PacketLogger.LogLine response = logger.followPacket(receivedShake, false);
@@ -467,12 +441,15 @@ public class GBSocket implements AutoCloseable{
             connectionType = receivedShake.getContentType();
             handler = parent.connectionTypes.get(connectionType);
             Stack receivedShakeContent = (Stack) receivedShake.getContent();
-            maxSendSize = (int) receivedShakeContent.pop();
-            sendTypes = (HashSet<String>)receivedShakeContent.pop();
+            sendTypes = (HashSet<String>) receivedShakeContent.pop();
+            maxSendSize = (Integer) receivedShakeContent.pop();
             SmartAssert.makeSure(validateAuthData(receivedShakeContent), "The authentication data sent from the client did not match the expected authentication data for this connection type");
             PacketLogger.LogLine response = logger.followPacket(receivedShake, false);
-            GBSocket thisSocket = this;
-            response.setResponse(new Packet(new Stack<Object>(){{getAuthData(this); add(maxReceiveSize); add(handler.getHandledTypes(thisSocket).toArray());}}, new int[]{-1, socketIDServerSide}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe));
+            Stack<Object> stack = new Stack<>();
+            getAuthData(stack);
+            stack.add(maxReceiveSize);
+            stack.add(handler.getHandledTypes(this));
+            response.setResponse(new Packet(stack, new int[]{-1, socketIDServerSide}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe));
             PacketLogger.LogLine toSend = logger.followPacket(response.getResponse(), true);
             int attempts = GBUILibGlobals.getPacketSendAttempts();
             int intervals = (1000 * GBUILibGlobals.getTimeToSendPacket() / attempts);

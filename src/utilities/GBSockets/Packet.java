@@ -82,6 +82,10 @@ public class Packet implements Serializable{
         return isAck;
     }
 
+    protected void setIsAck(boolean isAck) {
+        this.isAck = isAck;
+    }
+
     // Unsafe
     public Packet(Object content, String contentType, String packetType){
         this(content, null, contentType, packetType, false);
