@@ -1,5 +1,11 @@
 package utilities;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Date;
+
 public class Utils {
 
 //    public static void warn(String string){
@@ -12,6 +18,11 @@ public class Utils {
 
     public enum SpecialChars{
         TAB, SPACE, NEW_LINE, TEXT, INVALID, BACK_SPACE, NULL, DELETE
+    }
+
+    public static String instantToTimestamp(Instant inst, boolean includeSecs){
+        LocalDateTime time = LocalDateTime.ofInstant(inst, ZoneId.systemDefault());
+        return String.format("%d of %s %d at %d-%d", time.getDayOfMonth(), time.getMonth() ,time.getYear(), time.getHour(), time.getMinute()) + (includeSecs ? "_" + time.getSecond() : "");
     }
 
     public static SpecialChars IdentifyChar(char c){

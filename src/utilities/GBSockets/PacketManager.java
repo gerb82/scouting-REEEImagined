@@ -72,14 +72,14 @@ public class PacketManager {
         @Override
         public void run() {
             if(discardTimers.get(toCheck).equals(this)){
-                if (toCheck.getAttemptsLeftToSend() == 0) {
+                if () { //shouldDiscard
                     toCheck.getStatusProperty().removeListener(changeManager);
                     if (toCheck.getStatus() == PacketLogger.PacketStatus.WAITING) {
                         toCheck.setStatus(PacketLogger.PacketStatus.TIMED_OUT);
                     }
                     toCheck.discardToLog();
                     return;
-                } else {
+                } else { //countdown
                     toCheck.lowerAttemptsLeftToSend(toCheck.getAttemptsLeftToSend());
                 }
                 scheduleDiscardCheckup(toCheck, 0);
@@ -91,7 +91,6 @@ public class PacketManager {
                     socket.sendPacket(toCheck);
                 } catch (BadPacketException e) {
                     toCheck.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
-                    toCheck.discardToLog();
                 }
             }
         }

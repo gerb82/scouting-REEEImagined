@@ -2,6 +2,7 @@ package utilities.GBSockets;
 
 import javafx.beans.property.SimpleObjectProperty;
 import utilities.GBUILibGlobals;
+import utilities.Utils;
 
 import java.io.*;
 import java.net.SocketAddress;
@@ -79,6 +80,7 @@ public class PacketLogger implements AutoCloseable{
             packets.get(key).discardToLog();
         }
         if(logFileStream != null){
+            logFileStream.writeUTF("Socket closed");
             logFileStream.close();
         }
     }
@@ -122,7 +124,7 @@ public class PacketLogger implements AutoCloseable{
                     } else {
                         logFileStream.writeUTF("there was no response");
                     }
-                    logFileStream.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + packet.getTimeStamp() + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
+                    logFileStream.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + Utils.instantToTimestamp(packet.getTimeStamp(), true) + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
                     logFileStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -185,11 +187,15 @@ public class PacketLogger implements AutoCloseable{
 
     }
 
+    public static void setDirectory(){
+        setDirectory(null);
+    }
+
     public static void setDirectory(File file){
         if(logsRepository == null) {
-            logsRepository = file == null ? GBUILibGlobals.getSocketLogsDirectory() : file;
+            logsRepository = file == null ? GBUILibGlobals.getLogsDirectory() : file;
+            logsRepository = new File(logsRepository.getPath() + File.separator + "socketLogs");
             logsRepository.mkdirs();
-            System.out.println(logsRepository);
             return;
         }
         throw new IllegalStateException("The logs repository is already set!");
@@ -200,24 +206,27 @@ public class PacketLogger implements AutoCloseable{
         this.socket = socket;
         writeToLog = GBUILibGlobals.writePacketsToFile();
         if(writeToLog) {
-            logFile = new File(logsRepository.getAbsolutePath());
+            logFile = logsRepository;
             if(socket.isServer()){
-                logFile = new File(logsRepository.getAbsolutePath() + File.separator + socket.parent.name);
+                logFile = new File(logsRepository, socket.parent.name);
                 logFile.mkdirs();
             }
         }
     }
 
     protected void setSocketID(int socketID) throws IOException {
-        logFile = socket.socketIDServerSide != -1 ? new File(logFile.getPath() + File.separator + socketID + ".txt") : logFile;
-        logFile.createNewFile();logFileStream = new ObjectOutputStream(new FileOutputStream(logFile));
+        if (socketID != -1){
+            logFile = new File(logFile, socketID + ".txt");
+            logFile.createNewFile();
+            logFileStream = new ObjectOutputStream(new FileOutputStream(logFile));
+        }
     }
 
     protected static void suspiciousPacket(SocketAddress address, GBSocket socket) {
-        File file = new File(logsRepository.getAbsoluteFile() + File.separator + (socket.isServer() ? socket.parent.name + File.separator : "") + "SuspiciousPackets.txt");
+        File file = new File(logsRepository + (socket.isServer() ? File.separator + socket.parent.name : ""),"SuspiciousPackets.txt");
         try {
             file.createNewFile();
-            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(file));
+            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(file, true));
             writer.writeUTF("A suspicious packet was received from the address: " + address + (socket.isServer() ? " by the sever socket " : " by the socket numbered: " + socket.programWideSocketID + " program-wide, and " + socket.socketIDServerSide + " by it's connected server ") + "at " + Instant.now());
             writer.close();
         } catch (IOException e) {

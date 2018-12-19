@@ -102,7 +102,7 @@ public class GBSocket implements AutoCloseable{
         if(!connected.get()) {
             try {
                 if (PacketLogger.logsRepository == null) {
-                    PacketLogger.logsRepository = GBUILibGlobals.getSocketLogsDirectory();
+                    PacketLogger.logsRepository = GBUILibGlobals.getLogsDirectory();
                     PacketLogger.logsRepository.createNewFile();
                 }
                 logger = new PacketLogger(this);
@@ -121,7 +121,7 @@ public class GBSocket implements AutoCloseable{
                     if(!server) {
                         selector.registerSocket(this);
                         heart = new Timer();
-                        heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay, heartBeatDelay);
+                        heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay*1000, heartBeatDelay*1000);
                         logger.packets.getLine(true, new int[]{-1}).discardToLog();
                         PacketLogger.LogLine line = logger.packets.getLine(false, new int[]{-1, socketIDServerSide});
                         line.getStatusProperty().addListener(manager.changeManager);
