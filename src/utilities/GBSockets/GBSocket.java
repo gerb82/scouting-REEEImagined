@@ -122,6 +122,15 @@ public class GBSocket implements AutoCloseable{
                         selector.registerSocket(this);
                         heart = new Timer();
                         heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay, heartBeatDelay);
+                        logger.packets.getLine(true, new int[]{-1}).discardToLog();
+                        PacketLogger.LogLine line = logger.packets.getLine(false, new int[]{-1, socketIDServerSide});
+                        line.getStatusProperty().addListener(manager.changeManager);
+                        line.setStatus(PacketLogger.PacketStatus.RECEIVED);
+                    } else {
+                        logger.packets.getLine(false, new int[]{-1}).discardToLog();
+                        PacketLogger.LogLine line = logger.packets.getLine(true, new int[]{-1, socketIDServerSide});
+                        line.setStatus(PacketLogger.PacketStatus.RECEIVED_DONE);
+                        line.discardToLog();
                     }
                     connected.set(true);
                     return true;

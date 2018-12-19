@@ -158,11 +158,13 @@ public class PacketLogger implements AutoCloseable{
             return attemptsLeftToSend;
         }
 
+        protected void lowerAttemptsLeftToSend(int i){
+            attemptsLeftToSend = --i;
+        }
+
         protected void setAttemptsLeftToSend(int i){
-            if(attemptsLeftToSend != i+1) {
-                initialAttemptsAmount = i;
-            }
             attemptsLeftToSend = i;
+            initialAttemptsAmount = i;
         }
 
         protected ObservablePacketStatus getStatusProperty(){

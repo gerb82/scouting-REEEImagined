@@ -2,7 +2,6 @@ package utilities.GBSockets;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableSet;
 import utilities.GBUILibGlobals;
 
 import java.io.Serializable;
@@ -36,7 +35,7 @@ public class PacketManager {
     private int packetTotal = 0;
     private final int connectionID;
     private GBSocket socket;
-    private ChangeListener<PacketLogger.PacketStatus> changeManager = new ChangeListener<PacketLogger.PacketStatus>() {
+    protected ChangeListener<PacketLogger.PacketStatus> changeManager = new ChangeListener<PacketLogger.PacketStatus>() {
         @Override
         public void changed(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus oldValue, PacketLogger.PacketStatus newValue) {
             PacketLogger.LogLine logLine = ((PacketLogger.ObservablePacketStatus)observable).getParent();
@@ -45,6 +44,8 @@ public class PacketManager {
                 case RECEIVED_ERRORED:
                 case ACKED:
                 case RECEIVED_DONE:
+                case RECEIVED:
+                case SENT:
                 case WAITING:
                     logLine.setAttemptsLeftToSend(attemptsPerPacket);
                     scheduleDiscardCheckup(logLine, 0);
@@ -79,17 +80,18 @@ public class PacketManager {
                     toCheck.discardToLog();
                     return;
                 } else {
-                    toCheck.setAttemptsLeftToSend(toCheck.getAttemptsLeftToSend() - 1);
+                    toCheck.lowerAttemptsLeftToSend(toCheck.getAttemptsLeftToSend());
                 }
                 scheduleDiscardCheckup(toCheck, 0);
             } else if(discardTimers.get(toCheck) != null){
                 scheduleDiscardCheckup(toCheck, (int)Instant.now().toEpochMilli() - (int)discardTimers.get(toCheck).scheduledAt.toEpochMilli());
             }
-            if(toCheck.getStatus() == PacketLogger.PacketStatus.WAITING){
+            if(toCheck.getStatus().equals(PacketLogger.PacketStatus.WAITING) && toCheck.getPacket().getResend()){
                 try {
                     socket.sendPacket(toCheck);
                 } catch (BadPacketException e) {
-                    e.printStackTrace();
+                    toCheck.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
+                    toCheck.discardToLog();
                 }
             }
         }
@@ -184,9 +186,9 @@ public class PacketManager {
     // done
     protected static String formatPacketIDs(int[] ids, String packetType, int globalSocketID) throws IllegalArgumentException {
         if (ids.length == 2) {
-            return "number" + ids[0] + " (total), in connection number " + ids[1] + " server side, and " + globalSocketID + " client side";
+            return "number" + ids[0] + " (total), in connection number " + Integer.toString(ids[1]) + " server side, and " + globalSocketID + " client side";
         } else if (ids.length == 3 && packetType != null) {
-            return "number" + ids[0] + " (total), " + ids[1] + " (of " + packetType + "), in connection number " + ids[2] + " server side, and " + globalSocketID + " client side";
+            return "number" + ids[0] + " (total), " + Integer.toString(ids[1]) + " (of " + packetType + "), in connection number " + Integer.toString(ids[2]) + " server side, and " + globalSocketID + " client side";
         } else if (ids[0] == -1) {
             return "handshake packet ";
         } else {
