@@ -45,9 +45,6 @@ public class PacketManager {
                 case RECEIVED_ERRORED:
                 case ACKED:
                 case RECEIVED_DONE:
-                    logLine.getStatusProperty().removeListener(changeManager);
-                    logLine.discardToLog();
-                    break;
                 case WAITING:
                     logLine.setAttemptsLeftToSend(attemptsPerPacket);
                     scheduleDiscardCheckup(logLine, 0);
