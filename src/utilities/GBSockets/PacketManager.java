@@ -1,11 +1,8 @@
 package utilities.GBSockets;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import utilities.GBUILibGlobals;
 
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.*;
 
 public class PacketManager {
@@ -13,20 +10,22 @@ public class PacketManager {
 
     PacketLogger logger;
 
-    protected PacketManager(HashSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger) {
+    protected PacketManager(HashSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger, Timer discarder) {
         this.logger = logger;
         // output
         this.packetNumbers = new HashMap<>();
         for(String string : sendTypes){
-            packetNumbers.put(string, 0);
+            packetNumbers.put(string, -1);
         }
         this.socket = socket;
         this.connectionID = connectionID;
         this.sendTypes = sendTypes;
         // input
         this.actionHandler = actionHandler;
-        this.attemptsPerPacket = GBUILibGlobals.getPacketSendAttempts();
+        this.attemptsPerPacket = GBUILibGlobals.getPacketSendAttempts() - 1;
         this.timeToSendPacketOver = GBUILibGlobals.getTimeToSendPacket();
+        this.timeToDiscardPacket = GBUILibGlobals.getPacketLingerTime();
+        this.discarder = discarder;
     }
 
     // outgoing packets
@@ -35,74 +34,31 @@ public class PacketManager {
     private int packetTotal = 0;
     private final int connectionID;
     private GBSocket socket;
-    protected ChangeListener<PacketLogger.PacketStatus> changeManager = new ChangeListener<PacketLogger.PacketStatus>() {
-        @Override
-        public void changed(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus oldValue, PacketLogger.PacketStatus newValue) {
-            PacketLogger.LogLine logLine = ((PacketLogger.ObservablePacketStatus)observable).getParent();
-            switch(newValue){
-                case SEND_ERRORED:
-                case RECEIVED_ERRORED:
-                case ACKED:
-                case RECEIVED_DONE:
-                case RECEIVED:
-                case SENT:
-                case WAITING:
-                    logLine.setAttemptsLeftToSend(attemptsPerPacket);
-                    scheduleDiscardCheckup(logLine, 0);
-                    break;
-            }
-        }
-    };
 
     private final int attemptsPerPacket;
     private final int timeToSendPacketOver;
-    private Timer discarder = new Timer();
-    private HashMap<PacketLogger.LogLine, DiscardCheckup> discardTimers = new HashMap<>();
+    private final int timeToDiscardPacket;
+    private Timer discarder;
 
-    private class DiscardCheckup extends TimerTask{
+    private class DiscarderTask extends TimerTask{
 
-        private PacketLogger.LogLine toCheck;
-        private Instant scheduledAt;
+        private PacketLogger.LogLine line;
 
-        private DiscardCheckup(PacketLogger.LogLine toCheck, Instant scheduledAt){
-            this.toCheck = toCheck;
-            this.scheduledAt = scheduledAt;
+        protected DiscarderTask(PacketLogger.LogLine line){
+            this.line = line;
         }
 
         @Override
         public void run() {
-            if(discardTimers.get(toCheck).equals(this)){
-                if () { //shouldDiscard
-                    toCheck.getStatusProperty().removeListener(changeManager);
-                    if (toCheck.getStatus() == PacketLogger.PacketStatus.WAITING) {
-                        toCheck.setStatus(PacketLogger.PacketStatus.TIMED_OUT);
-                    }
-                    toCheck.discardToLog();
-                    return;
-                } else { //countdown
-                    toCheck.lowerAttemptsLeftToSend(toCheck.getAttemptsLeftToSend());
+            try {
+                int nextTask = line.discarderTick(timeToDiscardPacket, timeToSendPacketOver / attemptsPerPacket, socket::sendPacket);
+                if(nextTask != -1){
+                    discarder.schedule(new DiscarderTask(line), nextTask);
                 }
-                scheduleDiscardCheckup(toCheck, 0);
-            } else if(discardTimers.get(toCheck) != null){
-                scheduleDiscardCheckup(toCheck, (int)Instant.now().toEpochMilli() - (int)discardTimers.get(toCheck).scheduledAt.toEpochMilli());
-            }
-            if(toCheck.getStatus().equals(PacketLogger.PacketStatus.WAITING) && toCheck.getPacket().getResend()){
-                try {
-                    socket.sendPacket(toCheck);
-                } catch (BadPacketException e) {
-                    toCheck.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
-                }
+            } catch (BadPacketException e){
+                throw new Error("Somehow the packet could be sent on the first time but not be resent again. It appears something has accessed the packet from outside the GBSocket library.", e);
             }
         }
-
-    }
-
-    private void scheduleDiscardCheckup(PacketLogger.LogLine line, int time){
-        if(discardTimers.containsKey(line)){
-            discardTimers.remove(line).cancel();
-        }
-        discardTimers.put(line, new DiscardCheckup(line, Instant.now()));
-        discarder.schedule(discardTimers.get(line), ((1000*timeToSendPacketOver)/attemptsPerPacket)-time);
     }
 
     // done
@@ -141,8 +97,9 @@ public class PacketManager {
     protected void sendAsPacket(Object content, String contentType, String packetType, boolean important) throws BadPacketException {
         Packet packet = new Packet(content, contentType, packetType, this, important);
         PacketLogger.LogLine line = logger.followPacket(packet, true);
-        line.getStatusProperty().addListener(changeManager);
         socket.sendPacket(line);
+        line.initDiscardFollow(attemptsPerPacket);
+        discarder.schedule(new DiscarderTask(line), 0);
     }
 
     // done
@@ -156,7 +113,7 @@ public class PacketManager {
         int[] output;
         if (packetType != null) {
             output = new int[]{packetTotal, packetNumbers.get(packetType), connectionID};
-            packetNumbers.put(packetType, output[1]++);
+            packetNumbers.put(packetType, ++output[1]);
         } else {
             output = new int[]{packetTotal, connectionID};
         }
@@ -185,9 +142,9 @@ public class PacketManager {
     // done
     protected static String formatPacketIDs(int[] ids, String packetType, int globalSocketID) throws IllegalArgumentException {
         if (ids.length == 2) {
-            return "number" + ids[0] + " (total), in connection number " + Integer.toString(ids[1]) + " server side, and " + globalSocketID + " client side";
+            return "number " + ids[0] + " (total), in connection number " + Integer.toString(ids[1]) + " server side, and " + globalSocketID + " client side";
         } else if (ids.length == 3 && packetType != null) {
-            return "number" + ids[0] + " (total), " + Integer.toString(ids[1]) + " (of " + packetType + "), in connection number " + Integer.toString(ids[2]) + " server side, and " + globalSocketID + " client side";
+            return "number " + ids[0] + " (total), " + Integer.toString(ids[1]) + " (of " + packetType + "), in connection number " + Integer.toString(ids[2]) + " server side, and " + globalSocketID + " client side";
         } else if (ids[0] == -1) {
             return "handshake packet ";
         } else {
@@ -213,10 +170,12 @@ public class PacketManager {
                 }
                 return;
             }
-            logger.followPacket(packet, false);
+            PacketLogger.LogLine line = logger.followPacket(packet, false);
+            line.initDiscardFollow(0);
+            discarder.schedule(new DiscarderTask(line), 0);
             actionHandler.handlePacket(packet, socket);
         } catch (BadPacketException e) {
-            if(packet.getIsAck()){
+            if(!packet.getIsAck()){
                 try {
                     error(e.getMessage(), packet.getIds(), packet.getPacketType());
                 } catch (BadPacketException e1) {

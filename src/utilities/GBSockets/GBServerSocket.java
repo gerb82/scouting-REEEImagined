@@ -2,17 +2,17 @@ package utilities.GBSockets;
 
 import utilities.GBUILibGlobals;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class GBServerSocket implements AutoCloseable{
+public class GBServerSocket implements Closeable {
 
     // done
     @Override
@@ -24,6 +24,9 @@ public class GBServerSocket implements AutoCloseable{
         }
         for(int id : activeConnectionsMap.keySet()){
             activeConnectionsMap.get(id).stopServerSideConnection();
+        }
+        for(Timer timer : discarders.keySet()){
+            timer.cancel();
         }
         selector.close();
     }
@@ -337,6 +340,8 @@ public class GBServerSocket implements AutoCloseable{
     protected HashMap<Integer, GBSocket> activeConnectionsMap = new HashMap<>();
     protected String name;
     protected List<Packet> currentlyConnecting = new ArrayList<>();
+    private HashMap<Timer, Integer> discarders = new HashMap<>();
+
     // safe
     public GBServerSocket(int port, Integer maxReceiveSize, Integer maxConnections, Boolean allowNoAck, String name){
         this.port = port;
@@ -345,6 +350,9 @@ public class GBServerSocket implements AutoCloseable{
         this.allowNoAck = allowNoAck != null ? allowNoAck : false;
         reader = new GBSocket(port, this, this.maxReceiveSize);
         this.name = name;
+        for(int i = 0; i < GBUILibGlobals.getDiscarderCount(); i++){
+            discarders.put(new Timer(), 0);
+        }
     }
 
     public void addConnectionType(String string, ActionHandler handler){
@@ -403,5 +411,14 @@ public class GBServerSocket implements AutoCloseable{
 
     public void setListenToConnections(boolean listenToConnections) {
         this.listenToConnections = listenToConnections;
+    }
+
+    protected Timer askForDiscarder(){
+        List<Map.Entry<Timer, Integer>> list = new ArrayList<>(discarders.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+        Timer timer = list.get(0).getKey();
+        int counter = discarders.remove(timer);
+        discarders.put(timer, ++counter);
+        return timer;
     }
 }

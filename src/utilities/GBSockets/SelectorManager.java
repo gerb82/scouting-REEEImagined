@@ -1,5 +1,6 @@
 package utilities.GBSockets;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -7,7 +8,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class SelectorManager implements AutoCloseable{
+public class SelectorManager implements Closeable {
 
     private Selector selector;
     private boolean alive;

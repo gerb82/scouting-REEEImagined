@@ -20,7 +20,7 @@ import java.util.Stack;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class GBSocket implements AutoCloseable{
+public class GBSocket implements Closeable{
 
     // done
     public static class SocketConfig{
@@ -84,6 +84,7 @@ public class GBSocket implements AutoCloseable{
     private int port;
     protected SimpleIntegerProperty pingInMillis = new SimpleIntegerProperty(0);
     public ObservableValue<Integer> ping = pingInMillis.asObject();
+    private Timer timer;
 
     protected DatagramChannel getChannel(){
         return socket;
@@ -117,16 +118,18 @@ public class GBSocket implements AutoCloseable{
                         return false;
                     }
                     logger.setSocketID(socketIDServerSide);
-                    manager = new PacketManager(sendTypes, socketIDServerSide, this, handler, logger);
                     if(!server) {
+                        timer = new Timer();
+                        manager = new PacketManager(sendTypes, socketIDServerSide, this, handler, logger, timer);
                         selector.registerSocket(this);
                         heart = new Timer();
                         heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay*1000, heartBeatDelay*1000);
                         logger.packets.getLine(true, new int[]{-1}).discardToLog();
                         PacketLogger.LogLine line = logger.packets.getLine(false, new int[]{-1, socketIDServerSide});
-                        line.getStatusProperty().addListener(manager.changeManager);
                         line.setStatus(PacketLogger.PacketStatus.RECEIVED);
                     } else {
+                        timer = parent.askForDiscarder();
+                        manager = new PacketManager(sendTypes, socketIDServerSide, this, handler, logger, timer);
                         logger.packets.getLine(false, new int[]{-1}).discardToLog();
                         PacketLogger.LogLine line = logger.packets.getLine(true, new int[]{-1, socketIDServerSide});
                         line.setStatus(PacketLogger.PacketStatus.RECEIVED_DONE);
@@ -178,6 +181,7 @@ public class GBSocket implements AutoCloseable{
             if(!server) {
                 key.cancel();
                 heart.cancel();
+                timer.cancel();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -308,7 +312,6 @@ public class GBSocket implements AutoCloseable{
             sendObjInput.flush();
             byte[] bytes = sendInput.toByteArray();
             sendObjInput.close();
-            System.out.println(toSend.getPacketType() + " was sent by " + (server ? "server." : "client."));
             if(bytes.length < maxSendSize) {
                 if(server){
                     socket.send(ByteBuffer.wrap(bytes), address);
@@ -400,7 +403,7 @@ public class GBSocket implements AutoCloseable{
             Packet packet = new Packet(stack, new int[]{-1}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe);
             PacketLogger.LogLine toSend = logger.followPacket(packet, true);
             int attempts = GBUILibGlobals.getPacketSendAttempts();
-            int intervals = (1000*GBUILibGlobals.getTimeToSendPacket()/attempts);
+            int intervals = (GBUILibGlobals.getTimeToSendPacket()/attempts);
             Packet receivedShake = null;
             maxSendSize = maxReceiveSize;
             for(int i = 0; i < attempts; i++) {
@@ -461,7 +464,7 @@ public class GBSocket implements AutoCloseable{
             response.setResponse(new Packet(stack, new int[]{-1, socketIDServerSide}, connectionType, ActionHandler.DefaultPacketTypes.HandShake.toString(), !isUnsafe));
             PacketLogger.LogLine toSend = logger.followPacket(response.getResponse(), true);
             int attempts = GBUILibGlobals.getPacketSendAttempts();
-            int intervals = (1000 * GBUILibGlobals.getTimeToSendPacket() / attempts);
+            int intervals = (GBUILibGlobals.getTimeToSendPacket() / attempts);
             for (int i = 0; i < attempts; i++) {
                 sendPacket(toSend);
                 Instant start = Instant.now();

@@ -9,7 +9,7 @@ import java.net.SocketAddress;
 import java.time.Instant;
 import java.util.HashMap;
 
-public class PacketLogger implements AutoCloseable{
+public class PacketLogger implements Closeable{
 
     private final GBSocket socket;
 
@@ -26,19 +26,21 @@ public class PacketLogger implements AutoCloseable{
     // done
     protected LogLine packetAlreadyReceived(Packet packet){
         LogLine origin = packets.getLine(false, packet.getIds());
-        origin.setStatus(origin.getStatus());
+        origin.mention();
         return origin.getResponse() != null ? origin : null;
     }
 
     // done
     protected LogLine setResponse(int[] ids, Packet packet){
-        packets.getLine(false, ids).setResponse(packet);
-        return packets.getLine(false, ids);
+        LogLine line = packets.getLine(false, ids);
+        line.setResponse(packet);
+        line.mention();
+        return line;
     }
 
     // done
     protected LogLine beat(Packet packet){
-        LogLine line = new LogLine(packet, true);
+        LogLine line = followPacket(packet, true);
         line.setStatus(PacketStatus.SEND_READY);
         return line;
     }
@@ -46,22 +48,27 @@ public class PacketLogger implements AutoCloseable{
     protected void packetReturned(Packet packet){
         LogLine origin = packets.getLine(true, packet.getIds());
         origin.setResponse(packet);
-        origin.setStatus(PacketStatus.valueOf(packet.getPacketType()));
+        origin.mention();
+        if(packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.Error)){
+            origin.setStatus(PacketStatus.SEND_ERRORED);
+        } else {
+            origin.setStatus(PacketStatus.ACKED);
+        }
     }
 
     protected class PacketMap extends HashMap<String, LogLine>{
 
         protected LogLine getLine(boolean wasSent, int[] ids){
-            return get((wasSent ? "out" : "in") + arrayToString(ids));
+            return get((wasSent ? "out" : "in") + intArrayToString(ids));
         }
 
         private void putLine(boolean wasSent, int[] ids, LogLine line){
-            put((wasSent ? "out" : "in") + arrayToString(ids), line);
+            put((wasSent ? "out" : "in") + intArrayToString(ids), line);
         }
 
     }
 
-    private static String arrayToString(int[] ids){
+    private static String intArrayToString(int[] ids){
         String output = Integer.toString(ids[0]);
         for (int i = 1; i<ids.length; i++){
             output += "," + Integer.toString(ids[i]);
@@ -85,19 +92,25 @@ public class PacketLogger implements AutoCloseable{
         }
     }
 
+    protected interface LogLineMethod {
+        void handle(LogLine line) throws BadPacketException;
+    }
+
     public enum PacketStatus{
         SEND_READY, ACKED, SEND_ERRORED, WAITING, TIMED_OUT, SENT,
-        RECEIVED, RECEIVED_ERRORED, RECEIVED_DONE
+        RECEIVED, RECEIVED_ERRORED, RECEIVED_DONE, DISCARDED
     }
 
     protected class LogLine{
 
-        private ObservablePacketStatus status;
+        private transient ObservablePacketStatus status;
         private Packet packet;
         private Packet response;
         private boolean wasSent;
         private int attemptsLeftToSend;
         private int initialAttemptsAmount;
+        private transient Instant lastMentioned;
+        private transient Instant lastSent;
 
         private LogLine(Packet packet, boolean wasSent){
             this.packet = packet;
@@ -105,26 +118,34 @@ public class PacketLogger implements AutoCloseable{
             this.status = new ObservablePacketStatus(this);
         }
 
-        public void discardToLog() {
+        protected void discardToLog() {
             packets.remove((wasSent ? "out" : "in") + packet.getIds());
-            if(writeToLog && logFileStream != null) {
+            PacketStatus tempStatus = status.get();
+            if(tempStatus.equals(PacketStatus.WAITING)){
+                tempStatus = PacketStatus.TIMED_OUT;
+            }
+            status.set(PacketStatus.DISCARDED);
+            if(writeToLog && logFileStream != null && !packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.HeartBeat) && !packet.getIsAck()) {
                 try {
-                    logFileStream.writeUTF("The serialized packet was: ");
-                    logFileStream.writeObject(packet);
-                    logFileStream.writeUTF(", and ");
-                    if(response != null) {
-                        if(response.getContent() != null) {
-                            if (response.getContent().getClass().isAssignableFrom(Packet.class)) {
+                    if(!GBUILibGlobals.writePacketsSerialized()) {
+                        logFileStream.writeUTF("The serialized packet was: ");
+                        logFileStream.writeObject(packet);
+                        logFileStream.writeUTF(", and ");
+                        if (response != null) {
+                            if (response.getContent() != null && response.getContent().getClass().isAssignableFrom(Packet.class)) {
                                 logFileStream.writeUTF("the response was the packet with the ids: " + response.getIds());
                             } else {
                                 logFileStream.writeUTF("the response was the packet: ");
                                 logFileStream.writeObject(response);
                             }
+                        } else {
+                            logFileStream.writeUTF("there was no response");
                         }
+                        logFileStream.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + Utils.instantToTimestamp(packet.getTimeStamp(), true) + ". The final packet status was: " + tempStatus + "." + (wasSent ? " The packet was sent " + (initialAttemptsAmount - attemptsLeftToSend + 1) + " times out of the " + (initialAttemptsAmount+1) + " maximum amount of attempts it had to be sent." : "") + System.lineSeparator());
                     } else {
-                        logFileStream.writeUTF("there was no response");
+                        logFileStream.writeObject(this);
+                        logFileStream.writeUTF(tempStatus.toString());
                     }
-                    logFileStream.writeUTF(". The packet " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + ", was " + (wasSent ? "sent" : "received") + ", on " + Utils.instantToTimestamp(packet.getTimeStamp(), true) + ". The final packet status was: " + status + ". The packet was sent " + (initialAttemptsAmount-attemptsLeftToSend) + " times out of the " + initialAttemptsAmount + " maximum amount of attempts it had to be sent." + System.lineSeparator());
                     logFileStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -132,45 +153,63 @@ public class PacketLogger implements AutoCloseable{
             }
         }
 
-        public PacketStatus getStatus(){
-            return status.getValue();
-        }
-
         protected Packet getPacket(){
+            mention();
             return packet;
         }
 
         protected void setStatus(PacketStatus status){
+            mention();
             this.status.set(status);
         }
 
         protected void setResponse(Packet packet){
+            mention();
             this.response = packet;
         }
 
         protected Packet getResponse(){
+            mention();
             return response;
         }
 
         protected boolean getWasSent(){
+            mention();
             return wasSent;
         }
 
-        protected int getAttemptsLeftToSend(){
-            return attemptsLeftToSend;
+        protected void mention(){
+            this.lastMentioned = Instant.now();
         }
 
-        protected void lowerAttemptsLeftToSend(int i){
-            attemptsLeftToSend = --i;
+        protected int discarderTick(int discardTimer, int sendIntervals, LogLineMethod sender) throws BadPacketException {
+            long now = Instant.now().toEpochMilli();
+            int nextCheck;
+            if(attemptsLeftToSend != 0 && status.get().equals(PacketStatus.WAITING)) {
+                if (now - lastSent.toEpochMilli() < sendIntervals) {
+                    nextCheck = sendIntervals - (int) (now - lastSent.toEpochMilli());
+                } else {
+                    sender.handle(this);
+                    lastSent = Instant.ofEpochMilli(now);
+                    attemptsLeftToSend--;
+                    nextCheck = attemptsLeftToSend != 0 ? sendIntervals : discardTimer;
+                }
+            } else {
+                nextCheck = discardTimer - (int) (now - lastMentioned.toEpochMilli());
+                if(nextCheck < 1){
+                    discardToLog();
+                    return -1;
+                }
+            }
+            mention();
+            return nextCheck;
         }
 
-        protected void setAttemptsLeftToSend(int i){
+        protected void initDiscardFollow(int i){
+            mention();
+            lastSent = Instant.now();
             attemptsLeftToSend = i;
             initialAttemptsAmount = i;
-        }
-
-        protected ObservablePacketStatus getStatusProperty(){
-            return status;
         }
     }
 
@@ -223,16 +262,17 @@ public class PacketLogger implements AutoCloseable{
     }
 
     protected static void suspiciousPacket(SocketAddress address, GBSocket socket) {
-        File file = new File(logsRepository + (socket.isServer() ? File.separator + socket.parent.name : ""),"SuspiciousPackets.txt");
-        try {
-            file.createNewFile();
-            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(file, true));
-            writer.writeUTF("A suspicious packet was received from the address: " + address + (socket.isServer() ? " by the sever socket " : " by the socket numbered: " + socket.programWideSocketID + " program-wide, and " + socket.socketIDServerSide + " by it's connected server ") + "at " + Instant.now());
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(GBUILibGlobals.writePacketsToFile()) {
+            File file = new File(logsRepository + (socket.isServer() ? File.separator + socket.parent.name : ""), "SuspiciousPackets.txt");
+            try {
+                file.createNewFile();
+                ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(file, true));
+                writer.writeUTF("A suspicious packet was received from the address: " + address + (socket.isServer() ? " by the sever socket " : " by the socket numbered: " + socket.programWideSocketID + " program-wide, and " + socket.socketIDServerSide + " by it's connected server ") + "at " + Instant.now() + System.lineSeparator());
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
     }
 
     // done
