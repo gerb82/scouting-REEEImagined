@@ -9,6 +9,7 @@ import utilities.SmartAssert;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -81,7 +82,6 @@ public class GBSocket implements Closeable{
     private boolean autoReconnect;
     private String connectionType;
     private Instant lastReceived;
-    private int port;
     protected SimpleIntegerProperty pingInMillis = new SimpleIntegerProperty(0);
     public ObservableValue<Integer> ping = pingInMillis.asObject();
     private Timer timer;
@@ -112,7 +112,13 @@ public class GBSocket implements Closeable{
                     socket.configureBlocking(false);
                 }
                 if (connect(address)) {
-                    if(server ? !serverHandShake(packet) : !handShake()){
+                    try {
+                        if (server ? !serverHandShake(packet) : !handShake()) {
+                            socketIDServerSide = -1;
+                            logger.close();
+                            return false;
+                        }
+                    } catch (RuntimePortUnreachable e){
                         socketIDServerSide = -1;
                         logger.close();
                         return false;
@@ -123,7 +129,7 @@ public class GBSocket implements Closeable{
                         manager = new PacketManager(sendTypes, socketIDServerSide, this, handler, logger, timer);
                         selector.registerSocket(this);
                         heart = new Timer();
-                        heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay*1000, heartBeatDelay*1000);
+                        heart.scheduleAtFixedRate(new HeartBeatTask(), heartBeatDelay, heartBeatDelay);
                         logger.packets.getLine(true, new int[]{-1}).discardToLog();
                         PacketLogger.LogLine line = logger.packets.getLine(false, new int[]{-1, socketIDServerSide});
                         line.setStatus(PacketLogger.PacketStatus.RECEIVED);
@@ -224,7 +230,7 @@ public class GBSocket implements Closeable{
     }
 
     public void setAddress(SocketAddress address) throws IllegalAccessException {
-        if(connected.get()){
+        if(!connected.get()){
             this.address = address;
             return;
         }
@@ -233,9 +239,8 @@ public class GBSocket implements Closeable{
 
     // safe socket
 
-    public GBSocket(int port, SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, boolean allowNoAck){
+    public GBSocket(SocketAddress address, String connectionType, boolean autoReconnectArg, SelectorManager selector, ActionHandler handler, SocketConfig config, boolean allowNoAck){
         this(address, connectionType, autoReconnectArg, selector, handler, config, null, allowNoAck);
-        this.port = port;
     }
 
     // actual socket constructor
@@ -246,6 +251,9 @@ public class GBSocket implements Closeable{
             heartBeatDelay = -1;
         } else {
             this.heartBeatDelay = config.getHeartBeatDelay();
+            if(this.heartBeatDelay < 0){
+                throw new IllegalArgumentException("Heartbeat delay cannot be negavite");
+            }
             this.autoReconnect = autoReconnectArg;
             this.connected.addListener((observable, oldValue, newValue) -> {
                 if(!newValue && autoReconnect){
@@ -378,6 +386,8 @@ public class GBSocket implements Closeable{
                 } catch (Exception e) {
                     logger.suspiciousPacket(senderAddress, this);
                 }
+            } catch (PortUnreachableException e){
+                throw new RuntimePortUnreachable(e);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;

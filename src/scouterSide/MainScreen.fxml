@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.media.MediaView?>
+<SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="768.0" prefWidth="1024.0" xmlns="http://javafx.com/javafx/9.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="scouterSide.ScouterUI">
+    <items>
+        <SplitPane dividerPositions="0.5" prefHeight="200.0" prefWidth="200.0">
+            <items>
+                <MediaView fx:id="mediaView" fitHeight="540.0" fitWidth="750.0" SplitPane.resizableWithParent="false" />
+                <SplitPane dividerPositions="0.3685185185185185" orientation="VERTICAL" prefHeight="200.0" prefWidth="200.0">
+                    <items>
+                        <Pane fx:id="controlsPanel" prefHeight="200.0" prefWidth="200.0" SplitPane.resizableWithParent="false">
+                            <children>
+                                <MenuButton fx:id="gameSelect" layoutX="9.0" layoutY="8.0" mnemonicParsing="false" text="Game Number">
+                                    <items>
+                                    </items>
+                                </MenuButton>
+                                <MenuButton fx:id="teamSelect" layoutX="143.0" layoutY="8.0" mnemonicParsing="false" text="Team Number">
+                                    <items>
+                                    </items>
+                                </MenuButton>
+                                <Slider fx:id="volumeSlider" layoutX="16.0" layoutY="41.0" orientation="VERTICAL" prefHeight="140.0" prefWidth="0.0" />
+                                <HBox alignment="CENTER" layoutX="33.0" layoutY="93.0" nodeOrientation="LEFT_TO_RIGHT" prefHeight="40.0" prefWidth="200.0" spacing="10.0">
+                                    <Button mnemonicParsing="false" prefWidth="40.0" text="&lt;&lt;" onAction="#back10" />
+                                    <Button mnemonicParsing="false" prefWidth="35.0" text="&lt;" onAction="#back5" >
+                                        <HBox.margin>
+                                            <Insets right="4.0" />
+                                        </HBox.margin></Button>
+                                    <Button mnemonicParsing="false" prefWidth="35.0" text="&gt;" onAction="#forward5" />
+                                    <Button mnemonicParsing="false" prefWidth="40.0" text="&gt;&gt;" onAction="#forward10" />
+                                </HBox>
+                                <Button layoutX="95.0" layoutY="52.0" mnemonicParsing="false" text="Load Game" onAction="#loadGame" />
+                                <Button layoutX="197.0" layoutY="158.0" mnemonicParsing="false" text="Reload" onAction="#reload" />
+                            </children>
+                        </Pane>
+                        <ScrollPane hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" vbarPolicy="ALWAYS">
+                            <content>
+                                <VBox fx:id="eventsLog" />
+                            </content>
+                        </ScrollPane>
+                    </items>
+                </SplitPane>
+            </items>
+        </SplitPane>
+        <FlowPane fx:id="events" columnHalignment="CENTER" prefHeight="200.0" prefWidth="200.0" rowValignment="TOP" SplitPane.resizableWithParent="false" />
+    </items>
+</SplitPane>

@@ -10,7 +10,7 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_ALLOWUNSAFE.toString(), false, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_TIMEOUTTIMER.toString(), 30, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXSERVERHOSTCONNECTIONS.toString(), -1, true);
-        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), 5, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_HEARTBEATRATE.toString(), 5000, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_INCOMINGPACKETMANAGEMENTTHREADCOUNT.toString(), 5, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_MAXRECEIVEPACKETSIZE.toString(), 65507, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETATTEMPTSTOSEND.toString(), 8, true);
