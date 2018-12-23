@@ -4,7 +4,7 @@ package serverSide.code;
 import connectionIndependent.ConnectWindow;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import utilities.GBSockets.*;
+import gbuiLib.GBSockets.*;
 
 import java.io.IOException;
 

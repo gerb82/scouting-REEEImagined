@@ -2,15 +2,14 @@ package scouterSide;
 
 import connectionIndependent.ConnectWindow;
 import connectionIndependent.ScoutingConnections;
+import connectionIndependent.ScoutingEvent;
+import connectionIndependent.ScoutingPackets;
+import gbuiLib.GBSockets.*;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import utilities.GBSockets.ActionHandler;
-import utilities.GBSockets.GBSocket;
-import utilities.GBSockets.PacketLogger;
-import utilities.GBSockets.SelectorManager;
-import utilities.ProgramWideVariable;
+import gbuiLib.ProgramWideVariable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,6 +26,7 @@ public class MainLogic extends Application{
         PacketLogger.setDirectory();
         stage = primaryStage;
         ActionHandler handler = new ActionHandler();
+        handler.setHandler(ScoutingPackets.SCOUTER_LOADGAME.toString(), ScouterUI::loadNewView);
         SelectorManager selector = new SelectorManager();
         String testConnection1 = ScoutingConnections.SCOUTER.toString();
         socket = new GBSocket(null, testConnection1, false, selector, handler, new GBSocket.SocketConfig(), false);
@@ -54,9 +54,20 @@ public class MainLogic extends Application{
         }
     }
 
+    private static int currentGame;
+    private static String currentTeam;
 
     // connect to server
 
+    public static PacketLogger.ObservablePacketStatus loadGame(int gameCount, String teamIdentifier) throws BadPacketException {
+        currentTeam = teamIdentifier;
+        currentGame = gameCount;
+        return loadGame();
+    }
+
+    public static PacketLogger.ObservablePacketStatus loadGame() throws BadPacketException {
+        return socket.sendAsPacket(currentGame, currentTeam, ScoutingPackets.SCOUTER_LOADGAME.toString(), true);
+    }
 
     public static void main(String[] args) {
         launch(args);
