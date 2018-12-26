@@ -65,7 +65,10 @@ public class PacketManager {
     protected boolean heartBeat() {
         try {
             Packet packet = new Packet(this);
-            socket.sendPacket(logger.beat(packet));
+            PacketLogger.LogLine line = logger.beat(packet);
+            socket.sendPacket(line);
+            line.initDiscardFollow(attemptsPerPacket);
+            discarder.schedule(new DiscarderTask(line), 0);
             return true;
         } catch (BadPacketException e) {
             return false;

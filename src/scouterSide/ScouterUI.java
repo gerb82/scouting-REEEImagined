@@ -8,6 +8,7 @@ import gbuiLib.GBSockets.PacketLogger;
 import javafx.beans.value.ObservableValue;
 import javafx.event.Event;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
@@ -19,9 +20,11 @@ import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.util.Duration;
+import serverSide.code.Main;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ScouterUI {
@@ -39,9 +42,9 @@ public class ScouterUI {
     private int currentGameNumber;
     private String currentTeamIdentifier;
     private boolean isConnected;
-    private PacketLogger.ObservablePacketStatus reloadOperation;
     private ArrayList<ScoutingEvent> eventList;
     private ArrayList<ScoutingEventDefinition> validEvents;
+    private MainLogic main;
 
     private class OptionChooser extends MenuItem {
 
@@ -115,9 +118,9 @@ public class ScouterUI {
         try {
             PacketLogger.ObservablePacketStatus status;
             if(forceReload) {
-                status = MainLogic.loadGame(currentGameNumber, currentTeamIdentifier);
+                status = main.loadGame(currentGameNumber, currentTeamIdentifier);
             } else {
-                status = MainLogic.loadGame();
+                status = main.loadGame();
             }
             status.addListener(this::statusChangeListener);
         } catch (BadPacketException e) {
@@ -125,6 +128,10 @@ public class ScouterUI {
         } catch (IllegalStateException e){
             errored("We aren't connected");
         }
+    }
+
+    public void setMain(MainLogic main){
+        this.main = main;
     }
 
     private void statusChangeListener(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus newValue, PacketLogger.PacketStatus oldValue){
@@ -152,7 +159,42 @@ public class ScouterUI {
         } catch (ClassCastException e){
             throw new BadPacketException("The packet was poorly formatted.");
         } catch (MediaException e){
-            throw new BadPacketException("The media link failed.");
+            throw new BadPacketException("The media link didn't work.");
+        }
+    }
+
+    private HashMap<Integer, EventButton> buttons;
+    private int[] initialEvents;
+    private ScoutingEvent currentlyProcessing;
+
+    private class EventButton extends Button {
+        private ScoutingEventDefinition definition;
+
+        private EventButton(ScoutingEventDefinition definition){
+            super();
+            this.definition = definition;
+        }
+
+        private void GenerateEvent(){
+            if(currentlyProcessing == null){
+                currentlyProcessing = new ScoutingEvent(definition.getName(), (int) (mediaPlayer.getCurrentTime().toMillis() / 100));
+            } else {
+                currentlyProcessing.setContained(new ScoutingEvent(definition.getName(), (int) (mediaPlayer.getCurrentTime().toMillis()/100)));
+
+            }
+
+            if(definition.getContained() == null){
+                ScoutingEvent event = new ScoutingEvent(currentlyProcessing);
+                eventList.add(event);
+                currentlyProcessing = null;
+            }
+            if(definition.getContained() == null){
+                if(currentlyProcessing != null){
+                    ScoutingEvent event = new ScoutingEvent(currentlyProcessing);
+                    eventList.add(event);
+                    currentlyProcessing = null;
+                }
+            }
         }
     }
 }

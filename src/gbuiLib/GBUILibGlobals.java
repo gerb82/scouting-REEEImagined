@@ -20,6 +20,7 @@ public class GBUILibGlobals {
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_PACKETLINGERTIMER.toString(), 20, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_WRITELOGLINESSERIALIZED.toString(), false, true);
         insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_SERVERDISCARDERCOUNT.toString(), 2, true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_GBSOCKET_RECONNECTINCREMENT.toString(), 5, true);
 
         //console
 //        insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true, true);
@@ -49,6 +50,7 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_PACKETLINGERTIMER,
         GBUILIB_GBSOCKET_WRITELOGLINESSERIALIZED,
         GBUILIB_GBSOCKET_SERVERDISCARDERCOUNT,
+        GBUILIB_GBSOCKET_RECONNECTINCREMENT,
 
         GBUILIB_LOGGING_LOGSDIRECTORY,
 
@@ -126,5 +128,9 @@ public class GBUILibGlobals {
 
     public static int getDiscarderCount(){
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_SERVERDISCARDERCOUNT.toString(), Integer.class);
+    }
+
+    public static int getConnectionTimeoutIncrement(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_RECONNECTINCREMENT.toString(), Integer.class);
     }
 }

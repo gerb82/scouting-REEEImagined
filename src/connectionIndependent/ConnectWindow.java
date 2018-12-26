@@ -20,36 +20,42 @@ public class ConnectWindow {
     @FXML
     private Pane pane;
 
-    private static connect connectorToRun;
+    private static Connect connectorToRun;
     private static InitMainWindow starter;
-    private static Stage stage;
     private static ConnectWindow controller;
 
-    public static void start(Stage stage, connect connector, String introText, InitMainWindow starter) throws IOException {
+    public static Scene start(Stage stage, Connect connector, String introText, InitMainWindow starter) throws IOException {
         FXMLLoader loader = new FXMLLoader(ConnectWindow.class.getResource("ConnectWindow.fxml"));
-        stage.setScene(new Scene(loader.load()));
+        Scene scene = new Scene(loader.load());
+        stage.setScene(scene);
+        controller = loader.getController();
         connectorToRun = connector;
         controller.starter = starter;
-        controller.stage = stage;
         controller.introText.setText(introText);
-        stage.setResizable(false);
-        stage.show();
         controller.introText.setLayoutX((controller.pane.getPrefWidth()-controller.introText.getLayoutBounds().getWidth())/2);
+        return scene;
     }
 
-    public interface connect{
+    public interface Connect {
         boolean connect(String address);
     }
 
     public interface InitMainWindow {
-        void init(Stage stage);
+        void init();
     }
+
+    private boolean alreadyInitialized;
 
     @FXML
     private void connect(){
+        String address = ip.getText();
+        ip.clear();
         pane.setDisable(true);
-        if(connectorToRun.connect(ip.getText())){
-            starter.init(stage);
+        if(connectorToRun.connect(address)){
+            if(!alreadyInitialized) {
+                starter.init();
+                alreadyInitialized = true;
+            }
         } else {
             pane.setDisable(false);
         }

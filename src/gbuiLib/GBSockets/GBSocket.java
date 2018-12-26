@@ -2,6 +2,7 @@ package gbuiLib.GBSockets;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import gbuiLib.AssertionYouDimwitException;
 import gbuiLib.GBUILibGlobals;
@@ -22,6 +23,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class GBSocket implements Closeable{
+
 
     // done
     public static class SocketConfig{
@@ -82,9 +84,13 @@ public class GBSocket implements Closeable{
     private boolean autoReconnect;
     private String connectionType;
     private Instant lastReceived;
+    private Timer reconnecter;
     protected SimpleIntegerProperty pingInMillis = new SimpleIntegerProperty(0);
     public ObservableValue<Integer> ping = pingInMillis.asObject();
     private Timer timer;
+    private int lastTimeout;
+    private ChangeListener<Boolean> connectedListener;
+
 
     protected DatagramChannel getChannel(){
         return socket;
@@ -188,6 +194,10 @@ public class GBSocket implements Closeable{
                 key.cancel();
                 heart.cancel();
                 timer.cancel();
+                try {
+                    reconnecter.cancel();
+                    connected.removeListener(connectedListener);
+                } catch (NullPointerException e) {}
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -251,15 +261,29 @@ public class GBSocket implements Closeable{
             heartBeatDelay = -1;
         } else {
             this.heartBeatDelay = config.getHeartBeatDelay();
-            if(this.heartBeatDelay < 0){
+            if(this.heartBeatDelay < 1){
                 throw new IllegalArgumentException("Heartbeat delay cannot be negavite");
             }
             this.autoReconnect = autoReconnectArg;
-            this.connected.addListener((observable, oldValue, newValue) -> {
-                if(!newValue && autoReconnect){
-                    socketConnect(null);
-                }
-            });
+            if(autoReconnect) {
+                this.reconnecter = new Timer();
+                this.lastTimeout = 0;
+                this.connectedListener = (observable, oldValue, newValue) -> {
+                    if (!newValue && autoReconnect) {
+                        reconnecter.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                if(socketConnect(null)){
+                                    lastTimeout = 0;
+                                } else {
+                                    lastTimeout += GBUILibGlobals.getConnectionTimeoutIncrement();
+                                }
+                            }
+                        }, lastTimeout);
+                    }
+                };
+                this.connected.addListener(connectedListener);
+            }
             this.connectionTimeout = config.shouldConnectionTimeout();
             this.allowNoAck = allowNoAck;
             server = false;
