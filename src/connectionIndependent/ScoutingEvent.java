@@ -15,7 +15,7 @@ public class ScoutingEvent implements Serializable{
 
     public ScoutingEvent(ScoutingEvent event) {
         this.type = event.type;
-        this.timeStamp = event.timeStamp;
+        this.timeStamp = new Integer(event.timeStamp);
         if(event.contained != null){
             this.contained = new ScoutingEvent(event.contained);
         }
@@ -34,7 +34,7 @@ public class ScoutingEvent implements Serializable{
     }
 
     public void setContained(ScoutingEvent contained) {
-
+        setContained(this, contained);
     }
 
     private void setContained(ScoutingEvent self, ScoutingEvent contained){

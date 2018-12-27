@@ -43,7 +43,7 @@ public class ScouterUI {
     private String currentTeamIdentifier;
     private boolean isConnected;
     private ArrayList<ScoutingEvent> eventList;
-    private ArrayList<ScoutingEventDefinition> validEvents;
+    private HashMap<Integer, ScoutingEventDefinition> validEvents = new HashMap<>();
     private MainLogic main;
 
     private class OptionChooser extends MenuItem {
@@ -153,7 +153,10 @@ public class ScouterUI {
     public static void loadNewView(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
             self.eventList = (ArrayList<ScoutingEvent>)((Object[])(packet.getContent()))[0];
-            self.validEvents = (ArrayList<ScoutingEventDefinition>)((Object[])(packet.getContent()))[1];
+            self.validEvents.clear();
+            for(ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>)((Object[])(packet.getContent()))[1]) {
+                self.validEvents.put(def.getName(), def);
+            }
             loadMedia(packet.getContentType());
             packet.ack();
         } catch (ClassCastException e){
@@ -166,6 +169,7 @@ public class ScouterUI {
     private HashMap<Integer, EventButton> buttons;
     private int[] initialEvents;
     private ScoutingEvent currentlyProcessing;
+    private ScoutingEvent currentLevel;
 
     private class EventButton extends Button {
         private ScoutingEventDefinition definition;
@@ -173,26 +177,29 @@ public class ScouterUI {
         private EventButton(ScoutingEventDefinition definition){
             super();
             this.definition = definition;
+            this.setOnAction(event -> generateEvent());
         }
 
-        private void GenerateEvent(){
+        private void generateEvent(){
+            events.setDisable(true);
             if(currentlyProcessing == null){
-                currentlyProcessing = new ScoutingEvent(definition.getName(), (int) (mediaPlayer.getCurrentTime().toMillis() / 100));
+                currentlyProcessing = new ScoutingEvent(definition.getName(), definition.doesStart() ? (int) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
+                currentLevel = currentlyProcessing;
             } else {
-                currentlyProcessing.setContained(new ScoutingEvent(definition.getName(), (int) (mediaPlayer.getCurrentTime().toMillis()/100)));
-
+                currentLevel.setContained(new ScoutingEvent(definition.getName(), definition.doesStart() ? (int) (mediaPlayer.getCurrentTime().toMillis()/100) : null));
+                currentLevel = currentLevel.getContained();
             }
-
+            events.getChildren().clear();
             if(definition.getContained() == null){
-                ScoutingEvent event = new ScoutingEvent(currentlyProcessing);
-                eventList.add(event);
+                eventList.add(new ScoutingEvent(currentlyProcessing));
                 currentlyProcessing = null;
-            }
-            if(definition.getContained() == null){
-                if(currentlyProcessing != null){
-                    ScoutingEvent event = new ScoutingEvent(currentlyProcessing);
-                    eventList.add(event);
-                    currentlyProcessing = null;
+                currentLevel = null;
+                for(int i : initialEvents) {
+                    events.getChildren().add(buttons.get(i));
+                }
+            } else {
+                for(ScoutingEventDefinition eventDef : definition.getContained()) {
+                    events.getChildren().add(buttons.get(eventDef.getName()));
                 }
             }
         }
