@@ -54,6 +54,15 @@ public class PacketManager {
                 int nextTask = line.discarderTick(timeToDiscardPacket, timeToSendPacketOver / attemptsPerPacket, socket::sendPacket);
                 if(nextTask != -1){
                     discarder.schedule(new DiscarderTask(line), nextTask);
+                } else {
+                    if(line.getPacket().getResend()){
+                        if(socket.isServer()) {
+                            socket.stopServerSideConnection();
+                        } else {
+                            socket.stop();
+                        }
+                        logger.connectionTimedOutImportant(line.getPacket());
+                    }
                 }
             } catch (BadPacketException e){
                 throw new Error("Somehow the packet could be sent on the first time but not be resent again. It appears something has accessed the packet from outside the GBSocket library.", e);

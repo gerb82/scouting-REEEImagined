@@ -45,6 +45,14 @@ public class PacketLogger implements Closeable{
         return line;
     }
 
+    protected void connectionTimedOutImportant(Packet packet){
+        if(writeToLog && logFileStream != null){
+            try {
+                logFileStream.writeUTF("Connection dropped because the packet numbered: " + PacketManager.formatPacketIDs(packet.getIds(), packet.getPacketType(), socket.programWideSocketID) + " did not arrive, even though it was important.");
+            } catch (IOException e) {}
+        }
+    }
+
     protected void packetReturned(Packet packet){
         LogLine origin = packets.getLine(true, packet.getIds());
         origin.setResponse(packet);
