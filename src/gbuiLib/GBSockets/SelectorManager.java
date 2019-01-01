@@ -2,6 +2,7 @@ package gbuiLib.GBSockets;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.PriorityQueue;
@@ -86,7 +87,11 @@ public class SelectorManager implements Closeable {
                                         socket.parent.activeConnectionsMap.get(packet.getIds()[1]).logger.packets.getLine(true, packet.getIds()).setResponse(packet);
                                     }
                                 } else {
-                                    serverPackets.addPacket(new GBServerSocket.PacketToProcess(packet, socket.parent));
+                                    if (socket.parent.activeConnectionsMap.containsValue(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])) {
+                                        serverPackets.addPacket(new GBServerSocket.PacketToProcess(packet, socket.parent));
+                                    } else {
+                                        socket.getChannel().write(ByteBuffer.wrap("You're already dead".getBytes()));
+                                    }
                                 }
                             } else {
                                 socket.receivePacket(packet);

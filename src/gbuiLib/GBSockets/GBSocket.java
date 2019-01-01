@@ -161,9 +161,7 @@ public class GBSocket implements Closeable{
 
     private boolean connect(SocketAddress address){
         try {
-            if(!server) {
-                socket.connect(address);
-            }
+            socket.connect(address);
             return true;
         } catch (ClosedChannelException e) {
             new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.socketConnect()");
@@ -326,7 +324,7 @@ public class GBSocket implements Closeable{
     public synchronized void sendPackets(byte[]... packets) throws IOException {
         if(isUnsafe){
             for(byte[] packet : packets){
-                socket.write(ByteBuffer.wrap(packet));
+                socket.send(ByteBuffer.wrap(packet), address);
             }
         } else {
             throw new UnsafeSocketException("There was an attempt to send a packet directly and not through a packet manager, even though unsafe sockets are disabled");
@@ -345,11 +343,7 @@ public class GBSocket implements Closeable{
             byte[] bytes = sendInput.toByteArray();
             sendObjInput.close();
             if(bytes.length < maxSendSize) {
-                if(server){
-                    socket.send(ByteBuffer.wrap(bytes), address);
-                } else {
-                    socket.write(ByteBuffer.wrap(bytes));
-                }
+                socket.send(ByteBuffer.wrap(bytes), address);
             } else{
                 logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
                 throw new BadPacketException("Packet is too big to be sent");
@@ -382,10 +376,10 @@ public class GBSocket implements Closeable{
     }
 
     protected void receivePacket(Packet packet){
-        if(packet.receivedFrom != address && socketIDServerSide == (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])){
-            changeAddress(packet.receivedFrom);
-        }
         if(server){
+            if(packet.receivedFrom.equals(address) && socketIDServerSide == (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])){
+                this.address = packet.receivedFrom;
+            }
             parent.ackSocket(this);
         }
         manager.receivePacket(packet);
@@ -408,7 +402,7 @@ public class GBSocket implements Closeable{
                     output.receivedFrom = senderAddress;
                     break;
                 } catch (Exception e) {
-                    logger.suspiciousPacket(senderAddress, this);
+                    PacketLogger.suspiciousPacket(senderAddress, this);
                 }
             } catch (PortUnreachableException e){
                 throw new RuntimePortUnreachable(e);
@@ -552,17 +546,5 @@ public class GBSocket implements Closeable{
 
     public boolean allowNoAck(){
         return allowNoAck;
-    }
-
-    protected void changeAddress(SocketAddress address) {
-        if(this.address != address) {
-            try {
-                this.address = address;
-                this.socket.disconnect();
-                this.socket.connect(address);
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-        }
     }
 }
