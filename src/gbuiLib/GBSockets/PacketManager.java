@@ -59,7 +59,7 @@ public class PacketManager {
                         if(socket.isServer()) {
                             socket.stopServerSideConnection();
                         } else {
-                            socket.stop();
+                            socket.disconnect();
                         }
                         logger.connectionTimedOutImportant(line.getPacket());
                     }

@@ -90,7 +90,7 @@ public class SelectorManager implements Closeable {
                                     if (socket.parent.activeConnectionsMap.containsValue(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])) {
                                         serverPackets.addPacket(new GBServerSocket.PacketToProcess(packet, socket.parent));
                                     } else {
-                                        socket.getChannel().write(ByteBuffer.wrap("You're already dead".getBytes()));
+                                        socket.getChannel().write(ByteBuffer.wrap(("You're already dead " + (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])).getBytes()));
                                     }
                                 }
                             } else {

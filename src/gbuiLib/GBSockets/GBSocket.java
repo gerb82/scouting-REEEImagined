@@ -161,7 +161,9 @@ public class GBSocket implements Closeable{
 
     private boolean connect(SocketAddress address){
         try {
-            socket.connect(address);
+            if(!server) {
+                socket.connect(address);
+            }
             return true;
         } catch (ClosedChannelException e) {
             new IllegalAccessError("The method GBSocket.connect() was invoked by a method other than GBSocket.socketConnect()");
@@ -180,8 +182,11 @@ public class GBSocket implements Closeable{
         close();
     }
 
-    public void stop(){
+    public void disconnect(){
         try {
+            if(socket.isConnected() && server){
+                socket.send(ByteBuffer.wrap(("die " + socketIDServerSide).getBytes()), address);
+            }
             handler.connectionClosed(this);
             socket.close();
             logger.close();
@@ -209,7 +214,7 @@ public class GBSocket implements Closeable{
     @Override
     public void close(){
         autoReconnect = false;
-        stop();
+        disconnect();
     }
 
     public void stopServerSideConnection(){
@@ -343,7 +348,11 @@ public class GBSocket implements Closeable{
             byte[] bytes = sendInput.toByteArray();
             sendObjInput.close();
             if(bytes.length < maxSendSize) {
-                socket.send(ByteBuffer.wrap(bytes), address);
+                if(server) {
+                    socket.send(ByteBuffer.wrap(bytes), address);
+                } else {
+                    socket.write(ByteBuffer.wrap(bytes));
+                }
             } else{
                 logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
                 throw new BadPacketException("Packet is too big to be sent");
@@ -391,14 +400,31 @@ public class GBSocket implements Closeable{
         while(true) {
             try {
                 ByteBuffer buffer = ByteBuffer.wrap(new byte[maxReceiveSize]);
-                senderAddress = socket.receive(buffer);
+                if(server) {
+                    senderAddress = socket.receive(buffer);
+                } else {
+                    socket.read(buffer);
+                    senderAddress = address;
+                }
                 int position = buffer.position();
                 buffer.rewind();
                 byte[] bytes = new byte[position];
                 buffer.get(bytes, 0, position);
                 lastReceived = Instant.now();
                 try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes))){
-                    output = (Packet) input.readObject();
+                    Object attempt = input.readObject();
+                    if(attempt instanceof Packet){
+                        output = (Packet) attempt;
+                    } else {
+                        if(attempt instanceof String){
+                            if(attempt.equals("you are already dead " + socketIDServerSide) || attempt.equals("die " + socketIDServerSide)){
+                                disconnect();
+                                return null;
+                            }
+                        }
+                        PacketLogger.suspiciousPacket(senderAddress, this);
+                        continue;
+                    }
                     output.receivedFrom = senderAddress;
                     break;
                 } catch (Exception e) {
@@ -527,7 +553,7 @@ public class GBSocket implements Closeable{
         public void run() {
             manager.heartBeat();
             if(Instant.now().toEpochMilli() - lastReceived.toEpochMilli() >= connectionTimeout*1000) {
-                stop();
+                disconnect();
             }
         }
     }
