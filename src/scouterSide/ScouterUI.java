@@ -20,12 +20,9 @@ import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.util.Duration;
-import serverSide.code.Main;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class ScouterUI {
 
@@ -43,7 +40,7 @@ public class ScouterUI {
     private String currentTeamIdentifier;
     private boolean isConnected;
     private ArrayList<ScoutingEvent> eventList;
-    private HashMap<Integer, ScoutingEventDefinition> validEvents = new HashMap<>();
+    private HashMap<Short, ScoutingEventDefinition> validEvents = new HashMap<>();
     private MainLogic main;
 
     private class OptionChooser extends MenuItem {
@@ -183,22 +180,21 @@ public class ScouterUI {
         private void generateEvent(){
             events.setDisable(true);
             if(currentlyProcessing == null){
-                currentlyProcessing = new ScoutingEvent(definition.getName(), definition.doesStart() ? (int) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
+                currentlyProcessing = new ScoutingEvent(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
                 currentLevel = currentlyProcessing;
             } else {
-                currentLevel.setContained(new ScoutingEvent(definition.getName(), definition.doesStart() ? (int) (mediaPlayer.getCurrentTime().toMillis()/100) : null));
-                currentLevel = currentLevel.getContained();
+
             }
             events.getChildren().clear();
-            if(definition.getContained() == null){
-                eventList.add(new ScoutingEvent(currentlyProcessing));
+            if(definition.getNextStamps() == null){
+                eventList.add(currentlyProcessing);
                 currentlyProcessing = null;
                 currentLevel = null;
                 for(int i : initialEvents) {
                     events.getChildren().add(buttons.get(i));
                 }
             } else {
-                for(ScoutingEventDefinition eventDef : definition.getContained()) {
+                for(ScoutingEventDefinition eventDef : definition.getNextStamps()) {
                     events.getChildren().add(buttons.get(eventDef.getName()));
                 }
             }

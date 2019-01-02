@@ -3,14 +3,14 @@ package connectionIndependent;
 public class FullScoutingEvent {
 
     private ScoutingEvent event;
-    private Integer team;
-    private int game;
-    private int competition;
-    private Integer mapConfiguration;
-    private int startingLocation;
-    private int alliance;
+    private Short team;
+    private short game;
+    private short competition;
+    private Short mapConfiguration;
+    private byte startingLocation;
+    private byte alliance;
 
-    public FullScoutingEvent(ScoutingEvent event, Integer team, int game, int competition, Integer mapConfiguration, int startingLocation, int alliance) {
+    public FullScoutingEvent(ScoutingEvent event, Short team, short game, short competition, Short mapConfiguration, byte startingLocation, byte alliance) {
         this.event = event;
         this.team = team;
         this.game = game;
@@ -24,27 +24,27 @@ public class FullScoutingEvent {
         return event;
     }
 
-    public Integer getTeam() {
+    public Short getTeam() {
         return team;
     }
 
-    public int getGame() {
+    public short getGame() {
         return game;
     }
 
-    public int getCompetition() {
+    public short getCompetition() {
         return competition;
     }
 
-    public Integer getMapConfiguration() {
+    public Short getMapConfiguration() {
         return mapConfiguration;
     }
 
-    public int getStartingLocation() {
+    public byte getStartingLocation() {
         return startingLocation;
     }
 
-    public int getAlliance() {
+    public byte getAlliance() {
         return alliance;
     }
 }

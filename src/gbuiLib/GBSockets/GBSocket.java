@@ -221,6 +221,8 @@ public class GBSocket implements Closeable{
         if(server){
             parent.removeSelectorChannel(this);
             close();
+        } else {
+            throw new IllegalStateException("This socket is not a server socket, and yet it was attempted to be closed through stopServerSideConnection");
         }
     }
 
@@ -418,6 +420,7 @@ public class GBSocket implements Closeable{
                     } else {
                         if(attempt instanceof String){
                             if(attempt.equals("you are already dead " + socketIDServerSide) || attempt.equals("die " + socketIDServerSide)){
+                                logger.connectionRemotelyTerminated();
                                 disconnect();
                                 return null;
                             }

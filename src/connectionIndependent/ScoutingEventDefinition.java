@@ -4,23 +4,23 @@ import java.io.Serializable;
 
 public class ScoutingEventDefinition implements Serializable{
 
-    private ScoutingEventDefinition[] contained;
-    private int name;
+    private ScoutingEventDefinition[] nextStamps;
+    private byte name;
     private boolean starts;
     private String textName;
 
-    public ScoutingEventDefinition(ScoutingEventDefinition[] contained, int name, boolean starts, String textName) {
-        this.contained = contained;
+    public ScoutingEventDefinition(ScoutingEventDefinition[] nextStamps, byte name, boolean starts, String textName) {
+        this.nextStamps = nextStamps;
         this.name = name;
         this.starts = starts;
         this.textName = textName;
     }
 
-    public ScoutingEventDefinition[] getContained() {
-        return contained;
+    public ScoutingEventDefinition[] getNextStamps() {
+        return nextStamps;
     }
 
-    public int getName() {
+    public short getName() {
         return name;
     }
 

@@ -64,6 +64,14 @@ public class PacketLogger implements Closeable{
         }
     }
 
+    public void connectionRemotelyTerminated() {
+        try {
+            if (writeToLog) {
+                logFileStream.writeObject("Connection was remotely terminated.");
+            }
+        } catch (IOException e) {}
+    }
+
     protected class PacketMap extends HashMap<String, LogLine>{
 
         protected LogLine getLine(boolean wasSent, int[] ids){
