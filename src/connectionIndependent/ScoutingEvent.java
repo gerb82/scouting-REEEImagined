@@ -18,10 +18,7 @@ public class ScoutingEvent implements Serializable{
     }
 
     private ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
-
-    public ScoutingEvent(byte type, Short timeStamp) {
-        timeStamps.add(new EventTimeStamp(type, timeStamp));
-    }
+    private int uniqueID = -1;
 
     public int getType() {
         return timeStamps.get(0).type;
@@ -43,13 +40,30 @@ public class ScoutingEvent implements Serializable{
         return timeStamps.get(step).type;
     }
 
+    public void setUniqueID(int uniqueID){
+        this.uniqueID = uniqueID;
+    }
+
     public void resetFromCertainStep(short step){
         while(timeStamps.size() >= step){
             timeStamps.remove(step);
         }
     }
 
+    public int getSize(){
+        return timeStamps.size();
+    }
+
+    public byte getLastType(){
+        return timeStamps.get(timeStamps.size()-1).type;
+    }
+
+    public void removeLast(){
+        timeStamps.remove(timeStamps.size()-1);
+    }
+
     private void writeObject(ObjectOutputStream stream) throws IOException{
+        stream.writeInt(uniqueID);
         stream.writeByte(timeStamps.size());
         for(short i = 0; timeStamps.size() > i; i += 8){
             short amount = (short)(timeStamps.size()%8);
@@ -71,17 +85,19 @@ public class ScoutingEvent implements Serializable{
     }
 
     private void readObject(ObjectInputStream stream) throws IOException{
+        uniqueID = stream.readInt();
         byte timeStampsCount = stream.readByte();
         timeStamps = new ArrayList<>();
         for(short i = 0; timeStampsCount > i; i += 8){
             short amount = (short)(timeStampsCount%8);
             byte signifier = (byte)(stream.readByte()<<7-amount);
             for(short j = 0; amount > j; j++){
-                if(signifier>>7 == 1){
+                if(signifier>>>7 == 1){
                     timeStamps.add(new EventTimeStamp(stream.readByte(), stream.readShort()));
                 } else {
                     timeStamps.add(new EventTimeStamp(stream.readByte(), null));
                 }
+                signifier = (byte)(signifier<<1);
             }
         }
     }

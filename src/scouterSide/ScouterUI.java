@@ -40,8 +40,9 @@ public class ScouterUI {
     private String currentTeamIdentifier;
     private boolean isConnected;
     private ArrayList<ScoutingEvent> eventList;
-    private HashMap<Short, ScoutingEventDefinition> validEvents = new HashMap<>();
+    private HashMap<Byte, ScoutingEventDefinition> validEvents = new HashMap<>();
     private MainLogic main;
+    private Button backEvent;
 
     private class OptionChooser extends MenuItem {
 
@@ -69,6 +70,8 @@ public class ScouterUI {
 
     private ScouterUI(){
         self = this;
+        backEvent = new Button();
+        backEvent.setOnAction(this::back);
     }
 
     @FXML
@@ -163,10 +166,9 @@ public class ScouterUI {
         }
     }
 
-    private HashMap<Integer, EventButton> buttons;
+    private HashMap<Byte, EventButton> buttons;
     private int[] initialEvents;
     private ScoutingEvent currentlyProcessing;
-    private ScoutingEvent currentLevel;
 
     private class EventButton extends Button {
         private ScoutingEventDefinition definition;
@@ -179,17 +181,11 @@ public class ScouterUI {
 
         private void generateEvent(){
             events.setDisable(true);
-            if(currentlyProcessing == null){
-                currentlyProcessing = new ScoutingEvent(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
-                currentLevel = currentlyProcessing;
-            } else {
-
-            }
+            currentlyProcessing.addProgress(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
             events.getChildren().clear();
             if(definition.getNextStamps() == null){
                 eventList.add(currentlyProcessing);
-                currentlyProcessing = null;
-                currentLevel = null;
+                currentlyProcessing = new ScoutingEvent();
                 for(int i : initialEvents) {
                     events.getChildren().add(buttons.get(i));
                 }
@@ -197,7 +193,22 @@ public class ScouterUI {
                 for(ScoutingEventDefinition eventDef : definition.getNextStamps()) {
                     events.getChildren().add(buttons.get(eventDef.getName()));
                 }
+                events.getChildren().add(backEvent);
             }
+            events.setDisable(false);
+        }
+    }
+
+    private void back(Event event){
+        events.setDisable(true);
+        currentlyProcessing.removeLast();
+        ScoutingEventDefinition definition = validEvents.get(currentlyProcessing.getLastType());
+        events.getChildren().clear();
+        for(ScoutingEventDefinition eventDef : definition.getNextStamps()) {
+            events.getChildren().add(buttons.get(eventDef.getName()));
+        }
+        if(currentlyProcessing.getSize() > 0){
+            events.getChildren().add(backEvent);
         }
     }
 }

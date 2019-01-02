@@ -20,7 +20,7 @@ public class ScoutingEventDefinition implements Serializable{
         return nextStamps;
     }
 
-    public short getName() {
+    public byte getName() {
         return name;
     }
 
