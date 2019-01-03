@@ -26,6 +26,7 @@ public class GBUILibGlobals {
 //        insertToMap.insert(GBUILibVariables.GBUILIB_CONSOLE_ENABLED.toString(), true, true);
 //
         insertToMap.insert(GBUILibVariables.GBUILIB_LOGGING_LOGSDIRECTORY.toString(), new File(System.getProperty("user.dir"),Utils.instantToTimestamp(Instant.now(), false) + " logs"), true);
+        insertToMap.insert(GBUILibVariables.GBUILIB_DATABASE_DATABASEDIRECTORY.toString(), new File(System.getProperty("user.dir"), "Database"), true);
 //
 //        //util
 //        insertToMap.insert(GBUILibVariables.GBUILIB_UTIL_SHUTDOWNCOMMANDSTORUN.toString(), new ArrayList<BlankMethod>(), true);
@@ -53,6 +54,8 @@ public class GBUILibGlobals {
         GBUILIB_GBSOCKET_RECONNECTINCREMENT,
 
         GBUILIB_LOGGING_LOGSDIRECTORY,
+
+        GBUILIB_DATABASE_DATABASEDIRECTORY,
 
         GBUILIB_CONSOLE_ENABLED,
 
@@ -132,5 +135,9 @@ public class GBUILibGlobals {
 
     public static int getConnectionTimeoutIncrement(){
         return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_GBSOCKET_RECONNECTINCREMENT.toString(), Integer.class);
+    }
+
+    public static File getDataBaseDirectory(){
+        return ProgramWideVariable.getFinalVariableSafe(GBUILibVariables.GBUILIB_DATABASE_DATABASEDIRECTORY.toString(), File.class);
     }
 }
