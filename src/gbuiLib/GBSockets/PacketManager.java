@@ -55,7 +55,7 @@ public class PacketManager {
                 if(nextTask != -1){
                     discarder.schedule(new DiscarderTask(line), nextTask);
                 } else {
-                    if(line.getPacket().getResend()){
+                    if(line.getPacket().isImportant()){
                         if(socket.isServer()) {
                             socket.stopServerSideConnection();
                         } else {
@@ -171,7 +171,7 @@ public class PacketManager {
 
     protected void receivePacket(Packet packet){
         try {
-            if(logger.isPacketFollowedOut(packet) && packet.getIsAck()){
+            if(logger.isPacketFollowedOut(packet) && packet.isAck()){
                 logger.packetReturned(packet);
                 PacketLogger.LogLine origin = logger.packets.getLine(true, packet.getIds());
                 socket.pingInMillis.set((int)(origin.getResponse().getTimeStamp().toEpochMilli() - origin.getPacket().getTimeStamp().toEpochMilli()));
@@ -188,7 +188,7 @@ public class PacketManager {
             discarder.schedule(new DiscarderTask(line), 0);
             actionHandler.handlePacket(packet, socket);
         } catch (BadPacketException e) {
-            if(!packet.getIsAck()){
+            if(!packet.isAck()){
                 try {
                     error(e.getMessage(), packet.getIds(), packet.getPacketType());
                 } catch (BadPacketException e1) {

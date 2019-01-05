@@ -1,10 +1,5 @@
 package gbuiLib.GBSockets;
 
-import com.sun.javafx.collections.ObservableSetWrapper;
-import javafx.collections.ObservableSet;
-
-import java.io.IOException;
-import java.net.SocketAddress;
 import java.time.Instant;
 import java.util.*;
 
@@ -20,7 +15,7 @@ public class ActionHandler {
 
         private PacketOut(Packet packet, GBSocket socket){
             super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
-            acked = !packet.getResend() && !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
+            acked = !packet.isImportant() && !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
             this.socket = socket;
         }
 

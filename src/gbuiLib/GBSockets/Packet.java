@@ -14,7 +14,7 @@ public class Packet implements Serializable{
     private int[] ids;
     private boolean errorChecked;
     private Instant timeStamp;
-    private transient boolean resend;
+    private transient boolean important;
     private boolean isAck;
     protected transient SocketAddress receivedFrom;
 
@@ -74,11 +74,11 @@ public class Packet implements Serializable{
         return timeStamp;
     }
 
-    protected boolean getResend() {
-        return resend;
+    protected boolean isImportant() {
+        return important;
     }
 
-    protected boolean getIsAck(){
+    protected boolean isAck(){
         return isAck;
     }
 
@@ -91,9 +91,9 @@ public class Packet implements Serializable{
     }
 
     // Normal
-    protected Packet(Object content, String contentType, String packetType, PacketManager parent, boolean resend) throws BadPacketException{
+    protected Packet(Object content, String contentType, String packetType, PacketManager parent, boolean important) throws BadPacketException{
         this(content, parent.checkPacketValidity(content, packetType), contentType, packetType, true);
-        this.resend = resend;
+        this.important = important;
         this.isAck = false;
     }
 
@@ -110,14 +110,14 @@ public class Packet implements Serializable{
     // ACK/ERROR/SMARTACK
     protected Packet(Object content, int[] ids, String packetType, String originalPacketType){
         this(content, ids, originalPacketType, packetType, true);
-        this.resend = false;
+        this.important = false;
         this.isAck = true;
     }
 
     // HeartBeat
     protected Packet(PacketManager parent) throws BadPacketException {
         this(null, parent.checkPacketValidity(null, ActionHandler.DefaultPacketTypes.HeartBeat.toString()), null, ActionHandler.DefaultPacketTypes.HeartBeat.toString(), true);
-        this.resend = false;
+        this.important = false;
         this.isAck = false;
     }
 }

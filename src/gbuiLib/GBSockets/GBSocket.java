@@ -359,7 +359,7 @@ public class GBSocket implements Closeable{
                 logLine.setStatus(PacketLogger.PacketStatus.SEND_ERRORED);
                 throw new BadPacketException("Packet is too big to be sent");
             }
-            if(!logLine.getPacket().getResend()){
+            if(!logLine.getPacket().isImportant()){
                 logLine.setStatus(PacketLogger.PacketStatus.SENT);
             } else {
                 logLine.setStatus(wasSent ? PacketLogger.PacketStatus.WAITING : PacketLogger.PacketStatus.RECEIVED_DONE);

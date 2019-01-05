@@ -44,6 +44,10 @@ public class ScoutingEvent implements Serializable{
         this.uniqueID = uniqueID;
     }
 
+    public int getUniqueID(){
+        return this.uniqueID;
+    }
+
     public void resetFromCertainStep(short step){
         while(timeStamps.size() >= step){
             timeStamps.remove(step);

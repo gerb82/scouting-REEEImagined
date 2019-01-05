@@ -190,8 +190,8 @@ public class ScouterUI {
                     events.getChildren().add(buttons.get(i));
                 }
             } else {
-                for(ScoutingEventDefinition eventDef : definition.getNextStamps()) {
-                    events.getChildren().add(buttons.get(eventDef.getName()));
+                for(byte eventDef : definition.getNextStamps()) {
+                    events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
                 }
                 events.getChildren().add(backEvent);
             }
@@ -204,8 +204,8 @@ public class ScouterUI {
         currentlyProcessing.removeLast();
         ScoutingEventDefinition definition = validEvents.get(currentlyProcessing.getLastType());
         events.getChildren().clear();
-        for(ScoutingEventDefinition eventDef : definition.getNextStamps()) {
-            events.getChildren().add(buttons.get(eventDef.getName()));
+        for(byte eventDef : definition.getNextStamps()) {
+            events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
         }
         if(currentlyProcessing.getSize() > 0){
             events.getChildren().add(backEvent);

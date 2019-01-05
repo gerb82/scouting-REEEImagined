@@ -141,7 +141,7 @@ public class PacketLogger implements Closeable{
                 tempStatus = PacketStatus.TIMED_OUT;
             }
             status.set(PacketStatus.DISCARDED);
-            if(writeToLog && logFileStream != null && !packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.HeartBeat) && !packet.getIsAck()) {
+            if(writeToLog && logFileStream != null && !packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.HeartBeat) && !packet.isAck()) {
                 try {
                     if(!GBUILibGlobals.writePacketsSerialized()) {
                         logFileStream.writeUTF("The serialized packet was: ");
