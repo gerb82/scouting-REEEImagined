@@ -2,11 +2,10 @@ package connectionIndependent;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Stack;
 
 public class ScoutingEvent implements Serializable{
 
-    private static class EventTimeStamp{
+    public static class EventTimeStamp{
 
         private EventTimeStamp(byte type, Short timeStamp) {
             this.type = type;
@@ -15,10 +14,18 @@ public class ScoutingEvent implements Serializable{
 
         private byte type;
         private Short timeStamp;
+
+        public byte getType() {
+            return type;
+        }
+
+        public Short getTimeStamp() {
+            return timeStamp;
+        }
     }
 
     private ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
-    private int uniqueID = -1;
+    private int chainID = -1;
 
     public int getType() {
         return timeStamps.get(0).type;
@@ -40,12 +47,12 @@ public class ScoutingEvent implements Serializable{
         return timeStamps.get(step).type;
     }
 
-    public void setUniqueID(int uniqueID){
-        this.uniqueID = uniqueID;
+    public void setChainID(int chainID){
+        this.chainID = chainID;
     }
 
-    public int getUniqueID(){
-        return this.uniqueID;
+    public int getChainID(){
+        return this.chainID;
     }
 
     public void resetFromCertainStep(short step){
@@ -66,8 +73,12 @@ public class ScoutingEvent implements Serializable{
         timeStamps.remove(timeStamps.size()-1);
     }
 
+    public ArrayList<EventTimeStamp> getStamps(){
+        return timeStamps;
+    }
+
     private void writeObject(ObjectOutputStream stream) throws IOException{
-        stream.writeInt(uniqueID);
+        stream.writeInt(chainID);
         stream.writeByte(timeStamps.size());
         for(short i = 0; timeStamps.size() > i; i += 8){
             short amount = (short)(timeStamps.size()%8);
@@ -89,7 +100,7 @@ public class ScoutingEvent implements Serializable{
     }
 
     private void readObject(ObjectInputStream stream) throws IOException{
-        uniqueID = stream.readInt();
+        chainID = stream.readInt();
         byte timeStampsCount = stream.readByte();
         timeStamps = new ArrayList<>();
         for(short i = 0; timeStampsCount > i; i += 8){

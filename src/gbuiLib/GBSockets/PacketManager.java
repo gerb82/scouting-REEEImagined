@@ -102,7 +102,11 @@ public class PacketManager {
      */
     protected void smartAck(int[] IDs, String originalPacketType, Object content, String contentType, String newPacketType) throws BadPacketException{
         Packet packet = new Packet(new Packet(content, contentType, newPacketType, this, false), IDs, ActionHandler.DefaultPacketTypes.SmartAck.toString(), originalPacketType);
-        socket.sendPacket(logger.setResponse(IDs, packet));
+        PacketLogger.LogLine line = logger.setResponse(IDs, packet);
+        logger.followPacket((Packet)packet.getContent(), true);
+        socket.sendPacket(line);
+        line.initDiscardFollow(attemptsPerPacket);
+        discarder.schedule(new DiscarderTask(line), 0);
     }
 
     // done

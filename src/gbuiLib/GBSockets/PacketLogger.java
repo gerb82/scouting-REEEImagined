@@ -201,7 +201,7 @@ public class PacketLogger implements Closeable{
         protected int discarderTick(int discardTimer, int sendIntervals, LogLineMethod sender) throws BadPacketException {
             long now = Instant.now().toEpochMilli();
             int nextCheck;
-            if(attemptsLeftToSend != 0 && status.get().equals(PacketStatus.WAITING)) {
+            if(attemptsLeftToSend != 0 && status.get().equals(PacketStatus.WAITING) || (status.get().equals(PacketStatus.RECEIVED_DONE) && response.getPacketType().equals(ActionHandler.DefaultPacketTypes.SmartAck))){
                 if (now - lastSent.toEpochMilli() < sendIntervals) {
                     nextCheck = sendIntervals - (int) (now - lastSent.toEpochMilli());
                 } else {
