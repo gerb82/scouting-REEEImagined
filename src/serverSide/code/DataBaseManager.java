@@ -45,7 +45,6 @@ public class DataBaseManager implements Closeable {
             database = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath().toString());
             database.setAutoCommit(false);
             Statement statement = database.createStatement();
-            statement.execute("SELECT  count(*) FROM information_schema.system_tables WHERE table_schem = 'public' AND table_name = 'user';");
 
             // eventDefinitionsList
             statement.execute("CREATE TABLE IF NOT EXISTS " + tables.eventTypes + "(" +
@@ -81,13 +80,13 @@ public class DataBaseManager implements Closeable {
                     columns.teamNumber5 + " integer," + System.lineSeparator() +
                     columns.teamNumber6 + " integer," + System.lineSeparator() +
                     "PRIMARY KEY(" + columns.gameNumbers + "," + columns.competition + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.competition + ") REFERNCES " + tables.competitions + "(" + columns.competitionID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber1 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber2 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber3 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber4 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber5 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber6 + ") REFERNCES " + tables.teamNumbers + "(" + columns.teamNumbers + "));");
+                    "FOREIGN KEY(" + columns.competition + ") REFERENCES " + tables.competitions + "(" + columns.competitionID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber1 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber2 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber3 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber4 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber5 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + columns.teamNumber6 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + "));");
 
             // eventFrames
             statement.execute("CREATE TABLE IF NOT EXISTS " + tables.eventFrames + "(" + System.lineSeparator() +
@@ -179,7 +178,7 @@ public class DataBaseManager implements Closeable {
         try(Statement statement = database.createStatement()){
             String inserter = "INSERT OR REPLACE INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ") values";
             String stampsFixer = "DELETE FROM " + tables.events + " WHERE ";
-            String stampsInserter = "INSERT INTO " + tables.events + ")" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ") values";
+            String stampsInserter = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ") values";
             boolean first = true;
             for(FullScoutingEvent event : events){
                 inserter += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + event.getGame() + "," + event.getCompetition() + "," + event.getTeam() + "," + event.getStartingLocation() + ")";
@@ -190,9 +189,7 @@ public class DataBaseManager implements Closeable {
                     first = false;
                 }
             }
-            statement.execute(inserter + ";");
-            statement.execute(stampsFixer + ";");
-            statement.execute(stampsInserter + ";");
+            statement.execute(inserter + ";" + stampsFixer + ";" + stampsInserter + ";");
             database.commit();
         } catch (SQLException e){
             try {
