@@ -60,8 +60,8 @@ public class DataBaseManager implements Closeable {
 
             // containableEventsList
             statement.execute("CREATE TABLE IF NOT EXISTS "+ tables.containableEvents + "(" + System.lineSeparator() +
-                    columns.containerEventType + " integer," + System.lineSeparator() +
-                    columns.eventContainedType + " integer," + System.lineSeparator() +
+                    columns.containerEventType + " integer NOT NULL," + System.lineSeparator() +
+                    columns.eventContainedType + " integer NOT NULL," + System.lineSeparator() +
                     "PRIMARY KEY(" + columns.containerEventType + "," + columns.eventContainedType + ")." + System.lineSeparator() +
                     "FOREIGN KEY(" + columns.containerEventType + ") REFERENCES " + tables.eventTypes + "(" + columns.eventTypeID + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + columns.eventContainedType + ") REFERENCES " + tables.eventTypes + "(" + columns.eventTypeID + "));");
@@ -104,8 +104,8 @@ public class DataBaseManager implements Closeable {
 
             // eventsList
             statement.execute("CREATE TABLE IF NOT EXISTS " + tables.events + "(" + System.lineSeparator() +
-                    columns.eventChainID + " integer ," + System.lineSeparator() +
-                    columns.eventLocationInChain + " integer," + System.lineSeparator() +
+                    columns.eventChainID + " integer NOT NULL," + System.lineSeparator() +
+                    columns.eventLocationInChain + " integer NOT NULL," + System.lineSeparator() +
                     columns.eventType + " integer NOT NULL," + System.lineSeparator() +
                     columns.timeStamps + " integer," + System.lineSeparator() +
                     "PRIMARY KEY(" + columns.eventChainID + "," + columns.eventLocationInChain + ")," + System.lineSeparator() +
@@ -135,15 +135,19 @@ public class DataBaseManager implements Closeable {
         return true;
     }
 
+    private String competitionNameToID(String competition){
+        return "SELECT " + columns.competitionID + " from " + tables.competitions + "where " + columns.competitionName + " = '" + competition + "'";
+    }
+
     protected void addNewCompetition(String name, ScoutedTeam[] teams){
         try(Statement statement = database.createStatement()) {
             statement.execute("INSERT INTO " + tables.competitions + "(" + columns.competitionName + ") VALUES(" + name + ");");
-            statement.execute("ALTER TABLE " + tables.teamNumbers + " ADD COLUMN " + columns.participatedIn + name + " number NOT NULL DEFAULT 0;");
-            String insertTeams = "INSERT OR IGNORE INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + "," + columns.participatedIn + name + ") VALUES";
-            String signUpTeams = "UPDATE " + tables.teamNumbers + " SET " + columns.participatedIn + name + " = 1 WHERE ";
+            statement.execute("ALTER TABLE " + tables.teamNumbers + " ADD COLUMN " + columns.participatedIn + competitionNameToID(name) + " integer NOT NULL DEFAULT 0;");
+            String insertTeams = "INSERT OR IGNORE INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + "," + columns.participatedIn + competitionNameToID(name) + ") VALUES";
+            String signUpTeams = "UPDATE " + tables.teamNumbers + " SET " + columns.participatedIn + competitionNameToID(name) + " = 1 WHERE ";
             boolean first = true;
             for (ScoutedTeam team : teams) {
-                insertTeams += (!first ? "," : "") + "(" + team.getNumber() + ",'" + team.getName() + "'" + "," + "1)";
+                insertTeams += (!first ? "," : "") + "(" + team.getNumber() + ",'" + team.getName() + "'," + "1)";
                 signUpTeams += (!first ? " OR " : "") + columns.teamNumbers  + " = " + team.getNumber();
                 first = false;
             }
@@ -164,9 +168,10 @@ public class DataBaseManager implements Closeable {
         try(Statement statement = database.createStatement()){
             String competitionsColumns = "";
             for(String competition : competitions){
-                competitionsColumns += "," + columns.participatedIn + competition;
+                competitionsColumns += "," + columns.participatedIn + competitionNameToID(competition);
             }
-            statement.execute("INSERT INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + competitionsColumns + ") VALUES(" + team.getNumber() + ",'" + team.getName() + "'" + String.join("",Collections.nCopies(competitionsColumns.length(), ",1")) + ");");
+            statement.execute("INSERT INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + competitionsColumns + ")" + System.lineSeparator() +
+                    "VALUES(" + team.getNumber() + ",'" + team.getName() + "'" + String.join("",Collections.nCopies(competitionsColumns.length(), ",1")) + ");");
             database.commit();
         } catch (SQLException e){
             try {
@@ -178,7 +183,7 @@ public class DataBaseManager implements Closeable {
         }
     }
 
-    protected void updateEvents(int game, String competition, FullScoutingEvent[] events){
+    protected void updateEvents(int game, String competition, int team, FullScoutingEvent[] events){
         try(Statement statement = database.createStatement()){
             Set<Integer> numberedEvents = new HashSet<>();
             boolean first = true;
@@ -193,12 +198,24 @@ public class DataBaseManager implements Closeable {
                     }
                 }
             }
-            // delete all relevant stamps. delete all event frames that aren't in the new list. insert or replace with new frames. add the new stamps. newest chain id is loaded from the database by getting the highest 1 chain id right now and then assigning them in an increasing size to the frames.
-            String stampsCleaner = "DELETE FROM " + tables.events + " WHERE " + columns.eventChainID + " in " + ("SELECT " + columns.chainID + " from " + tables.eventFrames + " where " + columns.gameNumber + " = " + game + " AND " + columns.competitionNumber + " = " + ("SELECT " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = '" + competition + "'")) + ");";
-            String framesCleaner = "DELETE FROM " + tables.eventFrames + " where " + columns.gameNumber + " = " + game + " AND " + columns.competitionNumber + " = " + ("SELECT " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = '" + competition + "'") + " AND " + columns.chainID + " NOT IN " + idList + ";";
+            String stampsCleaner = "DELETE FROM " + tables.events + System.lineSeparator() +
+                    "WHERE " + columns.eventChainID + " in " +
+                           ("SELECT " + columns.chainID + " from " + tables.eventFrames + System.lineSeparator() +
+                            "where " + columns.gameNumber + " = " + game + System.lineSeparator() + "" + System.lineSeparator() +
+                                   "AND " + columns.competitionNumber + " = " + competitionNameToID(competition) +
+                                   " AND " + columns.teamNumber + " = " + team) + ");";
+
+            String framesCleaner = "DELETE FROM " + tables.eventFrames + System.lineSeparator() +
+                    "where " + columns.gameNumber + " = " + game + System.lineSeparator() +
+                    "AND " + columns.competitionNumber + " = " + competitionNameToID(competition) + System.lineSeparator() +
+                    "AND " + columns.teamNumber + " = " + team + System.lineSeparator() +
+                    "AND " + columns.chainID + " NOT IN " + idList + ";";
+
             statement.execute(stampsCleaner + " " + framesCleaner);
-            String framesFixer = "INSERT OR REPLACE INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.alliance + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ") VALUES " ;
-            String stampsFixer = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ") values";
+            String framesFixer = "INSERT OR REPLACE INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.alliance + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ")" + System.lineSeparator() +
+                    "VALUES"; // continues in the for-loop
+            String stampsFixer = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ")" + System.lineSeparator() +
+                    "values"; // continues in the for-loop
             statement.execute("SELECT " + columns.chainID + " FROM " + tables.eventFrames + " ORDER BY " + columns.chainID + " DESC LIMIT 1;");
             ResultSet set = statement.getResultSet();
             set.next();
@@ -208,11 +225,20 @@ public class DataBaseManager implements Closeable {
                 if(event.getEvent().getChainID() == -1){
                     event.getEvent().setChainID(++lastID);
                 }
-                framesFixer += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + event.getGame() + "," + event.getCompetition() + "," + event.getTeam() + "," + event.getAlliance() + "," + event.getStartingLocation() + ")";
-                stampsFixer += (!first ? " OR " : "") + columns.eventChainID + " = " + event.getEvent().getChainID();
+                framesFixer += (!first ? "," : "") + "("
+                        + event.getEvent().getChainID() + ","
+                        + event.getGame() + ","
+                        + event.getCompetition() + ","
+                        + event.getTeam() + ","
+                        + event.getAlliance() + ","
+                        + event.getStartingLocation() + ")";
                 int location = 1;
                 for(ScoutingEvent.EventTimeStamp stamp : event.getEvent().getStamps()){
-                    stampsFixer += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + location++ + "," + event.getEvent().getType() + "," + String.valueOf(stamp.getTimeStamp()) + ")";
+                    stampsFixer += (!first ? "," : "") + "("
+                            + event.getEvent().getChainID() + ","
+                            + location++ + ","
+                            + event.getEvent().getType() + ","
+                            + String.valueOf(stamp.getTimeStamp()) + ")";
                     first = false;
                 }
             }
