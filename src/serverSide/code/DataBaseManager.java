@@ -154,7 +154,7 @@ public class DataBaseManager implements Closeable {
             try {
                 database.rollback();
             } catch (SQLException e1) {
-                throw new Error("Could not roll back database changes!");
+                throw new Error("could not roll back database changes!",e);
             }
             throw new IllegalArgumentException("The transaction could not be completed.", e);
         }
@@ -172,7 +172,7 @@ public class DataBaseManager implements Closeable {
             try {
                 database.rollback();
             } catch (SQLException e1) {
-                throw new Error("Could not roll back database changes!");
+                throw new Error("could not roll back database changes!",e);
             }
             throw new IllegalArgumentException("The transaction could not be completed.", e);
         }
@@ -194,27 +194,35 @@ public class DataBaseManager implements Closeable {
                 }
             }
             // delete all relevant stamps. delete all event frames that aren't in the new list. insert or replace with new frames. add the new stamps. newest chain id is loaded from the database by getting the highest 1 chain id right now and then assigning them in an increasing size to the frames.
-            String framesFixer = "DELETE FROM " + tables.events + " WHERE " + columns.eventChainID + " in " + ("SELECT " + columns.chainID + " from " + tables.eventFrames + " where " + columns.gameNumber + " = " + game + " AND " + columns.competitionNumber + " = " + ("SELECT " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = " + competition)) + ")";
-            String framesInserter = "INSERT INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ") values";
-            String stampsFixer = "DELETE FROM " + tables.events + " WHERE ";
-            String stampsInserter = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ") values";
-            boolean first = true;
+            String stampsCleaner = "DELETE FROM " + tables.events + " WHERE " + columns.eventChainID + " in " + ("SELECT " + columns.chainID + " from " + tables.eventFrames + " where " + columns.gameNumber + " = " + game + " AND " + columns.competitionNumber + " = " + ("SELECT " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = '" + competition + "'")) + ");";
+            String framesCleaner = "DELETE FROM " + tables.eventFrames + " where " + columns.gameNumber + " = " + game + " AND " + columns.competitionNumber + " = " + ("SELECT " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = '" + competition + "'") + " AND " + columns.chainID + " NOT IN " + idList + ";";
+            statement.execute(stampsCleaner + " " + framesCleaner);
+            String framesFixer = "INSERT OR REPLACE INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.alliance + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ") VALUES " ;
+            String stampsFixer = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ") values";
+            statement.execute("SELECT " + columns.chainID + " FROM " + tables.eventFrames + " ORDER BY " + columns.chainID + " DESC LIMIT 1;");
+            ResultSet set = statement.getResultSet();
+            set.next();
+            Integer lastID = set.getInt(columns.chainID.toString());
+            first = true;
             for(FullScoutingEvent event : events){
-                framesInserter += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + event.getGame() + "," + event.getCompetition() + "," + event.getTeam() + "," + event.getAlliance() + "," + event.getStartingLocation() + ")";
+                if(event.getEvent().getChainID() == -1){
+                    event.getEvent().setChainID(++lastID);
+                }
+                framesFixer += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + event.getGame() + "," + event.getCompetition() + "," + event.getTeam() + "," + event.getAlliance() + "," + event.getStartingLocation() + ")";
                 stampsFixer += (!first ? " OR " : "") + columns.eventChainID + " = " + event.getEvent().getChainID();
-                int location = 0;
+                int location = 1;
                 for(ScoutingEvent.EventTimeStamp stamp : event.getEvent().getStamps()){
-                    stampsInserter += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + location++ + "," + event.getEvent().getType() + "," + (stamp.getTimeStamp() == null ? "NULL" : stamp.getTimeStamp()) + ")";
+                    stampsFixer += (!first ? "," : "") + "(" + event.getEvent().getChainID() + "," + location++ + "," + event.getEvent().getType() + "," + String.valueOf(stamp.getTimeStamp()) + ")";
                     first = false;
                 }
             }
-            statement.execute(framesInserter + "; " + stampsFixer + "; " + stampsInserter + ";");
+            statement.execute(framesFixer + "; " + stampsFixer);
             database.commit();
         } catch (SQLException e){
             try {
                 database.rollback();
             } catch (SQLException e1) {
-                throw new Error("Could not roll back database changes!");
+                throw new Error("could not roll back database changes!",e);
             }
             throw new IllegalArgumentException("The transaction could not be completed.", e);
         }
@@ -243,7 +251,7 @@ public class DataBaseManager implements Closeable {
             try {
                 database.rollback();
             } catch (SQLException e1) {
-                throw new Error("Could not roll back database changes!");
+                throw new Error("could not roll back database changes!",e);
             }
             throw new IllegalArgumentException("The transaction could not be completed.", e);
         }
