@@ -181,19 +181,23 @@ public class ScouterUI {
 
         private void generateEvent(){
             events.setDisable(true);
-            currentlyProcessing.addProgress(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis()/100) : null);
-            events.getChildren().clear();
-            if(definition.getNextStamps() == null){
-                eventList.add(currentlyProcessing);
-                currentlyProcessing = new ScoutingEvent();
-                for(int i : initialEvents) {
-                    events.getChildren().add(buttons.get(i));
+            try {
+                currentlyProcessing.addProgress(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis() / 100) : null);
+                events.getChildren().clear();
+                if (definition.getNextStamps() == null) {
+                    eventList.add(currentlyProcessing);
+                    currentlyProcessing = new ScoutingEvent();
+                    for (int i : initialEvents) {
+                        events.getChildren().add(buttons.get(i));
+                    }
+                } else {
+                    for (byte eventDef : definition.getNextStamps()) {
+                        events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
+                    }
+                    events.getChildren().add(backEvent);
                 }
-            } else {
-                for(byte eventDef : definition.getNextStamps()) {
-                    events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
-                }
-                events.getChildren().add(backEvent);
+            } catch (IllegalArgumentException e){
+                errored(e.getMessage());
             }
             events.setDisable(false);
         }

@@ -6,11 +6,11 @@ public class FullScoutingEvent {
     private Short team;
     private short game;
     private short competition;
-    private Short mapConfiguration;
+    private String mapConfiguration;
     private byte startingLocation;
     private byte alliance;
 
-    public FullScoutingEvent(ScoutingEvent event, Short team, short game, short competition, Short mapConfiguration, byte startingLocation, byte alliance) {
+    public FullScoutingEvent(ScoutingEvent event, Short team, short game, short competition, String mapConfiguration, byte startingLocation, byte alliance) {
         this.event = event;
         this.team = team;
         this.game = game;
@@ -36,7 +36,7 @@ public class FullScoutingEvent {
         return competition;
     }
 
-    public Short getMapConfiguration() {
+    public String getMapConfiguration() {
         return mapConfiguration;
     }
 
