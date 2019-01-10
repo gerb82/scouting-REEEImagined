@@ -27,7 +27,7 @@ public class DataBaseManager implements Closeable {
     private Connection database;
 
     // database mapping available at https://www.dbdesigner.net/designer/schema/221463
-    private enum columns {
+    private enum Columns {
         eventTypeID, eventName, teamSpecific, // event types
         containerEventType, eventContainedType, // containers table
         teamNumbers, teamNames, participatedIn, // teams table
@@ -38,7 +38,7 @@ public class DataBaseManager implements Closeable {
         commentContent, associatedTeam, associatedGame, associatedChain, timeStamp // comments table
     }
 
-    private enum tables {
+    private enum Tables {
         eventTypes, containableEvents, teamNumbers, events, games, competitions, eventFrames, comments
     }
 
@@ -52,84 +52,84 @@ public class DataBaseManager implements Closeable {
             Statement statement = database.createStatement();
 
             // eventDefinitionsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.eventTypes + "(" + System.lineSeparator() +
-                    columns.eventTypeID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
-                    columns.eventName + " text NOT NULL UNIQUE," +
-                    columns.teamSpecific + " integer NOT NULL);");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventTypes + "(" + System.lineSeparator() +
+                    Columns.eventTypeID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
+                    Columns.eventName + " text NOT NULL UNIQUE," +
+                    Columns.teamSpecific + " integer NOT NULL);");
 
             // competitions
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.competitions + "(" + System.lineSeparator() +
-                    columns.competitionID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
-                    columns.competitionName + " text NOT NULL);");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.competitions + "(" + System.lineSeparator() +
+                    Columns.competitionID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
+                    Columns.competitionName + " text NOT NULL);");
 
             // containableEventsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.containableEvents + "(" + System.lineSeparator() +
-                    columns.containerEventType + " integer NOT NULL," + System.lineSeparator() +
-                    columns.eventContainedType + " integer NOT NULL," + System.lineSeparator() +
-                    "PRIMARY KEY(" + columns.containerEventType + "," + columns.eventContainedType + ")." + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.containerEventType + ") REFERENCES " + tables.eventTypes + "(" + columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.eventContainedType + ") REFERENCES " + tables.eventTypes + "(" + columns.eventTypeID + "));");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.containableEvents + "(" + System.lineSeparator() +
+                    Columns.containerEventType + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.eventContainedType + " integer NOT NULL," + System.lineSeparator() +
+                    "PRIMARY KEY(" + Columns.containerEventType + "," + Columns.eventContainedType + ")." + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.containerEventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.eventContainedType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + "));");
 
             // teamsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.teamNumbers + "(" + System.lineSeparator() +
-                    columns.teamNumbers + " integer primary key," + System.lineSeparator() +
-                    columns.teamNames + " text NOT NULL UNIQUE);");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.teamNumbers + "(" + System.lineSeparator() +
+                    Columns.teamNumbers + " integer primary key," + System.lineSeparator() +
+                    Columns.teamNames + " text NOT NULL UNIQUE);");
 
             // gamesList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.games + "(" + System.lineSeparator() +
-                    columns.gameNumbers + " integer NOT NULL," + System.lineSeparator() +
-                    columns.mapConfiguration + " text," + System.lineSeparator() +
-                    columns.competition + " integer NOT NULL," + System.lineSeparator() +
-                    columns.redAllianceScore + " integer NOT NULL," + System.lineSeparator() +
-                    columns.redAllianceRP + " integer NOT NULL," + System.lineSeparator() +
-                    columns.blueAllianceScore + " integer NOT NULL," + System.lineSeparator() +
-                    columns.blueAllianceRP + " integer NOT NULL," + System.lineSeparator() +
-                    columns.teamNumber1 + " integer," + System.lineSeparator() +
-                    columns.teamNumber2 + " integer," + System.lineSeparator() +
-                    columns.teamNumber3 + " integer," + System.lineSeparator() +
-                    columns.teamNumber4 + " integer," + System.lineSeparator() +
-                    columns.teamNumber5 + " integer," + System.lineSeparator() +
-                    columns.teamNumber6 + " integer," + System.lineSeparator() +
-                    "PRIMARY KEY(" + columns.gameNumbers + "," + columns.competition + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.competition + ") REFERENCES " + tables.competitions + "(" + columns.competitionID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber1 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber2 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber3 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber4 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber5 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber6 + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + "));");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.games + "(" + System.lineSeparator() +
+                    Columns.gameNumbers + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.mapConfiguration + " text," + System.lineSeparator() +
+                    Columns.competition + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.blueAllianceScore + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.redAllianceScore + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.blueAllianceRP + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.redAllianceRP + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.teamNumber1 + " integer," + System.lineSeparator() +
+                    Columns.teamNumber2 + " integer," + System.lineSeparator() +
+                    Columns.teamNumber3 + " integer," + System.lineSeparator() +
+                    Columns.teamNumber4 + " integer," + System.lineSeparator() +
+                    Columns.teamNumber5 + " integer," + System.lineSeparator() +
+                    Columns.teamNumber6 + " integer," + System.lineSeparator() +
+                    "PRIMARY KEY(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.competition + ") REFERENCES " + Tables.competitions + "(" + Columns.competitionID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber1 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber2 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber3 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber4 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber5 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber6 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
 
             // eventFrames
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.eventFrames + "(" + System.lineSeparator() +
-                    columns.chainID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
-                    columns.gameNumber + " integer NOT NULL," + System.lineSeparator() +
-                    columns.competitionNumber + " integer NOT NULL," + System.lineSeparator() +
-                    columns.teamNumber + " integer," + System.lineSeparator() +
-                    columns.alliance + " integer NOT NULL," + System.lineSeparator() +
-                    columns.startingLocation + " integer NOT NULL," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.gameNumber + "," + columns.competitionNumber + ") REFERENCES " + tables.games + "(" + columns.gameNumbers + "," + columns.competition + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.teamNumber + ") REFERENCES " + tables.teamNumbers + "(" + columns.teamNumbers + "));");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventFrames + "(" + System.lineSeparator() +
+                    Columns.chainID + " integer primary key AUTO INCREMENT," + System.lineSeparator() +
+                    Columns.gameNumber + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.competitionNumber + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.teamNumber + " integer," + System.lineSeparator() +
+                    Columns.alliance + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.startingLocation + " integer NOT NULL," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.gameNumber + "," + Columns.competitionNumber + ") REFERENCES " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.teamNumber + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
 
             // eventsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.events + "(" + System.lineSeparator() +
-                    columns.eventChainID + " integer NOT NULL," + System.lineSeparator() +
-                    columns.eventLocationInChain + " integer NOT NULL," + System.lineSeparator() +
-                    columns.eventType + " integer NOT NULL," + System.lineSeparator() +
-                    columns.timeStamps + " integer," + System.lineSeparator() +
-                    "PRIMARY KEY(" + columns.eventChainID + "," + columns.eventLocationInChain + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.eventType + ") REFERENCES " + tables.eventTypes + "(" + columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.eventChainID + ") REFERENCES " + tables.eventFrames + "(" + columns.chainID + "));");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.events + "(" + System.lineSeparator() +
+                    Columns.eventChainID + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.eventLocationInChain + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.eventType + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.timeStamps + " integer," + System.lineSeparator() +
+                    "PRIMARY KEY(" + Columns.eventChainID + "," + Columns.eventLocationInChain + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.eventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.eventChainID + ") REFERENCES " + Tables.eventFrames + "(" + Columns.chainID + "));");
 
             // commentsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + tables.comments + "(" + System.lineSeparator() +
-                    columns.commentContent + " text NOT NULL," + System.lineSeparator() +
-                    columns.associatedTeam + " integer," + System.lineSeparator() +
-                    columns.associatedGame + " integer," + System.lineSeparator() +
-                    columns.associatedChain + " integer," + System.lineSeparator() +
-                    columns.timeStamp + " integer" + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.associatedTeam + ") REFERENCES " + tables.teamNumbers + " (" + columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.associatedGame + ") REFERENCES " + tables.games + " (" + columns.gameNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + columns.associatedChain + ") REFERENCES " + tables.eventFrames + " (" + columns.chainID + "));");
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.comments + "(" + System.lineSeparator() +
+                    Columns.commentContent + " text NOT NULL," + System.lineSeparator() +
+                    Columns.associatedTeam + " integer," + System.lineSeparator() +
+                    Columns.associatedGame + " integer," + System.lineSeparator() +
+                    Columns.associatedChain + " integer," + System.lineSeparator() +
+                    Columns.timeStamp + " integer" + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.associatedTeam + ") REFERENCES " + Tables.teamNumbers + " (" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
 
             database.commit();
             statement.close();
@@ -152,19 +152,40 @@ public class DataBaseManager implements Closeable {
     }
 
     private String competitionNameToID(String competition) {
-        return "SELECT " + columns.competitionID + " from " + tables.competitions + "where " + columns.competitionName + " = '" + competition + "'";
+        return "SELECT " + Columns.competitionID + " from " + Tables.competitions + "where " + Columns.competitionName + " = '" + competition + "'";
+    }
+
+    private String allianceToAllianceID(boolean blueAlliance) {
+        return blueAlliance ? "1" : "2";
+    }
+
+    private String matchEventGameAndCompetition(short game, String competition){
+        return Columns.gameNumber + " = " + game + " AND " + Columns.competitionNumber + " = " + competitionNameToID(competition);
+    }
+
+    private String matchEventTeam(short team){
+        return Columns.teamNumber + " = " + team;
+    }
+
+    private String matchEventType(byte type){
+        return Columns.eventType + " IN " + "(SELECT " + Columns.eventChainID + " FROM " + Tables.events + " WHERE " + Columns.eventType + " = " + type + ")";
+    }
+
+    private String matchTeamAlliance(short team){
+        return "((" + Columns.alliance + " = " + allianceToAllianceID(true) + " AND (" + Columns.teamNumber1 + " = " + team + " OR " + Columns.teamNumber2 + " = " + team + " OR " + Columns.teamNumber3 + " = " + team + "))" + System.lineSeparator() +
+        "OR (" + Columns.alliance + " = " + allianceToAllianceID(false) + " AND (" + Columns.teamNumber4 + " = " + team + " OR " + Columns.teamNumber5 + " = " + team + " OR " + Columns.teamNumber6 + " = " + team + ")))";
     }
 
     protected void addNewCompetition(String name, ScoutedTeam[] teams) {
         try (Statement statement = database.createStatement()) {
-            statement.execute("INSERT INTO " + tables.competitions + "(" + columns.competitionName + ") VALUES(" + name + ");");
-            statement.execute("ALTER TABLE " + tables.teamNumbers + " ADD COLUMN " + columns.participatedIn + competitionNameToID(name) + " integer NOT NULL DEFAULT 0;");
-            String insertTeams = "INSERT OR IGNORE INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + "," + columns.participatedIn + competitionNameToID(name) + ") VALUES";
-            String signUpTeams = "UPDATE " + tables.teamNumbers + " SET " + columns.participatedIn + competitionNameToID(name) + " = 1 WHERE ";
+            statement.execute("INSERT INTO " + Tables.competitions + "(" + Columns.competitionName + ") VALUES(" + name + ");");
+            statement.execute("ALTER TABLE " + Tables.teamNumbers + " ADD COLUMN " + Columns.participatedIn + competitionNameToID(name) + " integer NOT NULL DEFAULT 0;");
+            String insertTeams = "INSERT OR IGNORE INTO " + Tables.teamNumbers + "(" + Columns.teamNumbers + "," + Columns.teamNames + "," + Columns.participatedIn + competitionNameToID(name) + ") VALUES";
+            String signUpTeams = "UPDATE " + Tables.teamNumbers + " SET " + Columns.participatedIn + competitionNameToID(name) + " = 1 WHERE ";
             boolean first = true;
             for (ScoutedTeam team : teams) {
                 insertTeams += (!first ? "," : "") + "(" + team.getNumber() + ",'" + team.getName() + "'," + "1)";
-                signUpTeams += (!first ? " OR " : "") + columns.teamNumbers + " = " + team.getNumber();
+                signUpTeams += (!first ? " OR " : "") + Columns.teamNumbers + " = " + team.getNumber();
                 first = false;
             }
             statement.execute(insertTeams + ";");
@@ -184,9 +205,9 @@ public class DataBaseManager implements Closeable {
         try (Statement statement = database.createStatement()) {
             String competitionsColumns = "";
             for (String competition : competitions) {
-                competitionsColumns += "," + columns.participatedIn + competitionNameToID(competition);
+                competitionsColumns += "," + Columns.participatedIn + competitionNameToID(competition);
             }
-            statement.execute("INSERT INTO " + tables.teamNumbers + "(" + columns.teamNumbers + "," + columns.teamNames + competitionsColumns + ")" + System.lineSeparator() +
+            statement.execute("INSERT INTO " + Tables.teamNumbers + "(" + Columns.teamNumbers + "," + Columns.teamNames + competitionsColumns + ")" + System.lineSeparator() +
                     "VALUES(" + team.getNumber() + ",'" + team.getName() + "'" + String.join("", Collections.nCopies(competitionsColumns.length(), ",1")) + ");");
             database.commit();
         } catch (SQLException e) {
@@ -214,28 +235,28 @@ public class DataBaseManager implements Closeable {
                     }
                 }
             }
-            String stampsCleaner = "DELETE FROM " + tables.events + System.lineSeparator() +
-                    "WHERE " + columns.eventChainID + " in " +
-                    ("SELECT " + columns.chainID + " from " + tables.eventFrames + System.lineSeparator() +
-                            "where " + columns.gameNumber + " = " + game + System.lineSeparator() + "" + System.lineSeparator() +
-                            "AND " + columns.competitionNumber + " = " + competitionNameToID(competition) +
-                            " AND " + columns.teamNumber + " = " + team) + ");";
+            String stampsCleaner = "DELETE FROM " + Tables.events + System.lineSeparator() +
+                    "WHERE " + Columns.eventChainID + " in " +
+                    ("SELECT " + Columns.chainID + " from " + Tables.eventFrames + System.lineSeparator() +
+                            "where " + Columns.gameNumber + " = " + game + System.lineSeparator() + "" + System.lineSeparator() +
+                            "AND " + Columns.competitionNumber + " = " + competitionNameToID(competition) +
+                            " AND " + Columns.teamNumber + " = " + team) + ");";
 
-            String framesCleaner = "DELETE FROM " + tables.eventFrames + System.lineSeparator() +
-                    "where " + columns.gameNumber + " = " + game + System.lineSeparator() +
-                    "AND " + columns.competitionNumber + " = " + competitionNameToID(competition) + System.lineSeparator() +
-                    "AND " + columns.teamNumber + " = " + team + System.lineSeparator() +
-                    "AND " + columns.chainID + " NOT IN " + idList + ";";
+            String framesCleaner = "DELETE FROM " + Tables.eventFrames + System.lineSeparator() +
+                    "where " + Columns.gameNumber + " = " + game + System.lineSeparator() +
+                    "AND " + Columns.competitionNumber + " = " + competitionNameToID(competition) + System.lineSeparator() +
+                    "AND " + Columns.teamNumber + " = " + team + System.lineSeparator() +
+                    "AND " + Columns.chainID + " NOT IN " + idList + ";";
 
             statement.execute(stampsCleaner + " " + framesCleaner);
-            String framesFixer = "INSERT OR REPLACE INTO " + tables.eventFrames + "(" + columns.chainID + "," + columns.alliance + "," + columns.gameNumber + "," + columns.competitionNumber + "," + columns.teamNumber + "," + columns.startingLocation + ")" + System.lineSeparator() +
+            String framesFixer = "INSERT OR REPLACE INTO " + Tables.eventFrames + "(" + Columns.chainID + "," + Columns.alliance + "," + Columns.gameNumber + "," + Columns.competitionNumber + "," + Columns.teamNumber + "," + Columns.startingLocation + ")" + System.lineSeparator() +
                     "VALUES"; // continues in the for-loop
-            String stampsFixer = "INSERT INTO " + tables.events + "(" + columns.eventChainID + "," + columns.eventLocationInChain + "," + columns.eventType + "," + columns.timeStamps + ")" + System.lineSeparator() +
+            String stampsFixer = "INSERT INTO " + Tables.events + "(" + Columns.eventChainID + "," + Columns.eventLocationInChain + "," + Columns.eventType + "," + Columns.timeStamps + ")" + System.lineSeparator() +
                     "values"; // continues in the for-loop
-            statement.execute("SELECT " + columns.chainID + " FROM " + tables.eventFrames + " ORDER BY " + columns.chainID + " DESC LIMIT 1;");
+            statement.execute("SELECT " + Columns.chainID + " FROM " + Tables.eventFrames + " ORDER BY " + Columns.chainID + " DESC LIMIT 1;");
             ResultSet set = statement.getResultSet();
             set.next();
-            Integer lastID = set.getInt(columns.chainID.toString());
+            Integer lastID = set.getInt(Columns.chainID.toString());
             first = true;
             for (FullScoutingEvent event : events) {
                 if (event.getEvent().getChainID() == -1) {
@@ -281,7 +302,7 @@ public class DataBaseManager implements Closeable {
                     throw new IllegalArgumentException("The same team was supplied twice for the given new game!");
                 }
             }
-            String gameCreate = "INSERT INTO " + tables.games + "(" + columns.gameNumbers + "," + columns.competition + "," + columns.mapConfiguration + "," + columns.teamNumber1 + "," + columns.teamNumber2 + "," + columns.teamNumber3 + "," + columns.teamNumber4 + "," + columns.teamNumber5 + "," + columns.teamNumber6 + ") values(" + gameNumber + "," + "(Select " + columns.competitionID + " from " + tables.competitions + " where " + columns.competitionName + " = '" + competition + "')" + "," + mapConfiguration;
+            String gameCreate = "INSERT INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.mapConfiguration + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + ") values(" + gameNumber + "," + "(Select " + Columns.competitionID + " from " + Tables.competitions + " where " + Columns.competitionName + " = '" + competition + "')" + "," + mapConfiguration;
             for (Integer teamNum : teams) {
                 gameCreate += "," + teamNum;
             }
@@ -304,31 +325,62 @@ public class DataBaseManager implements Closeable {
 
 
 
-    private String formatEventsSelect(String conditions){
-        return null;
+
+    private String formatEventsSelect(String conditions) {
+        return "SELECT " + Columns.eventChainID + "," + Columns.eventLocationInChain + "," + Columns.eventType + "," + Columns.timeStamps + "," + Columns.chainID + "," + Columns.alliance + "," + Columns.gameNumber + "," + Columns.competitionNumber + "," + Columns.startingLocation + " FROM " + Tables.events + System.lineSeparator() +
+                "INNER JOIN " + Tables.eventFrames + " ON " + Tables.eventFrames + "." + Columns.chainID + " = " + Tables.events + "." + Columns.eventChainID + System.lineSeparator() +
+                "INNER JOIN " + Tables.games + " ON " + Tables.games + "." + Columns.gameNumber + " = " + Tables.eventFrames + "." + Columns.gameNumber + System.lineSeparator() +
+                (conditions == null ? "" : "WHERE " + conditions + System.lineSeparator()) +
+                "ORDER BY " + Columns.eventChainID + " ASC, " + Columns.eventLocationInChain + " ASC;";
     }
 
-    protected ArrayList<FullScoutingEvent> getEventsByGame() {
-        return null;
+    protected ArrayList<FullScoutingEvent> getEventsByGame(short game, String competition) {
+        try (Statement statement = database.createStatement()) {
+            statement.execute(formatEventsSelect(matchEventGameAndCompetition(game, competition)));
+
+            return convertResultSetToEvents(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The transaction could not be completed.", e);
+        }
     }
 
-    protected ArrayList<FullScoutingEvent> getAllTeamEventsByGame() {
-        return null;
+    protected ArrayList<FullScoutingEvent> getAllTeamEventsByGame(short game, String competition, short team) {
+        try (Statement statement = database.createStatement()) {
+            statement.execute(formatEventsSelect( matchEventGameAndCompetition(game, competition) + System.lineSeparator() +
+                    "AND " + matchEventTeam(team)));
+
+            return convertResultSetToEvents(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The transaction could not be completed.", e);
+        }
     }
 
-    protected ArrayList<FullScoutingEvent> getTeamAllianceEvents() {
-        return null;
+    protected ArrayList<FullScoutingEvent> getTeamAllianceEvents(short team) {
+        try (Statement statement = database.createStatement()) {
+            statement.execute(formatEventsSelect(matchTeamAlliance(team)));
+
+            return convertResultSetToEvents(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The transaction could not be completed.", e);
+        }
     }
 
-    protected ArrayList<FullScoutingEvent> getTeamAliienceEventsByGame() {
-        return null;
+    protected ArrayList<FullScoutingEvent> getTeamAliienceEventsByGame(short game, String competition, short team) {
+        try (Statement statement = database.createStatement()) {
+            statement.execute(formatEventsSelect(matchEventGameAndCompetition(game, competition) + System.lineSeparator() +
+                    "AND " + matchTeamAlliance(team)));
+
+            return convertResultSetToEvents(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The transaction could not be completed.", e);
+        }
     }
 
     protected ArrayList<FullScoutingEvent> getAllTeamEventsOfType() {
         return null;
     }
 
-    protected ArrayList<FullScoutingEvent> getAllTeamEventsOfTypeByGame() {
+    protected ArrayList<FullScoutingEvent> getTeamEventsOfTypeByGame() {
         return null;
     }
 
@@ -389,39 +441,63 @@ public class DataBaseManager implements Closeable {
     }
 
 
-
-
-
     private ArrayList<ScoutedGame> convertResultSetToGames(ResultSet set) throws SQLException {
         ArrayList<ScoutedGame> result = new ArrayList<>();
-        while(set.next()){
+        while (set.next()) {
             result.add(new ScoutedGame(
-                    set.getShort(columns.gameNumbers.toString()),
-                    set.getByte(columns.competition.toString()),
-                    set.getShort(columns.redAllianceScore.toString()),
-                    set.getShort(columns.blueAllianceScore.toString()),
-                    set.getByte(columns.redAllianceRP.toString()),
-                    set.getByte(columns.blueAllianceRP.toString()),
-                    set.getString(columns.mapConfiguration.toString()),
-                    set.getShort(columns.teamNumber1.toString()),
-                    set.getShort(columns.teamNumber2.toString()),
-                    set.getShort(columns.teamNumber3.toString()),
-                    set.getShort(columns.teamNumber4.toString()),
-                    set.getShort(columns.teamNumber5.toString()),
-                    set.getShort(columns.teamNumber6.toString()))
+                    set.getShort(Columns.gameNumbers.toString()),
+                    set.getByte(Columns.competition.toString()),
+                    set.getShort(Columns.redAllianceScore.toString()),
+                    set.getShort(Columns.blueAllianceScore.toString()),
+                    set.getByte(Columns.redAllianceRP.toString()),
+                    set.getByte(Columns.blueAllianceRP.toString()),
+                    set.getString(Columns.mapConfiguration.toString()),
+                    set.getShort(Columns.teamNumber1.toString()),
+                    set.getShort(Columns.teamNumber2.toString()),
+                    set.getShort(Columns.teamNumber3.toString()),
+                    set.getShort(Columns.teamNumber4.toString()),
+                    set.getShort(Columns.teamNumber5.toString()),
+                    set.getShort(Columns.teamNumber6.toString()))
             );
         }
+        set.close();
         return result;
     }
 
     private ArrayList<ScoutedTeam> convertResultSetToTeams(ResultSet set) throws SQLException {
         ArrayList<ScoutedTeam> result = new ArrayList<>();
-        while(set.next()){
+        while (set.next()) {
             result.add(new ScoutedTeam(
-                    set.getShort(columns.teamNumbers.toString()),
-                    set.getString(columns.teamNames.toString()))
+                    set.getShort(Columns.teamNumbers.toString()),
+                    set.getString(Columns.teamNames.toString()))
             );
         }
+        set.close();
+        return result;
+    }
+
+    private ArrayList<FullScoutingEvent> convertResultSetToEvents(ResultSet set) throws SQLException {
+        ArrayList<FullScoutingEvent> result = new ArrayList<>();
+        FullScoutingEvent buffer = null;
+        while (set.next()) {
+            if (set.getInt(Columns.eventLocationInChain.toString()) == 1) {
+                buffer = new FullScoutingEvent(
+                        new ScoutingEvent() {{
+                            this.addProgress(set.getByte(Columns.eventType.toString()), set.getShort(Columns.timeStamps.toString()) == 0 ? null : set.getShort(Columns.timeStamps.toString()));
+                        }},
+                        set.getShort(Columns.teamNumber.toString()) == 0 ? null : set.getShort(Columns.teamNumber.toString()),
+                        set.getShort(Columns.gameNumber.toString()),
+                        set.getShort(Columns.competitionNumber.toString()),
+                        set.getString(Columns.mapConfiguration.toString()),
+                        set.getByte(Columns.startingLocation.toString()),
+                        (byte) (set.getByte(Columns.alliance.toString()) - 1)
+                );
+                result.add(buffer);
+            } else {
+                buffer.getEvent().addProgress(set.getByte(Columns.eventType.toString()), set.getShort(Columns.timeStamp.toString()));
+            }
+        }
+        set.close();
         return result;
     }
 
