@@ -35,11 +35,13 @@ public class DataBaseManager implements Closeable {
         competitionID, competitionName, // competitions
         eventChainID, eventLocationInChain, eventType, timeStamps, // stamps table
         chainID, gameNumber, competitionNumber, teamNumber, alliance, startingLocation, // main events table
-        commentContent, associatedTeam, associatedGame, associatedChain, timeStamp // comments table
+        commentContent, associatedTeam, associatedGame, associatedChain, timeStamp, // comments table
+        groupNumber, groupText, // group definitions table
+        groupEventType, containedGroupID, groupID // groups table
     }
 
     private enum Tables {
-        eventTypes, containableEvents, teamNumbers, events, games, competitions, eventFrames, comments
+        eventTypes, containableEvents, teamNumbers, events, games, competitions, eventFrames, comments, eventGroups, groupDefinitions
     }
 
     public DataBaseManager() {
@@ -131,6 +133,19 @@ public class DataBaseManager implements Closeable {
                     "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
 
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.groupDefinitions + "(" + System.lineSeparator() +
+                    Columns.groupNumber + " integer PRIMARY KEY," + System.lineSeparator() +
+                    Columns.groupText + " text NOT NULL);");
+
+            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventGroups + "(" + System.lineSeparator() +
+                    Columns.groupEventType + " integer," + System.lineSeparator() +
+                    Columns.containedGroupID + " integer," + System.lineSeparator() +
+                    Columns.groupID + "integer NOT NULL," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.groupEventType + ") REFERENCES " + Tables.eventTypes + " (" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.groupID + ") REFERENCES " + Tables.groupDefinitions + " (" + Columns.groupNumber + ")" + System.lineSeparator() +
+                    "PRIMARY KEY(" + Columns.groupEventType + "," + Columns.containedGroupID + "," + Columns.groupID + "));");
+
             database.commit();
             statement.close();
         } catch (SQLException e) {
@@ -168,7 +183,7 @@ public class DataBaseManager implements Closeable {
     }
 
     private String matchEventType(byte type){
-        return Columns.eventType + " IN " + "(SELECT " + Columns.eventChainID + " FROM " + Tables.events + " WHERE " + Columns.eventType + " = " + type + ")";
+        return Columns.eventChainID + " IN " + "(SELECT " + Columns.eventChainID + " FROM " + Tables.events + " WHERE " + Columns.eventType + " = " + type + ")";
     }
 
     private String matchTeamAlliance(short team){
