@@ -5,12 +5,12 @@ public class FullScoutingEvent {
     private ScoutingEvent event;
     private Short team;
     private short game;
-    private short competition;
+    private byte competition;
     private String mapConfiguration;
     private byte startingLocation;
-    private byte alliance;
+    private boolean alliance;
 
-    public FullScoutingEvent(ScoutingEvent event, Short team, short game, short competition, String mapConfiguration, byte startingLocation, byte alliance) {
+    public FullScoutingEvent(ScoutingEvent event, Short team, short game, byte competition, String mapConfiguration, byte startingLocation, boolean alliance) {
         this.event = event;
         this.team = team;
         this.game = game;
@@ -32,7 +32,7 @@ public class FullScoutingEvent {
         return game;
     }
 
-    public short getCompetition() {
+    public byte getCompetition() {
         return competition;
     }
 
@@ -44,7 +44,7 @@ public class FullScoutingEvent {
         return startingLocation;
     }
 
-    public byte getAlliance() {
+    public boolean getAlliance() {
         return alliance;
     }
 }

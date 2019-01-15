@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="nanohttpd-2.3.0">
-    <CLASSES>
-      <root url="jar://$USER_HOME$/Downloads/nanohttpd-2.3.0.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

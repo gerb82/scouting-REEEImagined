@@ -43,6 +43,7 @@ public class ScouterUI {
     private HashMap<Byte, ScoutingEventDefinition> validEvents = new HashMap<>();
     private MainLogic main;
     private Button backEvent;
+    private short playerOffset;
 
     private class OptionChooser extends MenuItem {
 
@@ -182,7 +183,7 @@ public class ScouterUI {
         private void generateEvent(){
             events.setDisable(true);
             try {
-                currentlyProcessing.addProgress(definition.getName(), definition.doesStart() ? (short) (mediaPlayer.getCurrentTime().toMillis() / 100) : null);
+                currentlyProcessing.addProgress(definition.getName(), definition.followStamp() ? (short) ((mediaPlayer.getCurrentTime().toMillis() / 100) + playerOffset) : null);
                 events.getChildren().clear();
                 if (definition.getNextStamps() == null) {
                     eventList.add(currentlyProcessing);

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="org.apache.tomcat.embed:tomcat-embed-core:9.0.14" type="repository">
+    <properties maven-id="org.apache.tomcat.embed:tomcat-embed-core:9.0.14" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/tomcat/embed/tomcat-embed-core/9.0.14/tomcat-embed-core-9.0.14.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/tomcat/tomcat-annotations-api/9.0.14/tomcat-annotations-api-9.0.14.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

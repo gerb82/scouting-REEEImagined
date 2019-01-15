@@ -16,7 +16,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" exported="" name="nanohttpd-2.3.0" level="project" />
     <orderEntry type="library" name="org.xerial:sqlite-jdbc:3.25.2" level="project" />
+    <orderEntry type="library" name="org.apache.tomcat.embed:tomcat-embed-core:9.0.14" level="project" />
   </component>
 </module>

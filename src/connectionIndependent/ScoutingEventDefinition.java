@@ -6,13 +6,13 @@ public class ScoutingEventDefinition implements Serializable{
 
     private byte[] nextStamps;
     private byte name;
-    private boolean starts;
+    private boolean stamp;
     private String textName;
 
-    public ScoutingEventDefinition(byte[] nextStamps, byte name, boolean starts, String textName) {
+    public ScoutingEventDefinition(byte[] nextStamps, byte name, boolean stamp, String textName) {
         this.nextStamps = nextStamps;
         this.name = name;
-        this.starts = starts;
+        this.stamp = stamp;
         this.textName = textName;
     }
 
@@ -24,8 +24,8 @@ public class ScoutingEventDefinition implements Serializable{
         return name;
     }
 
-    public boolean doesStart() {
-        return starts;
+    public boolean followStamp() {
+        return stamp;
     }
 
     public String getTextName() {
