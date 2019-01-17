@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.nio.file.Files;
 
 public class HTTPManager {
 
@@ -36,16 +38,13 @@ public class HTTPManager {
             public void doGet(HttpServletRequest req, HttpServletResponse resp)
                     throws ServletException, IOException
             {
-                req.startAsync();
-                RequestDispatcher rd = getServletContext().getNamedDispatcher("default");
-                System.out.println("we did it");
-                HttpServletRequest wrapped = new HttpServletRequestWrapper(req) {
-                    public String getServletPath() { return ""; }
-                };
-                rd.forward(wrapped, resp);
+                File file = new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\src\\serverSide\\code" + req.getRequestURI());
+                resp.setHeader("Content-Type", getServletContext().getMimeType(req.getRequestURI()));
+                resp.setHeader("Content-Length", String.valueOf(file.length()));
+                resp.setHeader("Content-Disposition", "inline; filename=\"" + file.getName() + "\"");
+                Files.copy(file.toPath(), resp.getOutputStream());
             }
         };
-
 
         String servletName = "default";
         String urlPattern = "/";
