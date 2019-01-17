@@ -2,6 +2,7 @@ package serverSide.code;
 
 
 import connectionIndependent.ConnectWindow;
+import gbuiLib.ProgramWideVariable;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import gbuiLib.GBSockets.*;
@@ -13,11 +14,21 @@ import java.io.*;
 
 public class Main{
 
+    public static File runningDirectory = new File("C:\\Users\\Programmer\\Desktop\\testVids");
 
-    public static void main(String args[]) throws LifecycleException, ServletException, FileNotFoundException {
-        System.out.println("fuck you");
-        HTTPManager manager = new HTTPManager();
-        System.out.println("DUN");
+    private static HTTPManager manager;
+
+    public static void main(String args[]) {
+        ProgramWideVariable.initializeDefaults(ScoutingVars::initialize);
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                manager = new HTTPManager();
+            }
+        };
+        thread.start();
+        DataBaseManager database = new DataBaseManager();
+
     }
 
 }

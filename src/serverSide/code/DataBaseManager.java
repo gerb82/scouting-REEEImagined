@@ -48,7 +48,7 @@ public class DataBaseManager implements Closeable {
     }
 
     public DataBaseManager() {
-        File databaseDirectory = GBUILibGlobals.getDataBaseDirectory();
+        File databaseDirectory = ScoutingVars.getDatabaseDirectory();
         databaseDirectory.mkdirs();
         File databaseFile = new File(databaseDirectory, "database.sqlite");
         try {
@@ -80,10 +80,10 @@ public class DataBaseManager implements Closeable {
             statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventGroups + "(" + System.lineSeparator() +
                     Columns.groupEventType + " integer," + System.lineSeparator() +
                     Columns.containedGroupID + " integer," + System.lineSeparator() +
-                    Columns.groupID + "integer NOT NULL," + System.lineSeparator() +
+                    Columns.groupID + " integer NOT NULL," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.groupEventType + ") REFERENCES " + Tables.eventTypes + " (" + Columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.groupID + ") REFERENCES " + Tables.groupDefinitions + " (" + Columns.groupNumber + ")," + System.lineSeparator() +
+                    "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
                     "PRIMARY KEY(" + Columns.groupEventType + "," + Columns.containedGroupID + "," + Columns.groupID + "));");
 
             // competitions
@@ -152,7 +152,7 @@ public class DataBaseManager implements Closeable {
                     "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
 
-            configEnforcer();
+//            configEnforcer();
             statement.execute("SELECT " + Columns.competitionID + "," + Columns.competitionName + " FROM " + Tables.competitions + ";");
             ResultSet set = statement.getResultSet();
             while (set.next()) {

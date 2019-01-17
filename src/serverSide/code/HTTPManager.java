@@ -1,93 +1,69 @@
 package serverSide.code;
 
-import org.apache.catalina.*;
-import org.apache.catalina.servlets.DefaultServlet;
+import org.apache.catalina.Context;
+import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.catalina.webresources.StandardRoot;
-import org.apache.juli.AsyncFileHandler;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URLDecoder;
 import java.nio.file.Files;
 
-public class HTTPManager {
+public class HTTPManager implements Closeable {
 
-    public HTTPManager() throws LifecycleException {
-        Tomcat tomcat = new Tomcat();
-        tomcat.setPort(8080);
-        tomcat.getConnector();
+    private Tomcat tomcat;
 
-        String contextPath = "/";
-        String docBase = new File(".").getAbsolutePath();
+    public HTTPManager() {
+        try {
+            tomcat = new Tomcat();
+            tomcat.setPort(8080);
+            tomcat.getConnector();
 
-        Context context = tomcat.addContext(contextPath, docBase);
+            String contextPath = "/";
+            String docBase = new File(".").getAbsolutePath();
 
-        Servlet servlet = new HttpServlet() {
+            Context context = tomcat.addContext(contextPath, docBase);
 
-            @Override
-            public void doGet(HttpServletRequest req, HttpServletResponse resp)
-                    throws ServletException, IOException
-            {
-                File file = new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\src\\serverSide\\code" + req.getRequestURI());
-                resp.setHeader("Content-Type", getServletContext().getMimeType(req.getRequestURI()));
-                resp.setHeader("Content-Length", String.valueOf(file.length()));
-                resp.setHeader("Content-Disposition", "inline; filename=\"" + file.getName() + "\"");
-                Files.copy(file.toPath(), resp.getOutputStream());
-            }
-        };
+            Servlet servlet = new HttpServlet() {
 
-        String servletName = "default";
-        String urlPattern = "/";
+                @Override
+                public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+                    if (req.getRequestURI().contains("video")) {
+                        File file = new File(new File(ScoutingVars.getVideosDirectory(), "competition " + req.getParameter("competition")), req.getParameter("game") + ".mp4");
+                        if (!file.canRead()) {
+                            resp.sendError(404, "Game not found");
+                        }
+                        resp.setHeader("Content-Type", getServletContext().getMimeType(req.getRequestURI()));
+                        resp.setHeader("Content-Length", String.valueOf(file.length()));
+                        resp.setHeader("Content-Disposition", "inline; filename=\"" + file.getName() + "\"");
+                        Files.copy(file.toPath(), resp.getOutputStream());
+                    }
+                }
+            };
 
-        tomcat.addServlet(contextPath, servletName, servlet);
-        context.addServletMappingDecoded(urlPattern, servletName);
+            String servletName = "default";
+            String urlPattern = "/";
 
-        tomcat.start();
-        tomcat.getServer().await();
+            tomcat.addServlet(contextPath, servletName, servlet);
+            context.addServletMappingDecoded(urlPattern, servletName);
+
+            tomcat.start();
+            tomcat.getServer().await();
+        } catch (LifecycleException e){
+            throw new Error("HTTP file sharing just went down!", e);
+        }
     }
 
-
-
-
-
-//        Tomcat server = new Tomcat();
-//        server.setBaseDir("temp");
-//        server.setPort(8080);
-//        server.getConnector();
-//        Context context = server.addContext("/", new File(".").getAbsolutePath());
-//
-//        Wrapper defaultServlet = context.createWrapper();
-//        defaultServlet.setName("default");
-//        defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
-//        defaultServlet.addInitParameter("debug", "0");
-//        defaultServlet.addInitParameter("listings", "false");
-//        defaultServlet.setLoadOnStartup(1);
-//        context.addChild(defaultServlet);
-//        context.addServletMappingDecoded("/", "default");
-//
-//        Wrapper jspServlet = context.createWrapper();
-//        jspServlet.setName("jsp");
-//        jspServlet.setServletClass("org.apache.jasper.servlet.JspServlet");
-//        jspServlet.addInitParameter("fork", "false");
-//        jspServlet.addInitParameter("xpoweredBy", "false");
-//        jspServlet.setLoadOnStartup(2);
-//        context.addChild(jspServlet);
-//        context.addServletMappingDecoded("*.jsp", "jsp");
-//        try {
-//            server.start();
-//            server.getServer().await();
-//        } catch (LifecycleException e) {
-//            e.printStackTrace();
-//        }
+    @Override
+    public void close() throws IOException{
+        try {
+            tomcat.stop();
+        } catch (LifecycleException e) {
+            throw new IOException("Tomcat refused to close down!", e);
+        }
     }
-
+}
