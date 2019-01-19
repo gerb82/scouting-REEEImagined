@@ -33,6 +33,10 @@ public class DataBaseManager implements Closeable {
         return competitionsMap.get(competition);
     }
 
+    protected String[] getCompetitionsList(){
+        return competitionsMap.keySet().toArray(new String[0]);
+    }
+
     private enum Columns {
         eventTypeID, eventName, followStamp, teamSpecific, // event types
         containerEventType, eventContainedType, // containers table
@@ -190,27 +194,37 @@ public class DataBaseManager implements Closeable {
     private ArrayList<ScoutingEventDefinition> teamDefinitions;
     private ArrayList<ScoutingEventDefinition> allianceDefinitions;
     private ArrayList<EventGroup> groups;
+    private ArrayList<ScoutingEventDefinition> teamStartDefinitions;
+    private ArrayList<ScoutingEventDefinition> allianceStartDefinitions;
 
-    public ArrayList<ScoutingEventDefinition> getTeamDefinitions() {
+    protected ArrayList<ScoutingEventDefinition> getTeamDefinitions() {
         return teamDefinitions;
     }
 
-    public ArrayList<ScoutingEventDefinition> getAllianceDefinitions() {
+    protected ArrayList<ScoutingEventDefinition> getAllianceDefinitions() {
         return allianceDefinitions;
     }
 
-    public ArrayList<EventGroup> getGroups() {
+    protected ArrayList<EventGroup> getGroups() {
         return groups;
+    }
+
+    protected ArrayList<ScoutingEventDefinition> getTeamStartDefinitions(){
+        return teamStartDefinitions;
+    }
+
+    protected ArrayList<ScoutingEventDefinition> getAllianceStartDefinitions(){
+        return allianceStartDefinitions;
     }
 
     private class ConfigFormat {
         private class EventDefinition {
-            private byte type;
+            private short type;
             private String name;
             private boolean followStamps;
             private boolean teamSpecific;
 
-            private EventDefinition(byte type, String name, boolean followStamps, boolean teamSpecific) {
+            private EventDefinition(short type, String name, boolean followStamps, boolean teamSpecific) {
                 this.type = type;
                 this.name = name;
                 this.followStamps = followStamps;
@@ -219,10 +233,10 @@ public class DataBaseManager implements Closeable {
         }
 
         private class EventContainmentChain {
-            private byte container;
-            private byte contained;
+            private short container;
+            private short contained;
 
-            private EventContainmentChain(byte container, byte contained) {
+            private EventContainmentChain(short container, short contained) {
                 this.container = container;
                 this.contained = contained;
             }
@@ -302,12 +316,12 @@ public class DataBaseManager implements Closeable {
             HashMap<Byte, ArrayList<Byte>> map = new HashMap<>();
             for (EventDefinition definition : definitions) {
                 if (definition.teamSpecific) {
-                    map.putIfAbsent(definition.type, new ArrayList<>());
+                    map.putIfAbsent((byte) byteFixer(definition.type, true), new ArrayList<>());
                 }
             }
             for (EventContainmentChain chain : chains) {
                 if (map.containsKey(chain.container)) {
-                    map.get(chain.container).add(chain.contained);
+                    map.get((byte)byteFixer(chain.container, true)).add((byte) byteFixer(chain.contained, true));
                 }
             }
             for (EventDefinition definition : definitions) {
@@ -316,7 +330,7 @@ public class DataBaseManager implements Closeable {
                 for (int i = 0; i < contained.length; i++) {
                     realContained[i] = (byte) contained[i];
                 }
-                output.add(new ScoutingEventDefinition(realContained, definition.type, definition.followStamps, definition.name));
+                output.add(new ScoutingEventDefinition(realContained, (byte) byteFixer(definition.type, true), definition.followStamps, definition.name));
             }
             return output;
         }
@@ -326,12 +340,12 @@ public class DataBaseManager implements Closeable {
             HashMap<Byte, ArrayList<Byte>> map = new HashMap<>();
             for (EventDefinition definition : definitions) {
                 if (!definition.teamSpecific) {
-                    map.putIfAbsent(definition.type, new ArrayList<>());
+                    map.putIfAbsent((byte) byteFixer(definition.type, true), new ArrayList<>());
                 }
             }
             for (EventContainmentChain chain : chains) {
                 if (map.containsKey(chain.container)) {
-                    map.get(chain.container).add(chain.contained);
+                    map.get((byte)byteFixer(chain.container, true)).add((byte) byteFixer(chain.contained, true));
                 }
             }
             for (EventDefinition definition : definitions) {
@@ -340,7 +354,7 @@ public class DataBaseManager implements Closeable {
                 for (int i = 0; i < contained.length; i++) {
                     realContained[i] = (byte) contained[i];
                 }
-                output.add(new ScoutingEventDefinition(realContained, definition.type, definition.followStamps, definition.name));
+                output.add(new ScoutingEventDefinition(realContained, (byte) byteFixer(definition.type, true), definition.followStamps, definition.name));
             }
             return output;
         }
@@ -518,7 +532,7 @@ public class DataBaseManager implements Closeable {
                     stampsFixer += (!first ? "," : "") + "("
                             + event.getEvent().getChainID() + ","
                             + location++ + ","
-                            + event.getEvent().getType() + ","
+                            + byteFixer(event.getEvent().getType(), false) + ","
                             + String.valueOf(stamp.getTimeStamp()) + ")";
                     first = false;
                 }
@@ -562,12 +576,12 @@ public class DataBaseManager implements Closeable {
         updateEventsOnGame(new FullScoutingEvent(event, team, game, competitionsMap.get(competition), null, (byte) -1, alliance));
     }
 
-    protected void addGame(int gameNumber, String competition, String mapConfiguration, Integer[] teams) {
+    protected void addGame(short gameNumber, String competition, String mapConfiguration, Short[] teams) {
         try (Statement statement = database.createStatement()) {
             writeLock.lock();
             assert (teams.length == 6);
-            ArrayList<Integer> testList = new ArrayList<>();
-            for (Integer teamNum : teams) {
+            ArrayList<Short> testList = new ArrayList<>();
+            for (Short teamNum : teams) {
                 if (!testList.contains(teamNum) || teamNum == null) {
                     testList.add(teamNum);
                 } else {
@@ -575,7 +589,7 @@ public class DataBaseManager implements Closeable {
                 }
             }
             String gameCreate = "INSERT INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.mapConfiguration + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + ") values(" + gameNumber + "," + competitionsMap.get(competition) + "," + String.valueOf(mapConfiguration);
-            for (Integer teamNum : teams) {
+            for (Short teamNum : teams) {
                 gameCreate += "," + String.valueOf(teamNum);
             }
             statement.execute(gameCreate + ";");
@@ -617,7 +631,7 @@ public class DataBaseManager implements Closeable {
     }
 
     private String matchEventType(byte type) {
-        return Columns.eventChainID + " IN " + "(SELECT " + Columns.eventChainID + " FROM " + Tables.events + " WHERE " + Columns.eventType + " = " + type + ")";
+        return Columns.eventChainID + " IN " + "(SELECT " + Columns.eventChainID + " FROM " + Tables.events + " WHERE " + Columns.eventType + " = " + byteFixer(type, false) + ")";
     }
 
     private String matchTeamAlliance(short team) {
@@ -767,12 +781,17 @@ public class DataBaseManager implements Closeable {
         return null;
     }
 
-    protected ArrayList<FullScoutingEvent> getGamesList() {
-        return null;
-    }
+    protected ArrayList<ScoutedGame> getGamesList(String competition) {
+        try (Statement statement = database.createStatement()) {
+            readLock.lock();
+            statement.execute(formatGamesSelect(Columns.competition + " = " + competitionsMap.get(competition),null));
 
-    protected ArrayList<FullScoutingEvent> getCompetitionsList() {
-        return null;
+            return convertResultSetToGames(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The query could not be completed.", e);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     protected ArrayList<FullScoutingEvent> getEventsTypesList() {
@@ -850,7 +869,7 @@ public class DataBaseManager implements Closeable {
             if (set.getInt(Columns.eventLocationInChain.toString()) == 1) {
                 buffer = new FullScoutingEvent(
                         new ScoutingEvent() {{
-                            this.addProgress(set.getByte(Columns.eventType.toString()), set.getShort(Columns.timeStamps.toString()) == 0 ? null : set.getShort(Columns.timeStamps.toString()));
+                            this.addProgress((byte)byteFixer(set.getShort(Columns.eventType.toString()), true), set.getShort(Columns.timeStamps.toString()) == 0 ? null : set.getShort(Columns.timeStamps.toString()));
                         }},
                         set.getShort(Columns.teamNumber.toString()) == 0 ? null : set.getShort(Columns.teamNumber.toString()),
                         set.getShort(Columns.gameNumber.toString()),
@@ -866,6 +885,22 @@ public class DataBaseManager implements Closeable {
         }
         set.close();
         return result;
+    }
+
+    /**
+     * Since sqlite counts from 1, and we can store a maximum of 256 events (byte's size is 256, from -128 to 127), we end up with problematic values.
+     * We can have a value of 256, even though {@link Byte#MAX_VALUE} can not fit that.
+     * We can also try to insert a value of {@link Byte#MIN_VALUE} even though sqlite starts counting from 1.
+     * To fix that, any conversion to and from sqlite of event types passes through this method.
+     * If the method needs to pull from sqlite, it will reduce the value by 129, so that the lowest value sqlite can supply (1), will become {@link Byte#MIN_VALUE}, and the highest value that it can supply, which is 256, will become {@link Byte#MAX_VALUE}.
+     * If the value given from sqlite is above 256 or the value given to sqlite is below 1, the method will throw an {@link IllegalArgumentException} in order to avoid derpy values.
+     * @param toFix The value to fix
+     * @param down Should it be lowered (aka it's being pulled from sqlite) or should it be increased (aka it's being pushed into sqlite)
+     * @return The converted value, in Short form (it then has to be cast)
+     */
+    private short byteFixer(short toFix, boolean down) throws IllegalArgumentException{
+        if(toFix < 1 && down || toFix > 256 && !down) throw new IllegalStateException("The byte was out of bounds");
+        return (short) (toFix + (down ? - 129 : 129));
     }
 
     public static class ScoutedGame {
@@ -1002,6 +1037,10 @@ public class DataBaseManager implements Closeable {
 
         public void setTeamNumber6(short teamNumber6) {
             this.teamNumber6 = teamNumber6;
+        }
+
+        public Short[] getTeamsArray(){
+            return new Short[]{teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6};
         }
     }
 

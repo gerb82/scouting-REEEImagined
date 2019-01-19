@@ -30,7 +30,7 @@ public class ScoutingEvent implements Serializable {
     private ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
     private int chainID = -1;
 
-    public int getType() {
+    public byte getType() {
         return timeStamps.get(0).type;
     }
 

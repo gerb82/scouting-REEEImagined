@@ -52,6 +52,7 @@ public class ScouterUI {
         private OptionChooser(boolean game){
             super();
             this.setOnAction(this::handleSelected);
+            this.game = game;
         }
 
         private void handleSelected(Event event){
@@ -158,7 +159,8 @@ public class ScouterUI {
             for(ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>)((Object[])(packet.getContent()))[1]) {
                 self.validEvents.put(def.getName(), def);
             }
-            loadMedia(packet.getContentType());
+            self.initialEvents = (byte[]) ((Object[])(packet.getContent()))[2];
+            loadMedia("https://" + MainLogic.host + ":4911/" + packet.getContentType());
             packet.ack();
         } catch (ClassCastException e){
             throw new BadPacketException("The packet was poorly formatted.");
@@ -168,7 +170,7 @@ public class ScouterUI {
     }
 
     private HashMap<Byte, EventButton> buttons;
-    private int[] initialEvents;
+    private byte[] initialEvents;
     private ScoutingEvent currentlyProcessing;
 
     private class EventButton extends Button {

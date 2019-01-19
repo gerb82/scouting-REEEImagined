@@ -20,6 +20,7 @@ public class MainLogic extends Application{
     private Stage stage;
     private static GBSocket socket;
     private Scene connectionWindow;
+    protected static String host;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -39,6 +40,7 @@ public class MainLogic extends Application{
             String[] splitAddress = address.split(":");
             assert (splitAddress.length == 2);
             socket.setAddress(new InetSocketAddress(splitAddress[0], Integer.valueOf(splitAddress[1])));
+            host = splitAddress[0];
             return socket.startConnection();
         } catch (IllegalAccessException e) {
             throw new Error("This error should not happen, the connection window's button was clicked when the socket was already connected");

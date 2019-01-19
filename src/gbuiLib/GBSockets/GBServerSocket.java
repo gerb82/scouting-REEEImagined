@@ -361,8 +361,9 @@ public class GBServerSocket implements Closeable {
         }
     }
 
-    public boolean removeConnectionType(String string, ActionHandler handler){
-        return connectionTypes.remove(string, handler);
+    public boolean removeConnectionType(String string, ActionHandler handler) throws IllegalAccessException {
+        if(selector == null) return connectionTypes.remove(string, handler);
+        throw new IllegalAccessException("Cannot remove a connection type after socket has been started!");
     }
 
     protected void createNewConnection(Packet packet){
