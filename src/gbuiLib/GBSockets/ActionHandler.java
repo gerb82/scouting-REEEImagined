@@ -66,7 +66,7 @@ public class ActionHandler {
         }
 
         // done
-        public void ack(Object content, String packetType, String contentType, String ackContentType) throws BadPacketException {
+        public void ack(Object content, String packetType, String contentType) throws BadPacketException {
             if(!acked) {
                 socket.smartAck(super.getIds(), super.getPacketType(), content, packetType, contentType);
                 acked = true;

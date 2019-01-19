@@ -14,18 +14,14 @@ import java.io.*;
 
 public class Main{
 
-    public static File runningDirectory = new File("C:\\Users\\Programmer\\Desktop\\testVids");
+    public static File runningDirectory = new File(System.getProperty("userDir"), "data");
 
     private static HTTPManager manager;
 
     public static void main(String args[]) {
+        runningDirectory.mkdirs();
         ProgramWideVariable.initializeDefaults(ScoutingVars::initialize);
-        Thread thread = new Thread(){
-            @Override
-            public void run() {
-                manager = new HTTPManager();
-            }
-        };
+        Thread thread = new Thread(() -> manager = new HTTPManager());
         thread.start();
         DataBaseManager database = new DataBaseManager();
 
