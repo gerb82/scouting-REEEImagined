@@ -1,84 +1,88 @@
 package scouterSide;
 
-import connectionIndependent.ConnectWindow;
+import connectionIndependent.ConnectionFinder;
 import connectionIndependent.ScoutingConnections;
 import connectionIndependent.ScoutingEvent;
 import connectionIndependent.ScoutingPackets;
 import gbuiLib.GBSockets.*;
+import gbuiLib.ProgramWideVariable;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import gbuiLib.ProgramWideVariable;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.PortUnreachableException;
+import java.io.File;
+import java.util.ArrayList;
 
 public class MainLogic extends Application{
 
-    private Stage stage;
-    private static GBSocket socket;
-    private Scene connectionWindow;
-    protected static String host;
+    private GBSocket socket;
+    private static MainLogic self;
+    protected String host;
+    private Parent root;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\src\\scouterSide\\MainScreen.fxml").toURI().toURL());
+        root = loader.load();
+        primaryStage.setScene(new Scene(root));
+        ScouterUI controller = loader.getController();
+        controller.setMain(this);
+        controller.setRoot(root);
+        controller.setActivePane(false);
+        primaryStage.show();
+        primaryStage.setFullScreen(true);
+
+        self = this;
         ProgramWideVariable.initializeDefaults();
         PacketLogger.setDirectory();
-        stage = primaryStage;
         ActionHandler handler = new ActionHandler();
-        handler.setHandler(ScoutingPackets.SCOUTER_LOADGAME.toString(), ScouterUI::loadNewView);
+        handler.setHandler(ScoutingPackets.SCOUTER_LOADGAME.toString(), controller::loadNewView);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), controller::competitions);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), controller::games);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), controller::teams);
+        handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), controller::scoutOver);
         SelectorManager selector = new SelectorManager();
-        String testConnection1 = ScoutingConnections.SCOUTER.toString();
-        socket = new GBSocket(null, testConnection1, false, selector, handler, new GBSocket.SocketConfig(), false);
-        connectionWindow = ConnectWindow.start(primaryStage, this::connect, "server side", this::initMainWindow);
+        socket = new GBSocket(ConnectionFinder.getLocalHost(4590), ScoutingConnections.SCOUTER.toString(), true, selector, handler, new GBSocket.SocketConfig(), false);
+        socket.isConnected.addListener((observable, oldValue, newValue) -> {while(!observable.getValue()) {
+            try {
+                root.setDisable(true);
+                socket.setAddress(ConnectionFinder.getLocalHost(4590));
+            } catch (IllegalAccessException e) {
+                root.setDisable(false);
+                return;
+            }
+            socket.startConnection();}});
     }
 
-    public boolean connect(String address){
-        try {
-            String[] splitAddress = address.split(":");
-            assert (splitAddress.length == 2);
-            socket.setAddress(new InetSocketAddress(splitAddress[0], Integer.valueOf(splitAddress[1])));
-            host = splitAddress[0];
-            return socket.startConnection();
-        } catch (IllegalAccessException e) {
-            throw new Error("This error should not happen, the connection window's button was clicked when the socket was already connected");
-        } catch (AssertionError e){
-            return false;
-        }
+    public void getCompetitions() throws BadPacketException {
+        socket.sendAsPacket(null, null, ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), true);
     }
 
-    public void initMainWindow(){
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("MainScreen.fxml"));
-            stage.setScene(new Scene(loader.load()));
-            ScouterUI controller = loader.getController();
-            controller.setMain(this);
-            stage.setFullScreen(true);
-        } catch (IOException e) {
-            throw new Error("MainScreen.fxml file for scouter side could not be loaded");
-        }
+    public void getGames(String competition) throws BadPacketException {
+        socket.sendAsPacket(competition, null, ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), true);
     }
 
-    private int currentGame;
-    private String currentTeam;
-
-    // connect to server
-
-    public PacketLogger.ObservablePacketStatus loadGame(int gameCount, String teamIdentifier) throws BadPacketException {
-        currentTeam = teamIdentifier;
-        currentGame = gameCount;
-        return loadGame();
+    public void getTeams(String competition, short game) throws BadPacketException {
+        socket.sendAsPacket(game, competition, ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), true);
     }
 
-    public PacketLogger.ObservablePacketStatus loadGame() throws BadPacketException {
-        return socket.sendAsPacket(currentGame, currentTeam, ScoutingPackets.SCOUTER_LOADGAME.toString(), true);
+    public PacketLogger.ObservablePacketStatus loadGame(String competition, short gameCount, String teamIdentifier) throws BadPacketException {
+        return socket.sendAsPacket(new Object[]{competition, gameCount, (teamIdentifier.equals("Blue Alliance") ? true : (teamIdentifier.equals("Red Alliance") ? false : Short.valueOf(teamIdentifier)))}, null, ScoutingPackets.SCOUTER_LOADGAME.toString(), true);
     }
 
     public static void main(String[] args) {
         launch(args);
-        socket.close();
+        self.socket.close();
+    }
+
+    public PacketLogger.ObservablePacketStatus cancelScout() throws BadPacketException {
+        return socket.sendAsPacket(null, String.valueOf(false), ScoutingPackets.SCOUTER_SUBMITGAME.toString(), true);
+    }
+
+    public PacketLogger.ObservablePacketStatus submitScout(ArrayList<ScoutingEvent> events) throws BadPacketException {
+        return socket.sendAsPacket(events, String.valueOf(false), ScoutingPackets.SCOUTER_SUBMITGAME.toString(), true);
     }
 
     // sync up with games

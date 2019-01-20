@@ -18,15 +18,22 @@ public class ScoutersManager {
         private String competition;
         private short game;
         private Short team;
-        private boolean alliance;
+        private Boolean alliance;
         private String mapConfiguration;
         private Byte startingLocation;
 
-        private ScoutIdentifier(String competition, short game, Short team, boolean alliance) {
+        private ScoutIdentifier(String competition, short game, Object specific) {
             this.competition = competition;
             this.game = game;
-            this.team = team;
-            this.alliance = alliance;
+            if(specific instanceof Boolean){
+                this.alliance = (Boolean) specific;
+                this.team = null;
+            } else if(specific instanceof Short) {
+                this.team = (Short) specific;
+                this.alliance = null;
+            } else {
+                throw new IllegalArgumentException("The scouted target identifier was invalid!");
+            }
         }
 
         private boolean isEqualTo(ScoutIdentifier o) {
@@ -51,18 +58,33 @@ public class ScoutersManager {
         currentCompetition = comp;
     }
 
-    private HashMap<String, HashMap<Short, Short[]>> gamesStructure = new HashMap<>(); // competitions to games to teams in game
+    private HashMap<String, HashMap<Short, String[]>> gamesStructure = new HashMap<>(); // competitions to games to teams in game
+    private HashMap<String, HashMap<Short, ArrayList<String>>> alreadyScoutedGamesStructure = new HashMap<>(); // competitions to games to teams in game. Only contains Non-Scouted competitions/games/teams in game.
 
     protected void addCompetition(String competition) {
         gamesStructure.put(competition, new HashMap<>());
     }
 
     protected void addGame(String competiion, short game, Short[] teams) {
-        gamesStructure.get(competiion).put(game, teams);
+        ArrayList<String> Steams = new ArrayList<>();
+        for(Short team : teams){
+            Steams.add(String.valueOf(team));
+        }
+        if(ScoutingVars.allowAllianceEvents()){
+            Steams.add("Blue Alliance");
+            Steams.add("Red Alliance");
+        }
+        gamesStructure.get(competiion).put(game, Steams.toArray(new String[0]));
     }
 
 
     protected ScoutersManager(DataBaseManager dataBase) {
+        handler = new ActionHandler();
+        handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), this::scoutFinished);
+        handler.setHandler(ScoutingPackets.SCOUTER_LOADGAME.toString(), this::startScout);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), this::sendCompetitions);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), this::sendGames);
+        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), this::sendTeams);
         this.dataBase = dataBase;
         for (String comp : dataBase.getCompetitionsList()) {
             HashMap games = new HashMap<>();
@@ -80,7 +102,7 @@ public class ScoutersManager {
 
     private void sendCompetitions(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
-        packet.ack(gamesStructure.keySet().toArray(), ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), currentCompetition);
+        packet.ack(gamesStructure.keySet().toArray(new String[0]), ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), currentCompetition);
         } catch (BadPacketException e){
             throw e;
         } catch (Exception e){
@@ -90,7 +112,7 @@ public class ScoutersManager {
 
     private void sendGames(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
-            packet.ack(gamesStructure.get(packet.getContentType()).keySet(), ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), packet.getContentType());
+            packet.ack(gamesStructure.get(packet.getContentType()).keySet().toArray(new Short[0]), ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), packet.getContentType());
         } catch (BadPacketException e) {
             throw e;
         } catch (Exception e) {
@@ -111,7 +133,7 @@ public class ScoutersManager {
     private void startScout(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
             Object[] arguments = (Object[]) packet.getContent();
-            ScoutIdentifier identifier = new ScoutIdentifier((String) arguments[0], (Short) arguments[1], (Short) arguments[2], (Boolean) arguments[3]);
+            ScoutIdentifier identifier = new ScoutIdentifier((String) arguments[0], (Short) arguments[1], arguments[3]);
             if (currentlyScouting.putIfAbsent(packet.getSocket().isConnected, identifier) != null) {
                 throw new IllegalArgumentException("You are already scouting a game!");
             }
@@ -156,15 +178,19 @@ public class ScoutersManager {
 
     private void scoutFinished(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
-            ObservableValue<Boolean> socket = packet.getSocket().isConnected;
-            ScoutIdentifier identifier = currentlyScouting.get(socket);
-            ArrayList<FullScoutingEvent> finalized = new ArrayList<>();
-            for (ScoutingEvent event : (ArrayList<ScoutingEvent>) packet.getContent()) {
-                finalized.add(new FullScoutingEvent(event, identifier.team, identifier.game, dataBase.getCompetitionFromName(identifier.competition), identifier.mapConfiguration, identifier.startingLocation, identifier.alliance));
+            if(Boolean.valueOf(packet.getContentType())) {
+                ObservableValue<Boolean> socket = packet.getSocket().isConnected;
+                ScoutIdentifier identifier = currentlyScouting.get(socket);
+                ArrayList<FullScoutingEvent> finalized = new ArrayList<>();
+                for (ScoutingEvent event : (ArrayList<ScoutingEvent>) packet.getContent()) {
+                    finalized.add(new FullScoutingEvent(event, identifier.team, identifier.game, dataBase.getCompetitionFromName(identifier.competition), identifier.mapConfiguration, identifier.startingLocation, (identifier.alliance == null ? identifier.startingLocation < 4 : identifier.alliance)));
+                }
+                dataBase.updateEventsOnGame(finalized.toArray(new FullScoutingEvent[0]));
             }
-            dataBase.updateEventsOnGame(finalized.toArray(new FullScoutingEvent[0]));
         } catch (Exception e) {
             throw new BadPacketException("There was a problem saving the events!");
+        } finally {
+            unlockScout(packet.getSocket().isConnected);
         }
     }
 

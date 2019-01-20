@@ -20,7 +20,7 @@ public class HTTPManager implements Closeable {
     public HTTPManager() {
         try {
             tomcat = new Tomcat();
-            tomcat.setPort(8080);
+            tomcat.setPort(4911);
             tomcat.getConnector();
 
             String contextPath = "/";
@@ -36,6 +36,7 @@ public class HTTPManager implements Closeable {
                         File file = new File(new File(ScoutingVars.getVideosDirectory(), "competition " + req.getParameter("competition")), req.getParameter("game") + ".mp4");
                         if (!file.canRead()) {
                             resp.sendError(404, "Game not found");
+                            return;
                         }
                         resp.setHeader("Content-Type", getServletContext().getMimeType(req.getRequestURI()));
                         resp.setHeader("Content-Length", String.valueOf(file.length()));

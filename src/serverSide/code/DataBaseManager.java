@@ -68,125 +68,127 @@ public class DataBaseManager implements Closeable {
         accessLimiter = new ReentrantReadWriteLock();
         readLock = accessLimiter.readLock();
         writeLock = accessLimiter.writeLock();
-        try {
-            database = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath().toString());
-            database.setAutoCommit(false);
-            Statement statement = database.createStatement();
+        if(!databaseFile.exists()) {
+            try {
+                database = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath().toString());
+                database.setAutoCommit(false);
+                Statement statement = database.createStatement();
 
-            // eventDefinitionsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventTypes + "(" + System.lineSeparator() +
-                    Columns.eventTypeID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
-                    Columns.eventName + " text NOT NULL UNIQUE," + System.lineSeparator() +
-                    Columns.followStamp + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.teamSpecific + " integer NOT NULL);");
+                // eventDefinitionsList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventTypes + "(" + System.lineSeparator() +
+                        Columns.eventTypeID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
+                        Columns.eventName + " text NOT NULL UNIQUE," + System.lineSeparator() +
+                        Columns.followStamp + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.teamSpecific + " integer NOT NULL);");
 
-            // containableEventsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.containableEvents + "(" + System.lineSeparator() +
-                    Columns.containerEventType + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.eventContainedType + " integer NOT NULL," + System.lineSeparator() +
-                    "PRIMARY KEY(" + Columns.containerEventType + "," + Columns.eventContainedType + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.containerEventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.eventContainedType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + "));");
+                // containableEventsList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.containableEvents + "(" + System.lineSeparator() +
+                        Columns.containerEventType + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.eventContainedType + " integer NOT NULL," + System.lineSeparator() +
+                        "PRIMARY KEY(" + Columns.containerEventType + "," + Columns.eventContainedType + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.containerEventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.eventContainedType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + "));");
 
-            // groupDefinitions
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.groupDefinitions + "(" + System.lineSeparator() +
-                    Columns.groupNumber + " integer PRIMARY KEY," + System.lineSeparator() +
-                    Columns.groupText + " text NOT NULL);");
+                // groupDefinitions
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.groupDefinitions + "(" + System.lineSeparator() +
+                        Columns.groupNumber + " integer PRIMARY KEY," + System.lineSeparator() +
+                        Columns.groupText + " text NOT NULL);");
 
-            // groupContents
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventGroups + "(" + System.lineSeparator() +
-                    Columns.groupEventType + " integer," + System.lineSeparator() +
-                    Columns.containedGroupID + " integer," + System.lineSeparator() +
-                    Columns.groupID + " integer NOT NULL," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.groupEventType + ") REFERENCES " + Tables.eventTypes + " (" + Columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.groupID + ") REFERENCES " + Tables.groupDefinitions + " (" + Columns.groupNumber + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
-                    "PRIMARY KEY(" + Columns.groupEventType + "," + Columns.containedGroupID + "," + Columns.groupID + "));");
+                // groupContents
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventGroups + "(" + System.lineSeparator() +
+                        Columns.groupEventType + " integer," + System.lineSeparator() +
+                        Columns.containedGroupID + " integer," + System.lineSeparator() +
+                        Columns.groupID + " integer NOT NULL," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.groupEventType + ") REFERENCES " + Tables.eventTypes + " (" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.groupID + ") REFERENCES " + Tables.groupDefinitions + " (" + Columns.groupNumber + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
+                        "PRIMARY KEY(" + Columns.groupEventType + "," + Columns.containedGroupID + "," + Columns.groupID + "));");
 
-            // competitions
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.competitions + "(" + System.lineSeparator() +
-                    Columns.competitionID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
-                    Columns.competitionName + " text UNIQUE NOT NULL);");
+                // competitions
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.competitions + "(" + System.lineSeparator() +
+                        Columns.competitionID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
+                        Columns.competitionName + " text UNIQUE NOT NULL);");
 
-            // teamsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.teamNumbers + "(" + System.lineSeparator() +
-                    Columns.teamNumbers + " integer primary key," + System.lineSeparator() +
-                    Columns.teamNames + " text NOT NULL UNIQUE);");
+                // teamsList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.teamNumbers + "(" + System.lineSeparator() +
+                        Columns.teamNumbers + " integer primary key," + System.lineSeparator() +
+                        Columns.teamNames + " text NOT NULL UNIQUE);");
 
-            // gamesList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.games + "(" + System.lineSeparator() +
-                    Columns.gameNumbers + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.mapConfiguration + " text," + System.lineSeparator() +
-                    Columns.competition + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.blueAllianceScore + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.redAllianceScore + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.blueAllianceRP + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.redAllianceRP + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.teamNumber1 + " integer," + System.lineSeparator() +
-                    Columns.teamNumber2 + " integer," + System.lineSeparator() +
-                    Columns.teamNumber3 + " integer," + System.lineSeparator() +
-                    Columns.teamNumber4 + " integer," + System.lineSeparator() +
-                    Columns.teamNumber5 + " integer," + System.lineSeparator() +
-                    Columns.teamNumber6 + " integer," + System.lineSeparator() +
-                    "PRIMARY KEY(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.competition + ") REFERENCES " + Tables.competitions + "(" + Columns.competitionID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber1 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber2 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber3 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber4 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber5 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber6 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
+                // gamesList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.games + "(" + System.lineSeparator() +
+                        Columns.gameNumbers + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.mapConfiguration + " text," + System.lineSeparator() +
+                        Columns.competition + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.blueAllianceScore + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.redAllianceScore + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.blueAllianceRP + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.redAllianceRP + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.teamNumber1 + " integer," + System.lineSeparator() +
+                        Columns.teamNumber2 + " integer," + System.lineSeparator() +
+                        Columns.teamNumber3 + " integer," + System.lineSeparator() +
+                        Columns.teamNumber4 + " integer," + System.lineSeparator() +
+                        Columns.teamNumber5 + " integer," + System.lineSeparator() +
+                        Columns.teamNumber6 + " integer," + System.lineSeparator() +
+                        "PRIMARY KEY(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.competition + ") REFERENCES " + Tables.competitions + "(" + Columns.competitionID + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber1 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber2 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber3 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber4 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber5 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber6 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
 
-            // eventFrames
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventFrames + "(" + System.lineSeparator() +
-                    Columns.chainID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
-                    Columns.gameNumber + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.competitionNumber + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.teamNumber + " integer," + System.lineSeparator() +
-                    Columns.alliance + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.startingLocation + " integer," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.gameNumber + "," + Columns.competitionNumber + ") REFERENCES " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.teamNumber + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
+                // eventFrames
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventFrames + "(" + System.lineSeparator() +
+                        Columns.chainID + " integer primary key AUTOINCREMENT," + System.lineSeparator() +
+                        Columns.gameNumber + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.competitionNumber + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.teamNumber + " integer," + System.lineSeparator() +
+                        Columns.alliance + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.startingLocation + " integer," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.gameNumber + "," + Columns.competitionNumber + ") REFERENCES " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.teamNumber + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + "));");
 
-            // eventsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.events + "(" + System.lineSeparator() +
-                    Columns.eventChainID + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.eventLocationInChain + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.eventType + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.timeStamps + " integer," + System.lineSeparator() +
-                    "PRIMARY KEY(" + Columns.eventChainID + "," + Columns.eventLocationInChain + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.eventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.eventChainID + ") REFERENCES " + Tables.eventFrames + "(" + Columns.chainID + "));");
+                // eventsList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.events + "(" + System.lineSeparator() +
+                        Columns.eventChainID + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.eventLocationInChain + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.eventType + " integer NOT NULL," + System.lineSeparator() +
+                        Columns.timeStamps + " integer," + System.lineSeparator() +
+                        "PRIMARY KEY(" + Columns.eventChainID + "," + Columns.eventLocationInChain + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.eventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.eventChainID + ") REFERENCES " + Tables.eventFrames + "(" + Columns.chainID + "));");
 
-            // commentsList
-            statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.comments + "(" + System.lineSeparator() +
-                    Columns.commentContent + " text NOT NULL," + System.lineSeparator() +
-                    Columns.associatedTeam + " integer," + System.lineSeparator() +
-                    Columns.associatedGame + " integer," + System.lineSeparator() +
-                    Columns.associatedChain + " integer," + System.lineSeparator() +
-                    Columns.timeStamp + " integer," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.associatedTeam + ") REFERENCES " + Tables.teamNumbers + " (" + Columns.teamNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
-                    "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
+                // commentsList
+                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.comments + "(" + System.lineSeparator() +
+                        Columns.commentContent + " text NOT NULL," + System.lineSeparator() +
+                        Columns.associatedTeam + " integer," + System.lineSeparator() +
+                        Columns.associatedGame + " integer," + System.lineSeparator() +
+                        Columns.associatedChain + " integer," + System.lineSeparator() +
+                        Columns.timeStamp + " integer," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.associatedTeam + ") REFERENCES " + Tables.teamNumbers + " (" + Columns.teamNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
+                        "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
 
 //            configEnforcer();
-            statement.execute("SELECT " + Columns.competitionID + "," + Columns.competitionName + " FROM " + Tables.competitions + ";");
-            ResultSet set = statement.getResultSet();
-            while (set.next()) {
-                competitionsMap.put(set.getString(Columns.competitionName.toString()), set.getByte(Columns.competitionID.toString()));
-            }
-            database.commit();
-            statement.close();
-        } catch (SQLException e) {
-            try {
-                if (database != null) {
-                    database.rollback();
-                    throw new Error("Failed to initialize the database!", e);
-                } else {
-                    throw new Error("Could not connect to the database!", e);
+                statement.execute("SELECT " + Columns.competitionID + "," + Columns.competitionName + " FROM " + Tables.competitions + ";");
+                ResultSet set = statement.getResultSet();
+                while (set.next()) {
+                    competitionsMap.put(set.getString(Columns.competitionName.toString()), set.getByte(Columns.competitionID.toString()));
                 }
-            } catch (SQLException e1) {
-                throw new Error("Failed to roll back the database!", e1);
+                database.commit();
+                statement.close();
+            } catch (SQLException e) {
+                try {
+                    if (database != null) {
+                        database.rollback();
+                        throw new Error("Failed to initialize the database!", e);
+                    } else {
+                        throw new Error("Could not connect to the database!", e);
+                    }
+                } catch (SQLException e1) {
+                    throw new Error("Failed to roll back the database!", e1);
+                }
             }
         }
     }
@@ -619,7 +621,7 @@ public class DataBaseManager implements Closeable {
     }
 
     private String allianceToAllianceID(boolean blueAlliance) {
-        return blueAlliance ? "0" : "1";
+        return blueAlliance ? "1" : "0";
     }
 
     private String matchEventGameAndCompetition(short game, String competition) {

@@ -1,5 +1,6 @@
 package serverSide.code;
 
+import connectionIndependent.ScoutingConnections;
 import gbuiLib.GBSockets.GBServerSocket;
 import gbuiLib.GBSockets.PacketLogger;
 import javafx.event.Event;
@@ -16,6 +17,7 @@ public class ServerManager {
         scouters = new ScoutersManager(database);
         PacketLogger.setDirectory(ScoutingVars.getMainDirectory());
         GBServerSocket socket = new GBServerSocket(4590, null, null, false, "LocalNetwork");
+        socket.addConnectionType(ScoutingConnections.SCOUTER.toString(), scouters.getHandler());
         socket.initSelector();
     }
 

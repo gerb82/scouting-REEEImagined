@@ -15,7 +15,7 @@ public class ActionHandler {
 
         private PacketOut(Packet packet, GBSocket socket){
             super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
-            acked = !packet.isImportant() && !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
+            acked = !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
             this.socket = socket;
         }
 
