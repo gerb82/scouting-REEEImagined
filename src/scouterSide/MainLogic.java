@@ -44,16 +44,17 @@ public class MainLogic extends Application{
         handler.setHandler(ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), controller::teams);
         handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), controller::scoutOver);
         SelectorManager selector = new SelectorManager();
-        socket = new GBSocket(ConnectionFinder.getLocalHost(4590), ScoutingConnections.SCOUTER.toString(), true, selector, handler, new GBSocket.SocketConfig(), false);
+        socket = new GBSocket(ConnectionFinder.getLocalNetHost(4590), ScoutingConnections.SCOUTER.toString(), true, selector, handler, new GBSocket.SocketConfig(), false);
         socket.isConnected.addListener((observable, oldValue, newValue) -> {while(!observable.getValue()) {
             try {
                 root.setDisable(true);
-                socket.setAddress(ConnectionFinder.getLocalHost(4590));
+                socket.setAddress(ConnectionFinder.getLocalNetHost(4590));
             } catch (IllegalAccessException e) {
                 root.setDisable(false);
                 return;
             }
             socket.startConnection();}});
+        socket.startConnection();
     }
 
     public void getCompetitions() throws BadPacketException {

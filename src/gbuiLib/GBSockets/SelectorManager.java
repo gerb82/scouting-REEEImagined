@@ -87,7 +87,7 @@ public class SelectorManager implements Closeable {
                                         if(socket.parent.activeConnectionsMap.containsValue(packet.getIds()[1])){
                                             socket.parent.activeConnectionsMap.get(packet.getIds()[1]).logger.packets.getLine(true, packet.getIds()).setResponse(packet);
                                         } else {
-                                            socket.getChannel().write(ByteBuffer.wrap(("You're already dead " + packet.getIds()[1]).getBytes()));
+                                            socket.getChannel().send(ByteBuffer.wrap(("You're already dead " + packet.getIds()[1]).getBytes()), packet.receivedFrom);
                                         }
                                     }
                                 } else {

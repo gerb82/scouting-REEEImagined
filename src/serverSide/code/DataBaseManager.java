@@ -1,6 +1,5 @@
 package serverSide.code;
 
-import connectionIndependent.EventGroup;
 import connectionIndependent.FullScoutingEvent;
 import connectionIndependent.ScoutingEvent;
 import connectionIndependent.ScoutingEventDefinition;
@@ -40,8 +39,6 @@ public class DataBaseManager implements Closeable {
     private enum Columns {
         eventTypeID, eventName, followStamp, teamSpecific, // event types
         containerEventType, eventContainedType, // containers table
-        groupNumber, groupText, // group definitions table
-        groupEventType, containedGroupID, groupID, // groups containers table
         competitionID, competitionName, // competitions
         teamNumbers, teamNames, participatedIn, // teams table
         gameNumbers, mapConfiguration, competition, redAllianceScore, blueAllianceScore, redAllianceRP, blueAllianceRP, teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6, // games table
@@ -52,7 +49,6 @@ public class DataBaseManager implements Closeable {
 
     private enum Tables {
         eventTypes, containableEvents, // event definers
-        groupDefinitions, eventGroups, // group definers
         competitions, teamNumbers, games, // basis data
         eventFrames, events, comments // event data
     }
@@ -88,21 +84,6 @@ public class DataBaseManager implements Closeable {
                         "PRIMARY KEY(" + Columns.containerEventType + "," + Columns.eventContainedType + ")," + System.lineSeparator() +
                         "FOREIGN KEY(" + Columns.containerEventType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + ")," + System.lineSeparator() +
                         "FOREIGN KEY(" + Columns.eventContainedType + ") REFERENCES " + Tables.eventTypes + "(" + Columns.eventTypeID + "));");
-
-                // groupDefinitions
-                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.groupDefinitions + "(" + System.lineSeparator() +
-                        Columns.groupNumber + " integer PRIMARY KEY," + System.lineSeparator() +
-                        Columns.groupText + " text NOT NULL);");
-
-                // groupContents
-                statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.eventGroups + "(" + System.lineSeparator() +
-                        Columns.groupEventType + " integer," + System.lineSeparator() +
-                        Columns.containedGroupID + " integer," + System.lineSeparator() +
-                        Columns.groupID + " integer NOT NULL," + System.lineSeparator() +
-                        "FOREIGN KEY(" + Columns.groupEventType + ") REFERENCES " + Tables.eventTypes + " (" + Columns.eventTypeID + ")," + System.lineSeparator() +
-                        "FOREIGN KEY(" + Columns.groupID + ") REFERENCES " + Tables.groupDefinitions + " (" + Columns.groupNumber + ")," + System.lineSeparator() +
-                        "FOREIGN KEY(" + Columns.containedGroupID + ") REFERENCES " + Tables.eventGroups + " (" + Columns.groupID + ")," + System.lineSeparator() +
-                        "PRIMARY KEY(" + Columns.groupEventType + "," + Columns.containedGroupID + "," + Columns.groupID + "));");
 
                 // competitions
                 statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.competitions + "(" + System.lineSeparator() +
@@ -195,7 +176,6 @@ public class DataBaseManager implements Closeable {
 
     private ArrayList<ScoutingEventDefinition> teamDefinitions;
     private ArrayList<ScoutingEventDefinition> allianceDefinitions;
-    private ArrayList<EventGroup> groups;
     private ArrayList<ScoutingEventDefinition> teamStartDefinitions;
     private ArrayList<ScoutingEventDefinition> allianceStartDefinitions;
 
@@ -205,10 +185,6 @@ public class DataBaseManager implements Closeable {
 
     protected ArrayList<ScoutingEventDefinition> getAllianceDefinitions() {
         return allianceDefinitions;
-    }
-
-    protected ArrayList<EventGroup> getGroups() {
-        return groups;
     }
 
     protected ArrayList<ScoutingEventDefinition> getTeamStartDefinitions(){
@@ -244,38 +220,8 @@ public class DataBaseManager implements Closeable {
             }
         }
 
-        private class GroupDefinition {
-            private byte number;
-            private String name;
-
-            private GroupDefinition(byte number, String name) {
-                this.number = number;
-                this.name = name;
-            }
-        }
-
-        private class GroupContainmentChain {
-            private Byte containedEvent;
-            private Byte containedGroup;
-            private byte groupID;
-
-            private GroupContainmentChain(Byte containedGroup, byte groupID) {
-                this.containedGroup = containedGroup;
-                this.containedEvent = null;
-                this.groupID = groupID;
-            }
-
-            private GroupContainmentChain(byte groupID, Byte containedEvent) {
-                this.containedGroup = null;
-                this.containedEvent = containedEvent;
-                this.groupID = groupID;
-            }
-        }
-
         private ArrayList<EventDefinition> definitions;
         private ArrayList<EventContainmentChain> chains;
-        private ArrayList<GroupDefinition> groupDefinitions;
-        private ArrayList<GroupContainmentChain> groupChains;
 
         private ConfigFormat() {
         }
@@ -294,22 +240,6 @@ public class DataBaseManager implements Closeable {
 
         private void setChains(ArrayList<EventContainmentChain> chains) {
             this.chains = chains;
-        }
-
-        private ArrayList<GroupDefinition> getGroupDefinitions() {
-            return groupDefinitions;
-        }
-
-        private void setGroupDefinitions(ArrayList<GroupDefinition> groupDefinitions) {
-            this.groupDefinitions = groupDefinitions;
-        }
-
-        private ArrayList<GroupContainmentChain> getGroupChains() {
-            return groupChains;
-        }
-
-        private void setGroupChains(ArrayList<GroupContainmentChain> groupChains) {
-            this.groupChains = groupChains;
         }
 
 
@@ -361,9 +291,6 @@ public class DataBaseManager implements Closeable {
             return output;
         }
 
-        private ArrayList<EventGroup> generateGroups() {
-            return null;
-        }
     }
 
     private void configEnforcer() {
@@ -372,7 +299,6 @@ public class DataBaseManager implements Closeable {
 
         teamDefinitions = format.generateTeamEvents();
         allianceDefinitions = format.generateAllianceEvents();
-        groups = format.generateGroups();
     }
 
 
