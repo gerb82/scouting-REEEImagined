@@ -24,7 +24,7 @@ public class MainLogic extends Application{
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\src\\scouterSide\\MainScreen.fxml").toURI().toURL());
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("MainScreen.fxml"));
         root = loader.load();
         primaryStage.setScene(new Scene(root));
         ScouterUI controller = loader.getController();
