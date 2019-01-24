@@ -23,6 +23,7 @@ public class ScoutingEventUnit extends Pane {
 
     public ScoutingEventUnit(@NamedArg("layer") ScoutingEventLayer layer){
         super();
+        setManaged(false);
         layoutBoundsProperty().addListener((observableValue, oldBounds, bounds) -> refreshBounds(bounds));
         exiting = new HashMap<>();
         arriving = new HashMap<>();
@@ -33,6 +34,9 @@ public class ScoutingEventUnit extends Pane {
         in.setOnMouseClicked(unitLinker);
         out.setOnMouseClicked(unitLinker);
         anchor = new Pivot<>(this);
+        in.setFill(layer.getDefaultColor());
+        out.setFill(layer.getDefaultColor());
+        anchor.setFill(layer.getDefaultColor());
 
         getChildren().addAll(in, out, anchor);
         in.setManaged(true);

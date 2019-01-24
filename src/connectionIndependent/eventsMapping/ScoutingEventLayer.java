@@ -10,6 +10,7 @@ public class ScoutingEventLayer extends HBox{
 
     public ScoutingEventLayer(@NamedArg("tree") ScoutingEventTree tree){
         super();
+        setManaged(true);
         this.tree = tree;
     }
 

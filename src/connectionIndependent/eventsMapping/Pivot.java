@@ -1,6 +1,5 @@
 package connectionIndependent.eventsMapping;
 
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 
 public class Pivot<T> extends Rectangle {
@@ -9,6 +8,8 @@ public class Pivot<T> extends Rectangle {
 
     public Pivot(T value){
         this.value = value;
+        setWidth(20);
+        setHeight(20);
     }
 
     public T getValue(){

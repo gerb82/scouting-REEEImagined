@@ -1,9 +1,10 @@
 package connectionIndependent.eventsMapping;
 
 import javafx.beans.NamedArg;
-import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
+
+import java.util.ArrayList;
 
 public class ScoutingEventTree extends VBox{
 
@@ -13,7 +14,7 @@ public class ScoutingEventTree extends VBox{
     private Paint lineAdded;
     private Paint lineRemoved;
     private Paint defaultColor;
-    private ObservableList<ScoutingEventDirection> arrows;
+    private ArrayList<ScoutingEventDirection> arrows;
 
     public ScoutingEventTree(@NamedArg("editor") boolean editor, @NamedArg("dragColor") Paint dragColor, @NamedArg("selectColor") Paint selectColor, @NamedArg("lineAdded") Paint lineAdded, @NamedArg("lineRemoved") Paint lineRemoved, @NamedArg("defaultColor") Paint defaultColor){
         super();
@@ -22,7 +23,7 @@ public class ScoutingEventTree extends VBox{
         this.defaultColor = defaultColor;
         this.lineAdded = lineAdded;
         this.lineRemoved = lineRemoved;
-        getChildren().add(new ScoutingEventLayer(this));
+        arrows = new ArrayList<>();
         editing = editor;
     }
 

@@ -1,48 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import connectionIndependent.eventsMapping.ScoutingEventTree?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.Pane?>
 
-
-<?import connectionIndependent.eventsMapping.ScoutingEventTree?>
+<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>
+<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <MenuBar prefHeight="25.0" prefWidth="600.0">
-        <menus>
-          <Menu mnemonicParsing="false" text="File">
-            <items>
-              <MenuItem mnemonicParsing="false" text="Close" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
-            <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Help">
-            <items>
-              <MenuItem mnemonicParsing="false" text="About" />
-            </items>
-          </Menu>
-        </menus>
-      </MenuBar>
-      <TabPane layoutY="25.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="375.0" prefWidth="600.0" rotateGraphic="true" tabClosingPolicy="UNAVAILABLE">
-         <tabs>
-            <Tab text="Untitled" >
-                <content>
-                    <ScoutingEventTree editor="true"/>
-                </content>
-            </Tab>
-            <Tab text="+" >
-                <content>
-                    <ScoutingEventTree editor="true"/>
-                </content>
-            </Tab>
-         </tabs>
-      </TabPane>
-   </children>
+    <children>
+        <MenuBar prefHeight="25.0" prefWidth="600.0">
+            <menus>
+                <Menu mnemonicParsing="false" text="File">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Close" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Edit">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Delete" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+        <TabPane layoutY="25.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="375.0" prefWidth="600.0" rotateGraphic="true" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="Untitled">
+                    <content>
+                        <ScrollPane>
+                            <ScoutingEventTree fx:id="mainTree" defaultColor="grey" dragColor="yellow" editor="true" lineAdded="forestgreen" lineRemoved="red" prefHeight="375.0" prefWidth="600" selectColor="blue" spacing="50.0" >
+                                <children>
+                                    <ScoutingEventLayer>
+                                        <children>
+                                            <ScoutingEventUnit/>
+                                        </children>
+                                    </ScoutingEventLayer>
+                                </children>
+                            </ScoutingEventTree>
+                        </ScrollPane>
+                    </content>
+                </Tab>
+                <Tab text="+">
+                </Tab>
+            </tabs>
+        </TabPane>
+    </children>
 </Pane>
