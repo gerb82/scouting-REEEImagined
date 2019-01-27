@@ -21,7 +21,7 @@ public class ScoutingEventTree extends Pane{
     private VBox layers;
     private ObservableList<ScoutingEventDirection> arrows;
 
-    public ScoutingEventTree(@NamedArg("editor") boolean editor, @NamedArg("dragColor") Paint dragColor, @NamedArg("selectColor") Paint selectColor, @NamedArg("lineAdded") Paint lineAdded, @NamedArg("lineRemoved") Paint lineRemoved, @NamedArg("defaultColor") Paint defaultColor){
+    public ScoutingEventTree(@NamedArg("editor") boolean editor, @NamedArg("dragColor") Paint dragColor, @NamedArg("selectColor") Paint selectColor, @NamedArg("lineAdded") Paint lineAdded, @NamedArg("lineRemoved") Paint lineRemoved, @NamedArg("defaultColor") Paint defaultColor, @NamedArg("spacing") double spacing){
         super();
         setManaged(false);
         this.dragColor = dragColor;
@@ -29,7 +29,7 @@ public class ScoutingEventTree extends Pane{
         this.defaultColor = defaultColor;
         this.lineAdded = lineAdded;
         this.lineRemoved = lineRemoved;
-        layers = new VBox();
+        layers = new VBox(spacing);
         getChildren().add(layers);
         layers.setManaged(true);
         layers.prefWidthProperty().bind(widthProperty());
