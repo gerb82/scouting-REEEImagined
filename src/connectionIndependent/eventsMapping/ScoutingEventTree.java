@@ -1,12 +1,16 @@
 package connectionIndependent.eventsMapping;
 
 import javafx.beans.NamedArg;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 
-import java.util.ArrayList;
-
-public class ScoutingEventTree extends VBox{
+public class ScoutingEventTree extends Pane{
 
     private boolean editing;
     private Paint dragColor;
@@ -14,17 +18,40 @@ public class ScoutingEventTree extends VBox{
     private Paint lineAdded;
     private Paint lineRemoved;
     private Paint defaultColor;
-    private ArrayList<ScoutingEventDirection> arrows;
+    private VBox layers;
+    private ObservableList<ScoutingEventDirection> arrows;
 
     public ScoutingEventTree(@NamedArg("editor") boolean editor, @NamedArg("dragColor") Paint dragColor, @NamedArg("selectColor") Paint selectColor, @NamedArg("lineAdded") Paint lineAdded, @NamedArg("lineRemoved") Paint lineRemoved, @NamedArg("defaultColor") Paint defaultColor){
         super();
+        setManaged(false);
         this.dragColor = dragColor;
         this.selectColor = selectColor;
         this.defaultColor = defaultColor;
         this.lineAdded = lineAdded;
         this.lineRemoved = lineRemoved;
-        arrows = new ArrayList<>();
+        layers = new VBox();
+        getChildren().add(layers);
+        layers.setManaged(true);
+        layers.prefWidthProperty().bind(widthProperty());
+        layers.prefHeightProperty().bind(heightProperty());
+        arrows = FXCollections.observableArrayList();
+        arrows.addListener((ListChangeListener<ScoutingEventDirection>) c -> {
+            if(c.wasRemoved()){
+                getChildren().removeAll(c.getRemoved());
+            }
+            if(c.wasAdded()){
+                getChildren().addAll(c.getAddedSubList());
+            }
+        });
         editing = editor;
+    }
+
+    public ObservableList<ScoutingEventDirection> getArrows(){
+        return arrows;
+    }
+
+    public ObservableList<Node> getLayers(){
+        return layers.getChildren();
     }
 
     public boolean isEditing(){
