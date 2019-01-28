@@ -12,6 +12,7 @@
 <?import connectionIndependent.eventsMapping.ScoutingEventLayer?>
 <?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
+<?import javafx.scene.shape.Rectangle?>
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
     <children>
         <MenuBar prefHeight="25.0" prefWidth="600.0">
@@ -38,17 +39,20 @@
                 <Tab text="Untitled">
                     <content>
                         <ScrollPane>
-                            <ScoutingEventTree fx:id="mainTree" defaultColor="grey" dragColor="yellow" editor="true" lineAdded="forestgreen" lineRemoved="red" prefHeight="375.0" prefWidth="600" selectColor="blue" spacing="50.0" >
-                                <arrows>
-
-                                </arrows>
-                                <children>
-                                    <ScoutingEventLayer>
-                                        <children>
-                                            <ScoutingEventUnit/>
-                                        </children>
+                            <ScoutingEventTree fx:id="mainTree" defaultColor="grey" dragColor="yellow" editor="false" lineAdded="forestgreen" lineRemoved="red" prefHeight="600.0" prefWidth="600" selectColor="blue" spacing="50.0" >
+                                <layers>
+                                    <ScoutingEventLayer fx:id="layer" tree="$mainTree">
+                                        <units>
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$layer"/>
+                                        </units>
                                     </ScoutingEventLayer>
-                                </children>
+                                    <ScoutingEventLayer fx:id="second" tree="$mainTree">
+                                        <units>
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$second"/>
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$second"/>
+                                        </units>
+                                    </ScoutingEventLayer>
+                                </layers>
                             </ScoutingEventTree>
                         </ScrollPane>
                     </content>

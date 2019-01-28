@@ -7,7 +7,10 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.util.HashMap;
@@ -21,37 +24,42 @@ public class ScoutingEventUnit extends Pane {
     private Pivot<Boolean> in;
     private Pivot<ScoutingEventUnit> anchor;
 
-    public ScoutingEventUnit(@NamedArg("layer") ScoutingEventLayer layer){
+    public ScoutingEventUnit(){
         super();
-        setManaged(false);
+        setManaged(true);
         layoutBoundsProperty().addListener((observableValue, oldBounds, bounds) -> refreshBounds(bounds));
+        setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
         exiting = new HashMap<>();
         arriving = new HashMap<>();
 
-        this.layer = layer;
         in = new Pivot<>(false);
         out = new Pivot<>(true);
         in.setOnMouseClicked(unitLinker);
         out.setOnMouseClicked(unitLinker);
         anchor = new Pivot<>(this);
-        in.setFill(layer.getDefaultColor());
-        out.setFill(layer.getDefaultColor());
-        anchor.setFill(layer.getDefaultColor());
 
         getChildren().addAll(in, out, anchor);
         in.setManaged(true);
         out.setManaged(true);
         anchor.setManaged(true);
 
-        anchor.layoutXProperty().bind(layoutXProperty());
-        anchor.layoutYProperty().bind(layoutYProperty());
+        anchor.setLayoutX(0);
+        anchor.setLayoutY(0);
 
-        in.layoutYProperty().bind(layoutYProperty());
+        in.setLayoutY(0);
+    }
+
+    public void setLayer(ScoutingEventLayer layer) {
+        this.layer = layer;
+    }
+
+    public ScoutingEventLayer getLayer() {
+        return layer;
     }
 
     private void refreshBounds(Bounds bounds){
         middleX.set(bounds.getMinX() + (bounds.getWidth()/2));
-        bottomY.set(bounds.getMinX());
+        bottomY.set(bounds.getMaxY());
 
         in.setLayoutX(middleX.get() - (in.getWidth()/2));
 
@@ -59,39 +67,35 @@ public class ScoutingEventUnit extends Pane {
         out.setLayoutY(bottomY.get() - out.getHeight());
     }
 
-    private static ScoutingEventUnit linkStarter = null;
-    private static boolean linkExit;
-
-    public static EventHandler<MouseEvent> unitLinker = new EventHandler<MouseEvent>() {
-        @Override
-        public void handle(MouseEvent event) {
-            if(linkStarter == null){
-                linkStarter = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
-                linkExit = ((Pivot<Boolean>)event.getTarget()).getValue();
-                (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getSelectColor());
-            } else {
-                if (linkExit != ((Pivot<Boolean>) event.getTarget()).getValue()) {
-                    ScoutingEventUnit source;
-                    ScoutingEventUnit destination;
-                    if (linkExit) {
-                        source = linkStarter;
-                        destination = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
-                    } else {
-                        source = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
-                        destination = linkStarter;
-                    }
-                    lineCheck(source, destination, true);
-                    PauseTransition pauseTransition = new PauseTransition(Duration.seconds(1));
-                    pauseTransition.setOnFinished(e -> {
-                        source.out.setFill(source.layer.getDefaultColor());
-                        destination.in.setFill(destination.layer.getDefaultColor());
-                    });
-                    pauseTransition.play();
+    public static EventHandler<MouseEvent> unitLinker = event -> {
+        ScoutingEventUnit linkStarter = ((ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent()).layer.getLinkStarter();
+        boolean linkExit = false;
+        if(linkStarter == null){
+            linkStarter = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
+            linkStarter.getLayer().setLinkExit(((Pivot<Boolean>)event.getTarget()).getValue());
+            (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getSelectColor());
+        } else {
+            if (linkExit != ((Pivot<Boolean>) event.getTarget()).getValue()) {
+                ScoutingEventUnit source;
+                ScoutingEventUnit destination;
+                if (linkExit) {
+                    source = linkStarter;
+                    destination = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
                 } else {
-                    (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getDefaultColor());
+                    source = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
+                    destination = linkStarter;
                 }
-                linkStarter = null;
+                lineCheck(linkExit, source, destination, true);
+                PauseTransition pauseTransition = new PauseTransition(Duration.seconds(1));
+                pauseTransition.setOnFinished(e -> {
+                    source.out.setFill(source.layer.getDefaultColor());
+                    destination.in.setFill(destination.layer.getDefaultColor());
+                });
+                pauseTransition.play();
+            } else {
+                (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getDefaultColor());
             }
+            linkStarter.getLayer().setLinkStarter(null);
         }
     };
 
@@ -108,7 +112,7 @@ public class ScoutingEventUnit extends Pane {
         y.bind(bottomY);
     }
 
-    public static void lineCheck(ScoutingEventUnit source, ScoutingEventUnit destination, boolean color){
+    public static void lineCheck(boolean linkExit, ScoutingEventUnit source, ScoutingEventUnit destination, boolean color){
         if (source.exiting.containsKey(destination)) {
             source.exiting.remove(destination);
             destination.arriving.remove(source).discard();
@@ -118,7 +122,9 @@ public class ScoutingEventUnit extends Pane {
             }
         } else {
             if (source.layer.layerNumber() > destination.layer.layerNumber()) {
-                ScoutingEventDirection direction = new ScoutingEventDirection(source, destination, source.layer.getTree());
+                ScoutingEventDirection direction = new ScoutingEventDirection(source, destination);
+                direction.setTree(source.layer.getTree());
+                source.getLayer().getTree().getChildren().add(direction);
                 source.exiting.put(destination, direction);
                 destination.arriving.put(source, direction);
                 if(color) {
@@ -127,9 +133,10 @@ public class ScoutingEventUnit extends Pane {
                 }
             } else {
                 if(color) {
-                    (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getDefaultColor());
+                    (linkExit ? source.out : destination.in).setFill(source.layer.getDefaultColor());
                 }
             }
         }
     }
+
 }

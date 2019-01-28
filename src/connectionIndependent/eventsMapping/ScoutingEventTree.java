@@ -1,53 +1,71 @@
 package connectionIndependent.eventsMapping;
 
+import javafx.application.Platform;
 import javafx.beans.NamedArg;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
 
 public class ScoutingEventTree extends Pane{
 
     private boolean editing;
-    private Paint dragColor;
-    private Paint selectColor;
-    private Paint lineAdded;
-    private Paint lineRemoved;
-    private Paint defaultColor;
+    private SimpleObjectProperty<Paint> dragColor;
+    private SimpleObjectProperty<Paint> selectColor;
+    private SimpleObjectProperty<Paint> lineAdded;
+    private SimpleObjectProperty<Paint> lineRemoved;
+    private SimpleObjectProperty<Paint> defaultColor;
     private VBox layers;
-    private ObservableList<ScoutingEventDirection> arrows;
+    private Pivot<ScoutingEventTree> anchor;
+    private ScoutingEventUnit linkStarter = null;
+    private boolean linkExit;
+
+    public ScoutingEventUnit getLinkStarter() {
+        return linkStarter;
+    }
+
+    public void setLinkStarter(ScoutingEventUnit linkStarter) {
+        this.linkStarter = linkStarter;
+    }
+
+    public boolean isLinkExit() {
+        return linkExit;
+    }
+
+    public void setLinkExit(boolean linkExit) {
+        this.linkExit = linkExit;
+    }
 
     public ScoutingEventTree(@NamedArg("editor") boolean editor, @NamedArg("dragColor") Paint dragColor, @NamedArg("selectColor") Paint selectColor, @NamedArg("lineAdded") Paint lineAdded, @NamedArg("lineRemoved") Paint lineRemoved, @NamedArg("defaultColor") Paint defaultColor, @NamedArg("spacing") double spacing){
         super();
-        setManaged(false);
-        this.dragColor = dragColor;
-        this.selectColor = selectColor;
-        this.defaultColor = defaultColor;
-        this.lineAdded = lineAdded;
-        this.lineRemoved = lineRemoved;
+        this.dragColor = new SimpleObjectProperty<>(dragColor);
+        this.selectColor = new SimpleObjectProperty<>(selectColor);
+        this.defaultColor = new SimpleObjectProperty<>(defaultColor);
+        this.lineAdded = new SimpleObjectProperty<>(lineAdded);
+        this.lineRemoved = new SimpleObjectProperty<>(lineRemoved);
         layers = new VBox(spacing);
-        getChildren().add(layers);
+        layers.setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
         layers.setManaged(true);
+        if(editor) {
+            anchor = new Pivot<>(this);
+            getChildren().addAll(layers, anchor);
+        } else {
+            getChildren().add(layers);
+        }
         layers.prefWidthProperty().bind(widthProperty());
         layers.prefHeightProperty().bind(heightProperty());
-        arrows = FXCollections.observableArrayList();
-        arrows.addListener((ListChangeListener<ScoutingEventDirection>) c -> {
-            if(c.wasRemoved()){
-                getChildren().removeAll(c.getRemoved());
-            }
-            if(c.wasAdded()){
-                getChildren().addAll(c.getAddedSubList());
-            }
-        });
+        layers.setLayoutX(0);
+        layers.setLayoutY(0);
         editing = editor;
-    }
-
-    public ObservableList<ScoutingEventDirection> getArrows(){
-        return arrows;
     }
 
     public ObservableList<Node> getLayers(){
@@ -59,32 +77,70 @@ public class ScoutingEventTree extends Pane{
     }
 
     public void addArrow(ScoutingEventDirection direction){
-        arrows.add(direction);
         getChildren().add(direction);
     }
 
     public void removeArrow(ScoutingEventDirection direction){
-        arrows.remove(direction);
         getChildren().remove(direction);
     }
 
     public Paint getDragColor() {
-        return dragColor;
+        return dragColor.get();
     }
 
     public Paint getSelectColor() {
-        return selectColor;
+        return selectColor.get();
     }
 
     public Paint getLineAdded() {
-        return lineAdded;
+        return lineAdded.get();
     }
 
     public Paint getLineRemoved() {
-        return lineRemoved;
+        return lineRemoved.get();
     }
 
     public Paint getDefaultColor() {
+        return defaultColor.get();
+    }
+
+    public void setDragColor(Paint dragColor) {
+        this.dragColor.set(dragColor);
+    }
+
+    public void setSelectColor(Paint selectColor) {
+        this.selectColor.set(selectColor);
+    }
+
+    public void setLineAdded(Paint lineAdded) {
+        this.lineAdded.set(lineAdded);
+    }
+
+    public void setLineRemoved(Paint lineRemoved) {
+        this.lineRemoved.set(lineRemoved);
+    }
+
+    public void setDefaultColor(Paint defaultColor) {
+        this.defaultColor.set(defaultColor);
+    }
+
+    public SimpleObjectProperty<Paint> dragColorProperty() {
+        return dragColor;
+    }
+
+    public SimpleObjectProperty<Paint> selectColorProperty() {
+        return selectColor;
+    }
+
+    public SimpleObjectProperty<Paint> lineAddedProperty() {
+        return lineAdded;
+    }
+
+    public SimpleObjectProperty<Paint> lineRemovedProperty() {
+        return lineRemoved;
+    }
+
+    public SimpleObjectProperty<Paint> defaultColorProperty() {
         return defaultColor;
     }
 }
