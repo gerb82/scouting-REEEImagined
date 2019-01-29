@@ -11,23 +11,12 @@ public class ScoutingEventDirection extends Line implements ScoutingEventTreePar
 
     private ScoutingEventUnit start;
     private ScoutingEventUnit end;
-    private ScoutingEventTree tree;
 
     public ScoutingEventDirection(@NamedArg("start") ScoutingEventUnit start, @NamedArg("end") ScoutingEventUnit end){
         super();
-        parentProperty().addListener((observable, oldValue, newValue) -> tree = (ScoutingEventTree) ScoutingEventTreePart.findEventParent(this));
+        this.setStroke(ScoutingTreesManager.getInstance().getArrowColor());
         this.setMouseTransparent(true);
         this.start = start;
         this.end = end;
-        this.start.bindToBottom(startXProperty(), startYProperty());
-        this.end.bindToTop(endXProperty(), endYProperty());
-    }
-
-    public void discard(){
-        startXProperty().unbind();
-        startYProperty().unbind();
-        endXProperty().unbind();
-        endYProperty().unbind();
-        tree.removeArrow(this);
     }
 }

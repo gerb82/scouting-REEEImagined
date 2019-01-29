@@ -8,6 +8,7 @@ public class Pivot<T> extends Rectangle {
 
     public Pivot(T value){
         this.value = value;
+        setFill(ScoutingTreesManager.getInstance().getDefaultColor());
         setWidth(20);
         setHeight(20);
     }
