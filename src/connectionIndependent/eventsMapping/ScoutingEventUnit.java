@@ -15,7 +15,7 @@ import javafx.util.Duration;
 
 import java.util.HashMap;
 
-public class ScoutingEventUnit extends Pane {
+public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
 
     private ScoutingEventLayer layer;
     private HashMap<ScoutingEventUnit, ScoutingEventDirection> exiting;
@@ -26,6 +26,7 @@ public class ScoutingEventUnit extends Pane {
 
     public ScoutingEventUnit(){
         super();
+        parentProperty().addListener((observable, oldValue, newValue) -> layer = (ScoutingEventLayer) ScoutingEventTreePart.findEventParent(this));
         setManaged(true);
         layoutBoundsProperty().addListener((observableValue, oldBounds, bounds) -> refreshBounds(bounds));
         setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
@@ -49,10 +50,6 @@ public class ScoutingEventUnit extends Pane {
         in.setLayoutY(0);
     }
 
-    public void setLayer(ScoutingEventLayer layer) {
-        this.layer = layer;
-    }
-
     public ScoutingEventLayer getLayer() {
         return layer;
     }
@@ -68,12 +65,13 @@ public class ScoutingEventUnit extends Pane {
     }
 
     public static EventHandler<MouseEvent> unitLinker = event -> {
-        ScoutingEventUnit linkStarter = ((ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent()).layer.getLinkStarter();
+        ScoutingEventTree tree = ((ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent()).getLayer().getTree();
+        ScoutingEventUnit linkStarter = tree.getLinkStarter();
         boolean linkExit = false;
         if(linkStarter == null){
             linkStarter = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
-            linkStarter.getLayer().setLinkExit(((Pivot<Boolean>)event.getTarget()).getValue());
-            (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getSelectColor());
+            tree.setLinkExit(((Pivot<Boolean>)event.getTarget()).getValue());
+            (linkExit ? linkStarter.out : linkStarter.in).setFill(tree.getSelectColor());
         } else {
             if (linkExit != ((Pivot<Boolean>) event.getTarget()).getValue()) {
                 ScoutingEventUnit source;
@@ -85,17 +83,17 @@ public class ScoutingEventUnit extends Pane {
                     source = (ScoutingEventUnit) ((Pivot<Boolean>) event.getTarget()).getParent();
                     destination = linkStarter;
                 }
-                lineCheck(linkExit, source, destination, true);
+                lineCheck(tree, linkExit, source, destination, true);
                 PauseTransition pauseTransition = new PauseTransition(Duration.seconds(1));
                 pauseTransition.setOnFinished(e -> {
-                    source.out.setFill(source.layer.getDefaultColor());
-                    destination.in.setFill(destination.layer.getDefaultColor());
+                    source.out.setFill(tree.getDefaultColor());
+                    destination.in.setFill(tree.getDefaultColor());
                 });
                 pauseTransition.play();
             } else {
-                (linkExit ? linkStarter.out : linkStarter.in).setFill(linkStarter.layer.getDefaultColor());
+                (linkExit ? linkStarter.out : linkStarter.in).setFill(tree.getDefaultColor());
             }
-            linkStarter.getLayer().setLinkStarter(null);
+            tree.setLinkStarter(null);
         }
     };
 
@@ -112,28 +110,27 @@ public class ScoutingEventUnit extends Pane {
         y.bind(bottomY);
     }
 
-    public static void lineCheck(boolean linkExit, ScoutingEventUnit source, ScoutingEventUnit destination, boolean color){
+    public static void lineCheck(ScoutingEventTree tree, boolean linkExit, ScoutingEventUnit source, ScoutingEventUnit destination, boolean color){
         if (source.exiting.containsKey(destination)) {
             source.exiting.remove(destination);
             destination.arriving.remove(source).discard();
             if(color) {
-                source.out.setFill(source.layer.getLineRemoved());
-                destination.out.setFill(destination.layer.getLineRemoved());
+                source.out.setFill(tree.getLineRemoved());
+                destination.out.setFill(tree.getLineRemoved());
             }
         } else {
             if (source.layer.layerNumber() > destination.layer.layerNumber()) {
                 ScoutingEventDirection direction = new ScoutingEventDirection(source, destination);
-                direction.setTree(source.layer.getTree());
                 source.getLayer().getTree().getChildren().add(direction);
                 source.exiting.put(destination, direction);
                 destination.arriving.put(source, direction);
                 if(color) {
-                    source.out.setFill(source.layer.getLineAdded());
-                    destination.out.setFill(destination.layer.getLineAdded());
+                    source.out.setFill(tree.getLineAdded());
+                    destination.out.setFill(tree.getLineAdded());
                 }
             } else {
                 if(color) {
-                    (linkExit ? source.out : destination.in).setFill(source.layer.getDefaultColor());
+                    (linkExit ? source.out : destination.in).setFill(tree.getDefaultColor());
                 }
             }
         }

@@ -16,7 +16,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 
-public class ScoutingEventTree extends Pane{
+public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
 
     private boolean editing;
     private SimpleObjectProperty<Paint> dragColor;

@@ -39,17 +39,17 @@
                 <Tab text="Untitled">
                     <content>
                         <ScrollPane>
-                            <ScoutingEventTree fx:id="mainTree" defaultColor="grey" dragColor="yellow" editor="false" lineAdded="forestgreen" lineRemoved="red" prefHeight="600.0" prefWidth="600" selectColor="blue" spacing="50.0" >
+                            <ScoutingEventTree defaultColor="grey" dragColor="yellow" editor="false" lineAdded="forestgreen" lineRemoved="red" prefHeight="600.0" prefWidth="600" selectColor="blue" spacing="50.0" >
                                 <layers>
-                                    <ScoutingEventLayer fx:id="layer" tree="$mainTree">
+                                    <ScoutingEventLayer>
                                         <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$layer"/>
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
                                         </units>
                                     </ScoutingEventLayer>
-                                    <ScoutingEventLayer fx:id="second" tree="$mainTree">
+                                    <ScoutingEventLayer>
                                         <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$second"/>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" layer="$second"/>
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
+                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
                                         </units>
                                     </ScoutingEventLayer>
                                 </layers>
