@@ -19,4 +19,12 @@ public class ScoutingEventDirection extends Line implements ScoutingEventTreePar
         this.start = start;
         this.end = end;
     }
+
+    public ScoutingEventUnit getStart() {
+        return start;
+    }
+
+    public ScoutingEventUnit getEnd() {
+        return end;
+    }
 }

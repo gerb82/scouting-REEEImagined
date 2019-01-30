@@ -38,37 +38,6 @@
                     <content>
                         <ScrollPane>
                             <ScoutingEventTree treeNumber="1">
-                                <layers>
-                                    <ScoutingEventLayer>
-                                        <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
-                                        </units>
-                                    </ScoutingEventLayer>
-                                    <ScoutingEventLayer>
-                                        <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
-                                        </units>
-                                    </ScoutingEventLayer>
-                                    <ScoutingEventLayer>
-                                        <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
-                                        </units>
-                                    </ScoutingEventLayer>
-                                    <ScoutingEventLayer>
-                                        <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
-                                        </units>
-                                    </ScoutingEventLayer>
-                                    <ScoutingEventLayer>
-                                        <units>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200"/>
-                                            <ScoutingEventUnit prefWidth="200" prefHeight="200" />
-                                        </units>
-                                    </ScoutingEventLayer>
-                                </layers>
                             </ScoutingEventTree>
                         </ScrollPane>
                     </content>

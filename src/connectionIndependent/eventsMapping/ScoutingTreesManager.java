@@ -76,13 +76,15 @@ public final class ScoutingTreesManager {
     public void registerTree(ScoutingEventTree tree) {
         byte treeNumber = tree.getTreeNumber();
         for (Node layer : tree.getLayers()) {
-            ((ScoutingEventLayer)layer).setTreeNumber(treeNumber);
-            ((ScoutingEventLayer) layer).setPrefHeight(200);
-            ((ScoutingEventLayer) layer).setPrefWidth(1000);
-            for (Node node : ((ScoutingEventLayer) layer).getUnits()){
-                ScoutingEventUnit unit = (ScoutingEventUnit)node;
-                unit.setPrefWidth(200);
-                unit.setPrefHeight(200);
+            if(layer instanceof ScoutingEventLayer) {
+                ((ScoutingEventLayer) layer).setTreeNumber(treeNumber);
+                ((ScoutingEventLayer) layer).setPrefHeight(200);
+                ((ScoutingEventLayer) layer).setPrefWidth(1000);
+                for (Node node : ((ScoutingEventLayer) layer).getUnits()) {
+                    ScoutingEventUnit unit = (ScoutingEventUnit) node;
+                    unit.setPrefWidth(200);
+                    unit.setPrefHeight(200);
+                }
             }
         }
     }

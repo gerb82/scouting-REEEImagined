@@ -4,6 +4,7 @@ import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -11,44 +12,80 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
-public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart{
+public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
 
     private Pivot<ScoutingEventLayer> anchor;
+    private Pivot<ScoutingEventLayer> adder;
+    private Pivot<ScoutingEventLayer> remover;
     private Pane units;
     private byte treeNumber;
 
-    public ScoutingEventLayer(){
+    public ScoutingEventLayer() {
         super();
         setBackground(new Background(new BackgroundFill(Color.BLUE, null, null)));
         setManaged(true);
-        anchor = new Pivot<>(this);
         units = new HBox();
         units.setManaged(true);
-        getChildren().addAll(anchor, units);
-        anchor.setLayoutX(0);
-        anchor.setLayoutY(0);
         setWidth(1000);
         setHeight(200);
-        units.setPrefWidth(getWidth()-anchor.getWidth());
-        units.setPrefHeight(getHeight());
-        units.setLayoutX(anchor.getWidth());
-        units.setMinHeight(200);
-        units.setLayoutY(0);
-        layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
+        if (ScoutingTreesManager.getInstance().isEditing()) {
+            anchor = new Pivot<>(this);
+            adder = new Pivot<>(this);
+            remover = new Pivot<>(this);
+            getChildren().addAll(anchor, adder, remover, units);
             anchor.setLayoutX(0);
-            anchor.setLayoutY(0);
-            units.setPrefWidth(newValue.getWidth()-anchor.getWidth());
-            units.setPrefHeight(newValue.getHeight());
+            anchor.setLayoutY((getHeight()-remover.getHeight())/2);
+            adder.setLayoutX(0);
+            adder.setLayoutY(getHeight() - adder.getHeight());
+            remover.setLayoutX(0);
+            remover.setLayoutY(0);
+            remover.setOnMouseClicked(this::remove);
+            adder.setOnMouseClicked(this::addNewUnit);
+            units.setPrefWidth(getWidth() - anchor.getWidth());
             units.setLayoutX(anchor.getWidth());
+        } else {
+            getChildren().addAll(units);
+            units.setLayoutX(0);
+            units.prefWidthProperty().bind(widthProperty());
+        }
+        units.setLayoutY(0);
+        units.prefHeightProperty().bind(heightProperty());
+
+        layoutBoundsProperty().addListener((observable, oldValue, newValue) -> {
+            if(ScoutingTreesManager.getInstance().isEditing()) {
+                anchor.setLayoutX(0);
+                anchor.setLayoutY((getHeight()-remover.getHeight())/2);
+                adder.setLayoutX(0);
+                adder.setLayoutY(getHeight() - adder.getHeight());
+                remover.setLayoutX(0);
+                remover.setLayoutY(0);
+                units.setPrefWidth(newValue.getWidth() - anchor.getWidth());
+                units.setPrefHeight(newValue.getHeight());
+                units.setLayoutX(anchor.getWidth());
+            } else {
+                units.setLayoutX(0);
+            }
             units.setLayoutY(0);
         });
+    }
+
+    public void addNewUnit(Event event) {
+        getUnits().add(new ScoutingEventUnit());
+    }
+
+    public void remove(Event event){
+        for(Node node : getUnits()){
+            ((ScoutingEventUnit)node).removeFromLayer();
+        }
+        getUnits().removeAll(getUnits());
+        getTree().getLayers().remove(this);
     }
 
     public ObservableList<Node> getUnits() {
         return units.getChildren();
     }
 
-    public int layerNumber(){
+    public int layerNumber() {
         return getTree().getLayers().indexOf(this);
     }
 
@@ -56,7 +93,7 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart{
         return ScoutingTreesManager.getInstance().getTree(treeNumber);
     }
 
-    public double getUnitWidth(){
+    public double getUnitWidth() {
         return units.getWidth();
     }
 

@@ -5,7 +5,9 @@ import javafx.beans.NamedArg;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Pane;
@@ -13,11 +15,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
 
     private VBox layers;
     private Pivot<ScoutingEventTree> anchor = null;
+    private Button addLayer;
     private ScoutingEventUnit linkStarter = null;
     private boolean linkExit = false;
     private byte treeNumber = 1;
@@ -45,7 +49,14 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         layers.setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
         layers.setManaged(true);
         if(ScoutingTreesManager.getInstance().isEditing()) {
+            addLayer = new Button("add new layer");
             getChildren().add(layers);
+            layers.getChildren().add(addLayer);
+            addLayer.setLayoutX(0);
+            addLayer.setLayoutY(0);
+            addLayer.prefWidthProperty().bind(layers.widthProperty());
+            addLayer.setPrefHeight(200);
+            addLayer.setOnMouseClicked(this::addLayer);
         } else {
             anchor = new Pivot<>(this);
             getChildren().addAll(layers, anchor);
@@ -59,12 +70,18 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         ScoutingTreesManager.getInstance().addTree(this);
     }
 
+    public void addLayer(Event event){
+        ScoutingEventLayer layer = new ScoutingEventLayer();
+        layer.setTreeNumber(treeNumber);
+        layers.getChildren().add(layers.getChildren().indexOf(addLayer), layer);
+    }
+
     public ObservableList<Node> getLayers(){
         return layers.getChildren();
     }
 
     public List<Node> getArrows() {
-        return getChildren().subList(anchor == null ? 2 : 3, getChildren().size());
+        return getChildren().filtered(node -> node instanceof ScoutingEventDirection);
     }
 
     public byte getTreeNumber() {

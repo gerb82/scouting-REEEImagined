@@ -9,11 +9,14 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 
 import java.util.HashMap;
@@ -26,6 +29,10 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
     private Pivot<Boolean> out;
     private Pivot<Boolean> in;
     private Pivot<ScoutingEventUnit> anchor;
+    private Pivot<ScoutingEventUnit> remover;
+    private Text name;
+    private TextField editName;
+    private CheckBox stamp;
     protected static ScoutingTreesManager manager = null;
 
     public ScoutingEventUnit(){
@@ -40,25 +47,63 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
         out = new Pivot<>(true);
         in.setOnMouseClicked(unitLinker);
         out.setOnMouseClicked(unitLinker);
+        stamp = new CheckBox("Timestamps?");
 
         if(manager.isEditing()) {
+            remover = new Pivot<>(this);
             anchor = new Pivot<>(this);
+            editName = new TextField();
             enableDrag();
-            getChildren().addAll(in, out, anchor);
+            remover.setOnMouseClicked(this::remove);
+            getChildren().addAll(in, out, remover, editName, stamp, anchor);
+            anchor.setManaged(true);
+            editName.setPrefWidth(70);
+            editName.setLayoutX((getWidth()-editName.getWidth())/2);
+            editName.setLayoutY(60);
+            stamp.setLayoutX((getWidth()-stamp.getWidth())/2);
+            stamp.setLayoutY(90);
+            stamp.setDisable(false);
+            remover.setManaged(true);
         } else {
-            getChildren().addAll(in, out);
+            name = new Text();
+            name.setLayoutX((getWidth()-name.getWrappingWidth())/2);
+            name.setLayoutY(60);
+            getChildren().addAll(in, out, stamp, name);
+            stamp.setDisable(true);
         }
 
         in.setManaged(true);
         out.setManaged(true);
-        anchor.setManaged(true);
+        boundsInParentProperty().addListener((observableValue, oldBounds, bounds) -> refreshBounds(bounds));
         setWidth(200);
         setHeight(200);
-        boundsInParentProperty().addListener((observableValue, oldBounds, bounds) -> refreshBounds(bounds));
     }
 
-    public void setLayer(ScoutingEventLayer layer) {
-        this.layer = layer;
+    public void removeFromLayer(){
+        for(ScoutingEventDirection arrow : arriving.values()){
+            layer.getTree().getChildren().remove(arrow);
+            arriving.remove(arrow);
+            arrow.getStart().exiting.remove(arrow);
+        }
+        for(ScoutingEventDirection arrow : exiting.values()){
+            layer.getTree().getChildren().remove(arrow);
+            exiting.remove(arrow);
+            arrow.getEnd().arriving.remove(arrow);
+        }
+    }
+
+    public void remove(Event event){
+        for(ScoutingEventDirection arrow : arriving.values()){
+            layer.getTree().getChildren().remove(arrow);
+            arriving.remove(arrow);
+            arrow.getStart().exiting.remove(arrow);
+        }
+        for(ScoutingEventDirection arrow : exiting.values()){
+            layer.getTree().getChildren().remove(arrow);
+            exiting.remove(arrow);
+            arrow.getEnd().arriving.remove(arrow);
+        }
+        layer.getUnits().remove(this);
     }
 
     public ScoutingEventLayer getLayer() {
@@ -67,29 +112,41 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
 
     private void refreshBounds(Bounds bounds){
         middleX.set(0 + (bounds.getWidth()/2));
-        bottomY.set(bounds.getMaxY());
+        bottomY.set(getHeight());
 
         in.setLayoutX(middleX.get() - (in.getWidth()/2));
         in.setLayoutY(0);
 
+        stamp.setLayoutX((getWidth()-stamp.getWidth())/2);
+        stamp.setLayoutY(90);
+
         if(manager.isEditing()) {
             anchor.setLayoutX(0);
             anchor.setLayoutY(0);
+            remover.setLayoutX(getWidth()-remover.getWidth());
+            remover.setLayoutY(0);
+            editName.setLayoutX((getWidth()-editName.getWidth())/2);
+            editName.setLayoutY(60);
+        } else {
+            name.setLayoutX((getWidth()-name.getWrappingWidth())/2);
+            name.setLayoutY(60);
         }
 
         out.setLayoutX(middleX.get() - (out.getWidth()/2));
         out.setLayoutY(bottomY.get() - out.getHeight());
 
-        Point2D parentEntrance = getLayer().getTree().sceneToLocal(localToScene(middleX.get(), 0));
-        Point2D parentExit = getLayer().getTree().sceneToLocal(localToScene(middleX.get(), bottomY.get()));
-        for(ScoutingEventDirection direction : arriving.values()){
-            direction.setEndX(parentEntrance.getX());
-            direction.setEndY(parentEntrance.getY()-1);
-        }
-        for(ScoutingEventDirection direction : exiting.values()){
-            direction.setStartX(parentExit.getX());
-            direction.setStartY(parentExit.getY()+1);
-        }
+        try {
+            Point2D parentEntrance = getLayer().getTree().sceneToLocal(localToScene(middleX.get(), 0));
+            Point2D parentExit = getLayer().getTree().sceneToLocal(localToScene(middleX.get(), bottomY.get()));
+            for (ScoutingEventDirection direction : arriving.values()) {
+                direction.setEndX(parentEntrance.getX());
+                direction.setEndY(parentEntrance.getY() - 1);
+            }
+            for (ScoutingEventDirection direction : exiting.values()) {
+                direction.setStartX(parentExit.getX());
+                direction.setStartY(parentExit.getY() + 1);
+            }
+        } catch (NullPointerException e){}
     }
 
     public static EventHandler<MouseEvent> unitLinker = event -> {
