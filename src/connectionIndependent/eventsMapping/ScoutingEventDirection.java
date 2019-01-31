@@ -18,6 +18,8 @@ public class ScoutingEventDirection extends Line implements ScoutingEventTreePar
         this.setMouseTransparent(true);
         this.start = start;
         this.end = end;
+        start.exiting.put(end, this);
+        end.arriving.put(start, this);
     }
 
     public ScoutingEventUnit getStart() {
@@ -26,5 +28,9 @@ public class ScoutingEventDirection extends Line implements ScoutingEventTreePar
 
     public ScoutingEventUnit getEnd() {
         return end;
+    }
+
+    public String toFXML(){
+        return String.format("<ScoutingEventDirection start=\"$%s\" end=\"$%s\"/>", ScoutingEventUnit.unitID(start.getUnitID()), ScoutingEventUnit.unitID(end.getUnitID()));
     }
 }

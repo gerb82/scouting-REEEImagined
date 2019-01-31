@@ -1,6 +1,7 @@
 package serverSide.code;
 
 
+import connectionIndependent.eventsMapping.ScoutingTreesManager;
 import gbuiLib.ProgramWideVariable;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -16,15 +17,21 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 
-public class Main{
+public class Main extends Application{
 
     public static File runningDirectory = new File(System.getProperty("userDir"), "data");
 
     private static HTTPManager manager;
 
     public static void main(String args[]) {
+        launch();
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
         runningDirectory.mkdirs();
         ProgramWideVariable.initializeDefaults(ScoutingVars::initialize);
+        ScoutingTreesManager.initialize(false);
         Thread thread = new Thread(() -> manager = new HTTPManager());
         thread.start();
         ServerManager manager = new ServerManager();
@@ -35,7 +42,7 @@ public class Main{
                 while(true) {
                     socket.send(new DatagramPacket("Hi I'm hosting".getBytes(), 0, 14));
                     try {
-                        Thread.sleep(10000);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {}
                 }
             } catch (SocketException e) {
@@ -46,5 +53,4 @@ public class Main{
         });
         multiCast.start();
     }
-
 }

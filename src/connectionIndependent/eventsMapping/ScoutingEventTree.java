@@ -51,7 +51,6 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         if(ScoutingTreesManager.getInstance().isEditing()) {
             addLayer = new Button("add new layer");
             getChildren().add(layers);
-            layers.getChildren().add(addLayer);
             addLayer.setLayoutX(0);
             addLayer.setLayoutY(0);
             addLayer.prefWidthProperty().bind(layers.widthProperty());
@@ -68,6 +67,10 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         setWidth(1000);
         setHeight(3000);
         ScoutingTreesManager.getInstance().addTree(this);
+    }
+
+    public void initButton(){
+        layers.getChildren().add(addLayer);
     }
 
     public void addLayer(Event event){
@@ -90,5 +93,19 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
 
     public void setTreeNumber(byte treeNumber) {
         this.treeNumber = treeNumber;
+    }
+
+    private boolean alliance;
+
+    public boolean getAlliance() {
+        return alliance;
+    }
+
+    public void setAlliance(boolean alliance) {
+        this.alliance = alliance;
+    }
+
+    public String toFXML(String parentTag, String arrows, String layers) {
+        return String.format("<ScoutingEventTree %s alliance=\"%b\" treeNumber=\"%d\">%n<layers>%n%s</layers>%n<children>%n%s</children>%n</ScoutingEventTree>", parentTag, alliance, treeNumber, layers, arrows);
     }
 }

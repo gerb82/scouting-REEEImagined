@@ -60,7 +60,6 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
                 remover.setLayoutX(0);
                 remover.setLayoutY(0);
                 units.setPrefWidth(newValue.getWidth() - anchor.getWidth());
-                units.setPrefHeight(newValue.getHeight());
                 units.setLayoutX(anchor.getWidth());
             } else {
                 units.setLayoutX(0);
@@ -70,7 +69,8 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
     }
 
     public void addNewUnit(Event event) {
-        getUnits().add(new ScoutingEventUnit());
+        ScoutingEventUnit unit = new ScoutingEventUnit();
+        getUnits().add(unit);
     }
 
     public void remove(Event event){
@@ -103,5 +103,9 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
 
     public byte getTreeNumber() {
         return treeNumber;
+    }
+
+    public String toFXML(String units){
+        return String.format("<ScoutingEventLayer treeNumber=\"%d\">%n<units>%n%s</units>%n</ScoutingEventLayer>", treeNumber, units);
     }
 }

@@ -37,8 +37,7 @@
                 <Tab text="Untitled">
                     <content>
                         <ScrollPane>
-                            <ScoutingEventTree treeNumber="1">
-                            </ScoutingEventTree>
+                            <fx:include source="../../data/config/tree.fxml"/>
                         </ScrollPane>
                     </content>
                 </Tab>

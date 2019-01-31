@@ -84,17 +84,17 @@ public class SelectorManager implements Closeable {
                                     if (packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.HandShake.toString())) {
                                         socket.parent.createNewConnection(packet);
                                     } else {
-                                        if(socket.parent.activeConnectionsMap.containsValue(packet.getIds()[1])){
+                                        if(socket.parent.activeConnectionsMap.containsKey(packet.getIds()[1])){
                                             socket.parent.activeConnectionsMap.get(packet.getIds()[1]).logger.packets.getLine(true, packet.getIds()).setResponse(packet);
                                         } else {
                                             socket.getChannel().send(ByteBuffer.wrap(("You're already dead " + packet.getIds()[1]).getBytes()), packet.receivedFrom);
                                         }
                                     }
                                 } else {
-                                    if (socket.parent.activeConnectionsMap.containsValue(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])) {
+                                    if (socket.parent.activeConnectionsMap.containsKey(packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])) {
                                         serverPackets.addPacket(new GBServerSocket.PacketToProcess(packet, socket.parent));
                                     } else {
-                                        socket.getChannel().write(ByteBuffer.wrap(("You're already dead " + (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])).getBytes()));
+                                        socket.getChannel().send(ByteBuffer.wrap(("You're already dead " + (packet.getIds().length == 3 ? packet.getIds()[2] : packet.getIds()[1])).getBytes()), packet.receivedFrom);
                                     }
                                 }
                             } else {

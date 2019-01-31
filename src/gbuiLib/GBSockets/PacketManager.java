@@ -179,6 +179,9 @@ public class PacketManager {
                 logger.packetReturned(packet);
                 PacketLogger.LogLine origin = logger.packets.getLine(true, packet.getIds());
                 socket.pingInMillis.set((int)(origin.getResponse().getTimeStamp().toEpochMilli() - origin.getPacket().getTimeStamp().toEpochMilli()));
+                if(packet.getPacketType().equals(ActionHandler.DefaultPacketTypes.SmartAck.toString())){
+                    receivePacket((Packet) packet.getContent());
+                }
                 return;
             } else if(logger.isPacketFollowedIn(packet)){
                 PacketLogger.LogLine origin = logger.packetAlreadyReceived(packet);

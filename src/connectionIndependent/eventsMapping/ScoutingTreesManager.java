@@ -33,6 +33,7 @@ public final class ScoutingTreesManager {
                 FXMLLoader loader = new FXMLLoader(file.toURI().toURL());
                 loader.setController(this);
                 output.add(loader.load());
+                start();
             }
             return output;
         } catch (IOException e) {
@@ -49,6 +50,7 @@ public final class ScoutingTreesManager {
     private Paint arrowColor = Color.BLACK;
     private boolean editing;
     private HashMap<Byte, ScoutingEventTree> treesMap = new HashMap<>();
+    private ScoutingEventTree nowLoading;
 
     private ScoutingTreesManager(boolean editor) {
         editing = editor;
@@ -58,10 +60,8 @@ public final class ScoutingTreesManager {
         return treesMap.get(number);
     }
 
-    public void initialize(){
-        for(ScoutingEventTree tree : treesMap.values()){
-            registerTree(tree);
-        }
+    public void start(){
+        registerTree(nowLoading);
     }
 
     public void addTree(ScoutingEventTree tree){
@@ -70,11 +70,12 @@ public final class ScoutingTreesManager {
             treeNumber++;
         }
         tree.setTreeNumber(treeNumber);
-        treesMap.put(treeNumber, tree);
+        nowLoading = tree;
     }
 
     public void registerTree(ScoutingEventTree tree) {
         byte treeNumber = tree.getTreeNumber();
+        treesMap.put(treeNumber, tree);
         for (Node layer : tree.getLayers()) {
             if(layer instanceof ScoutingEventLayer) {
                 ((ScoutingEventLayer) layer).setTreeNumber(treeNumber);
@@ -82,13 +83,15 @@ public final class ScoutingTreesManager {
                 ((ScoutingEventLayer) layer).setPrefWidth(1000);
                 for (Node node : ((ScoutingEventLayer) layer).getUnits()) {
                     ScoutingEventUnit unit = (ScoutingEventUnit) node;
-                    unit.setPrefWidth(200);
-                    unit.setPrefHeight(200);
+                    unit.init();
                 }
             }
         }
+        if(isEditing()){
+            tree.initButton();
+        }
+        tree.requestLayout();
     }
-
 
     public Paint getDragColor() {
         return dragColor;
@@ -140,5 +143,36 @@ public final class ScoutingTreesManager {
 
     public boolean isEditing() {
         return editing;
+    }
+
+    private byte lastUnitID = Byte.MIN_VALUE;
+    public String treeAsFXML(byte treeNumber){
+        ScoutingEventTree tree = treesMap.get(treeNumber);
+        String arrows = "";
+        String layers = "";
+        boolean first = true;
+        for(Node layer : tree.getLayers()){
+            if(layer instanceof ScoutingEventLayer) {
+                if(first) {
+                    assert (((ScoutingEventLayer) layer).getUnits().size() == 1);
+                    first = false;
+                }
+                String units = "";
+                for (Node unit : ((ScoutingEventLayer) layer).getUnits()) {
+                    ((ScoutingEventUnit) unit).setUnitID(lastUnitID++);
+                    units += ((ScoutingEventUnit) unit).toFXML() + System.lineSeparator();
+                }
+                layers += ((ScoutingEventLayer) layer).toFXML(units) + System.lineSeparator();
+            }
+        }
+        for(Node direction : tree.getArrows()){
+            arrows += ((ScoutingEventDirection)direction).toFXML() + System.lineSeparator();
+        }
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventTree?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventDirection?>" + System.lineSeparator() +
+                tree.toFXML("xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\"", arrows, layers);
     }
 }

@@ -54,25 +54,30 @@ public class ScouterUI {
 
     private class OptionChooser extends MenuItem {
 
-        private OptionChooser(String text){
+        private MenuButton parent;
+        private OptionChooser(String text, MenuButton parent){
             super();
             setText(text);
+            this.parent = parent;
             this.setOnAction(this::handleSelected);
         }
 
         private void handleSelected(Event event){
             try {
-                if (this.getParentMenu().equals(currentCompetition)) {
+                if (this.parent.equals(competitionSelect)) {
                     currentCompetition = this.getText();
-                    main.getGames(currentCompetition);
+                    competitionSelect.setText(currentCompetition);
+                    main.getGames(this.getText());
                     gameSelect.getItems().clear();
                     teamSelect.getItems().clear();
-                } else if (this.getParentMenu().equals(gameSelect)) {
+                } else if (this.parent.equals(gameSelect)) {
                     currentGameNumber = Short.parseShort(this.getText());
                     main.getTeams(currentCompetition, currentGameNumber);
+                    gameSelect.setText(this.getText());
                     teamSelect.getItems().clear();
                 } else {
                     currentTeamIdentifier = this.getText();
+                    teamSelect.setText(this.getText());
                 }
             } catch (BadPacketException e) {
                 errored("Couldn't build the packet to get the data!");
@@ -137,6 +142,7 @@ public class ScouterUI {
         media = new Media(mediaUrl);
         mediaPlayer = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
+        mediaPlayer.setAutoPlay(true);
     }
 
     private void disable(){
@@ -173,8 +179,9 @@ public class ScouterUI {
             Platform.runLater(() -> {
                 String[] competitions = (String[]) packet.getContent();
                 for (String comp : competitions) {
-                    competitionSelect.getItems().add(new OptionChooser(comp));
+                    competitionSelect.getItems().add(new OptionChooser(comp, competitionSelect));
                 }
+                currentCompetition = packet.getContentType();
             });
         }
         packet.ack();
@@ -186,7 +193,7 @@ public class ScouterUI {
                 Short[] games = (Short[]) packet.getContent();
                 for (Short game : games) {
                     if(game != null) {
-                        gameSelect.getItems().add(new OptionChooser(game.toString()));
+                        gameSelect.getItems().add(new OptionChooser(game.toString(), gameSelect));
                     }
                 }
             });
@@ -195,12 +202,13 @@ public class ScouterUI {
     }
 
     public void teams(ActionHandler.PacketOut packet) throws BadPacketException {
-        if(packet.getContentType().equals(currentGameNumber) && teamSelect.getItems().isEmpty()) {
+        System.out.println(packet.getContentType());
+        if(Short.valueOf(packet.getContentType()) == currentGameNumber && teamSelect.getItems().isEmpty()) {
             Platform.runLater(() -> {
                 String[] teams = (String[]) packet.getContent();
                 for (String team : teams) {
                     if(team != null) {
-                        teamSelect.getItems().add(new OptionChooser(team));
+                        teamSelect.getItems().add(new OptionChooser(team, teamSelect));
                     }
                 }
             });
@@ -228,7 +236,7 @@ public class ScouterUI {
     }
 
     private void errored(String why){
-
+        System.out.println(why);
     }
 
     public void loadNewView(ActionHandler.PacketOut packet) throws BadPacketException {
@@ -244,11 +252,13 @@ public class ScouterUI {
 //            playerOffset = (short) ((Object[])packet.getContent())[3];
             mediaUrl = "https://" + main.host + ":4911/" + packet.getContentType();
             loadMedia();
-            setActivePane(true);
+            Platform.runLater(() ->setActivePane(true));
             packet.ack();
         } catch (ClassCastException e){
+            System.out.println("1");
             throw new BadPacketException("The packet was poorly formatted.");
         } catch (MediaException e){
+            System.out.println("2");
             throw new BadPacketException("The media link didn't work.");
         }
     }

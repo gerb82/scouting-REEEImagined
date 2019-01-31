@@ -11,6 +11,7 @@ public class ScoutingVars {
         inserter.insert(Variables.DIRECTORIES_MAIN.toString(), directory, true);
         inserter.insert(Variables.DIRECTORIES_VIDEOS.toString(), new File(directory, "videos"), true);
         inserter.insert(Variables.DIRECTORIES_DATABASE.toString(), new File(directory, "database"), true);
+        inserter.insert(Variables.DIRECTORIES_CONFIG.toString(), new File(directory, "config"), true);
         inserter.insert(Variables.ALLIANCEEVENTS.toString(), false, true);
     }
 
@@ -18,6 +19,7 @@ public class ScoutingVars {
         DIRECTORIES_MAIN,
         DIRECTORIES_VIDEOS,
         DIRECTORIES_DATABASE,
+        DIRECTORIES_CONFIG,
 
         ALLIANCEEVENTS
     }
@@ -36,5 +38,9 @@ public class ScoutingVars {
 
     public static boolean allowAllianceEvents(){
         return ProgramWideVariable.getFinalVariableSafe(Variables.ALLIANCEEVENTS.toString(), Boolean.class);
+    }
+
+    public static File getConfigDirectory(){
+        return ProgramWideVariable.getFinalVariableSafe(Variables.DIRECTORIES_CONFIG.toString(), File.class);
     }
 }

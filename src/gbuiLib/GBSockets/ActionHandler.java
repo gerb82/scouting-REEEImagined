@@ -5,17 +5,17 @@ import java.util.*;
 
 public class ActionHandler {
 
-    protected enum DefaultPacketTypes{
+    protected enum DefaultPacketTypes {
         Ack, SmartAck, HeartBeat, HandShake, Error
     }
 
-    public class PacketOut extends Packet{
+    public class PacketOut extends Packet {
         private boolean acked;
         private GBSocket socket;
 
-        private PacketOut(Packet packet, GBSocket socket){
+        private PacketOut(Packet packet, GBSocket socket) {
             super(packet.getContent(), packet.getIds(), packet.getContentType(), packet.getPacketType(), true);
-            acked = !packet.getPacketType().equals(DefaultPacketTypes.HeartBeat.toString());
+            acked = packet.isAck();
             this.socket = socket;
         }
 
@@ -54,27 +54,27 @@ public class ActionHandler {
         }
 
         public void ack() throws BadPacketException {
-            if(!acked) {
+            if (!acked) {
                 socket.ack(super.getIds(), super.getPacketType());
                 acked = true;
             }
         }
 
         // done
-        public boolean shouldAck(){
+        public boolean shouldAck() {
             return !acked;
         }
 
         // done
         public void ack(Object content, String packetType, String contentType) throws BadPacketException {
-            if(!acked) {
+            if (!acked) {
                 socket.smartAck(super.getIds(), super.getPacketType(), content, packetType, contentType);
                 acked = true;
             }
         }
     }
 
-    public interface PacketHandler{
+    public interface PacketHandler {
         void handle(PacketOut packet) throws BadPacketException;
     }
 
@@ -82,9 +82,9 @@ public class ActionHandler {
     private List<GBSocket> sockets = new ArrayList<>();
 
     // done
-    public void setHandler(String packetType, PacketHandler handler){
-        if(sockets.isEmpty()) {
-            if(packetType == DefaultPacketTypes.HandShake.toString()){
+    public void setHandler(String packetType, PacketHandler handler) {
+        if (sockets.isEmpty()) {
+            if (packetType == DefaultPacketTypes.HandShake.toString()) {
                 throw new IllegalArgumentException("Cannot use type HandShake for a packet handler, as it is reserved for GBSocket functions");
             }
             handlers.put(packetType, handler);
@@ -95,22 +95,22 @@ public class ActionHandler {
 
     // done
     protected void handlePacket(Packet packet, GBSocket socket) throws BadPacketException {
-        try{
-            assert(sockets.contains(socket));
+        try {
+            assert (sockets.contains(socket));
             PacketOut packetOut = new PacketOut(packet, socket);
             PacketHandler handler = handlers.get(packet.getPacketType());
-            assert(handler != null);
+            assert (handler != null);
             handler.handle(packetOut);
-            if(!packetOut.acked && !socket.allowNoAck()){
+            if (!packetOut.acked && !socket.allowNoAck()) {
                 throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
             }
-        } catch (AssertionError e){
+        } catch (AssertionError e) {
             throw new BadPacketException("The packet type supplied with the packet was a type that the socket cannot handle, or this actionHandler is not associated with this socket.", packet);
         }
     }
 
-    public void setAuthProtocol(CheckConnectionAuth checker, CreateConnectionAuth creator){
-        if(checker == null || creator == null){
+    public void setAuthProtocol(CheckConnectionAuth checker, CreateConnectionAuth creator) {
+        if (checker == null || creator == null) {
             throw new IllegalArgumentException("Cannot set the authentication checker or creator to null");
         }
         authChecker = checker;
@@ -122,6 +122,7 @@ public class ActionHandler {
     }
 
     private CheckConnectionAuth authChecker;
+
     protected boolean checkConnectionData(Stack<Object> params, boolean server) {
         return authChecker == null ? true : authChecker.check(params, server);
     }
@@ -131,17 +132,18 @@ public class ActionHandler {
     }
 
     private CreateConnectionAuth authMaker;
-    protected void getConnectionData(Stack<Object> stack, boolean server){
-        if(authMaker != null){
+
+    protected void getConnectionData(Stack<Object> stack, boolean server) {
+        if (authMaker != null) {
             authMaker.make(stack, server);
         }
     }
 
     // done
-    public ActionHandler(ActionHandlerRecipe... recipes){
+    public ActionHandler(ActionHandlerRecipe... recipes) {
         handlers = new HashMap<>();
-        for(ActionHandlerRecipe recipe : recipes){
-            for(String key : recipe.getHandlers().keySet()){
+        for (ActionHandlerRecipe recipe : recipes) {
+            for (String key : recipe.getHandlers().keySet()) {
                 setHandler(key, recipe.getHandlers().get(key));
             }
         }
@@ -151,43 +153,42 @@ public class ActionHandler {
         handlers.putIfAbsent(DefaultPacketTypes.Error.toString(), ActionHandler::error);
     }
 
-    protected HashSet<String> getHandledTypes(GBSocket socket){
+    protected HashSet<String> getHandledTypes(GBSocket socket) {
         sockets.add(socket);
         return new HashSet<>(handlers.keySet());
     }
 
-    protected void connectionClosed(GBSocket socket){
+    protected void connectionClosed(GBSocket socket) {
         sockets.remove(socket);
     }
 
-    private static void error(PacketOut packet){
+    private static void error(PacketOut packet) {
 
     }
 
     private static void heartBeat(PacketOut packet) throws BadPacketException {
-        if(packet.socket.isServer()){
+        if (packet.socket.isServer()) {
             packet.ack();
-        }
-        else{
+        } else {
             throw new BadPacketException("Received Heartbeat packet from server. Server should only be receiving HeartBeat packets from the clients, not vice-versa. More on why that is in the library documentation.", packet);
         }
     }
 
-    private static void ack(PacketOut packet){
+    private static void ack(PacketOut packet) {
     }
 
     private static void smartAck(PacketOut packet) throws BadPacketException {
         try {
-            packet.socket.receivePacket((Packet)packet.getContent());
-        } catch (ClassCastException e){
+            packet.socket.receivePacket((Packet) packet.getContent());
+        } catch (ClassCastException e) {
             throw new BadPacketException("Could not cast packet contents of a smart Ack packet content into a CustomAck Object.", packet);
         }
     }
 
-    public static void takeNestedPacket(PacketOut packet){
+    public static void takeNestedPacket(PacketOut packet) {
         try {
             packet.socket.receivePacket((Packet) packet.getContent());
-        } catch (ClassCastException e){
+        } catch (ClassCastException e) {
             throw new IllegalArgumentException("The PacketOut supplied to the function had content that is not of type Packet.");
         }
     }

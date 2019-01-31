@@ -3,10 +3,12 @@ package serverSide.code;
 import connectionIndependent.FullScoutingEvent;
 import connectionIndependent.ScoutingEvent;
 import connectionIndependent.ScoutingEventDefinition;
-import gbuiLib.GBUILibGlobals;
+import connectionIndependent.eventsMapping.*;
+import javafx.scene.Node;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -28,11 +30,11 @@ public class DataBaseManager implements Closeable {
     private Connection database;
     private HashMap<String, Byte> competitionsMap = new HashMap<>();
 
-    protected byte getCompetitionFromName(String competition){
+    protected byte getCompetitionFromName(String competition) {
         return competitionsMap.get(competition);
     }
 
-    protected String[] getCompetitionsList(){
+    protected String[] getCompetitionsList() {
         return competitionsMap.keySet().toArray(new String[0]);
     }
 
@@ -64,7 +66,7 @@ public class DataBaseManager implements Closeable {
         accessLimiter = new ReentrantReadWriteLock();
         readLock = accessLimiter.readLock();
         writeLock = accessLimiter.writeLock();
-        if(!databaseFile.exists()) {
+//        if (!databaseFile.exists()) {
             try {
                 database = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath().toString());
                 database.setAutoCommit(false);
@@ -151,7 +153,7 @@ public class DataBaseManager implements Closeable {
                         "FOREIGN KEY(" + Columns.associatedGame + ") REFERENCES " + Tables.games + " (" + Columns.gameNumbers + ")," + System.lineSeparator() +
                         "FOREIGN KEY(" + Columns.associatedChain + ") REFERENCES " + Tables.eventFrames + " (" + Columns.chainID + "));");
 
-//            configEnforcer();
+                configEnforcer(statement);
                 statement.execute("SELECT " + Columns.competitionID + "," + Columns.competitionName + " FROM " + Tables.competitions + ";");
                 ResultSet set = statement.getResultSet();
                 while (set.next()) {
@@ -170,8 +172,10 @@ public class DataBaseManager implements Closeable {
                 } catch (SQLException e1) {
                     throw new Error("Failed to roll back the database!", e1);
                 }
+            } catch (IOException e) {
+                throw new Error("Failed to load scouting config!", e);
             }
-        }
+//        }
     }
 
     private ArrayList<ScoutingEventDefinition> teamDefinitions;
@@ -187,118 +191,112 @@ public class DataBaseManager implements Closeable {
         return allianceDefinitions;
     }
 
-    protected ArrayList<ScoutingEventDefinition> getTeamStartDefinitions(){
+    protected ArrayList<ScoutingEventDefinition> getTeamStartDefinitions() {
         return teamStartDefinitions;
     }
 
-    protected ArrayList<ScoutingEventDefinition> getAllianceStartDefinitions(){
+    protected ArrayList<ScoutingEventDefinition> getAllianceStartDefinitions() {
         return allianceStartDefinitions;
     }
 
     private class ConfigFormat {
         private class EventDefinition {
-            private short type;
+            private byte type;
             private String name;
             private boolean followStamps;
-            private boolean teamSpecific;
 
-            private EventDefinition(short type, String name, boolean followStamps, boolean teamSpecific) {
+            private EventDefinition(byte type, String name, boolean followStamps) {
                 this.type = type;
                 this.name = name;
                 this.followStamps = followStamps;
-                this.teamSpecific = teamSpecific;
             }
         }
 
-        private class EventContainmentChain {
-            private short container;
-            private short contained;
 
-            private EventContainmentChain(short container, short contained) {
-                this.container = container;
-                this.contained = contained;
+        private HashMap<Byte, ArrayList<Byte>> chains = new HashMap<>();
+        private ConfigFormat(ArrayList<ScoutingEventTree> trees) {
+            ArrayList<EventDefinition> teamEvents = new ArrayList<>();
+            ArrayList<EventDefinition> allianceEvents = new ArrayList<>();
+            ArrayList<Byte> events = new ArrayList<>();
+            ArrayList<EventDefinition> teamStart = new ArrayList<>();
+            ArrayList<EventDefinition> allianceStart = new ArrayList<>();
+
+            for (Node nodeT : trees) {
+                ScoutingEventTree tree = (ScoutingEventTree) nodeT;
+                boolean alliance = tree.getAlliance();
+                boolean first = true;
+                for (Node nodeA : tree.getArrows()) {
+                    ScoutingEventDirection arrow = (ScoutingEventDirection) nodeA;
+                    if(!chains.containsKey(arrow.getStart().getUnitID())){
+                        chains.put(arrow.getStart().getUnitID(), new ArrayList<>());
+                    }
+                    chains.get(arrow.getStart().getUnitID()).add(arrow.getEnd().getUnitID());
+                }
+                for (Node nodeL : tree.getLayers()) {
+                    ScoutingEventLayer layer = (ScoutingEventLayer) nodeL;
+                    for (Node nodeU : layer.getUnits()) {
+                        ScoutingEventUnit unit = (ScoutingEventUnit) nodeU;
+                        EventDefinition def = new EventDefinition(unit.getUnitID(), unit.getName(), unit.getStamp());
+                        if (!events.contains(unit.getUnitID())) {
+                            events.add(unit.getUnitID());
+                        } else {
+                            throw new Error("Duplicate event found. There are two events numbered " + unit.getUnitID());
+                        }
+                        if (first) {
+                            (alliance ? allianceStart : teamStart).add(def);
+                            first = false;
+                        }
+                        (alliance ? allianceEvents : teamEvents).add(def);
+                    }
+                }
             }
+            teamDefinitions = eventDefToScoutingEventDef(teamEvents);
+            allianceDefinitions = eventDefToScoutingEventDef(allianceEvents);
+            allianceStartDefinitions = eventDefToScoutingEventDef(allianceStart);
+            teamStartDefinitions = eventDefToScoutingEventDef(teamStart);
         }
 
-        private ArrayList<EventDefinition> definitions;
-        private ArrayList<EventContainmentChain> chains;
-
-        private ConfigFormat() {
-        }
-
-        private ArrayList<EventDefinition> getDefinitions() {
-            return definitions;
-        }
-
-        private void setDefinitions(ArrayList<EventDefinition> definitions) {
-            this.definitions = definitions;
-        }
-
-        private ArrayList<EventContainmentChain> getChains() {
-            return chains;
-        }
-
-        private void setChains(ArrayList<EventContainmentChain> chains) {
-            this.chains = chains;
-        }
-
-
-        private ArrayList<ScoutingEventDefinition> generateTeamEvents() {
+        private ArrayList<ScoutingEventDefinition> eventDefToScoutingEventDef(ArrayList<EventDefinition> array) {
             ArrayList<ScoutingEventDefinition> output = new ArrayList<>();
-            HashMap<Byte, ArrayList<Byte>> map = new HashMap<>();
-            for (EventDefinition definition : definitions) {
-                if (definition.teamSpecific) {
-                    map.putIfAbsent((byte) byteFixer(definition.type, true), new ArrayList<>());
+            HashMap<Byte, byte[]> map = new HashMap<>();
+            for (EventDefinition def : array) {
+                byte bite = def.type;
+                if(chains.containsKey(bite)) {
+                    byte[] bites = new byte[chains.get(bite).size()];
+                    for (int i = 0; i < bites.length; i++) {
+                        bites[i] = chains.get(bite).get(i);
+                    }
+                    map.put(bite, bites);
                 }
             }
-            for (EventContainmentChain chain : chains) {
-                if (map.containsKey(chain.container)) {
-                    map.get((byte)byteFixer(chain.container, true)).add((byte) byteFixer(chain.contained, true));
-                }
-            }
-            for (EventDefinition definition : definitions) {
-                Object[] contained = map.remove(definition.type).toArray();
-                byte[] realContained = new byte[contained.length];
-                for (int i = 0; i < contained.length; i++) {
-                    realContained[i] = (byte) contained[i];
-                }
-                output.add(new ScoutingEventDefinition(realContained, (byte) byteFixer(definition.type, true), definition.followStamps, definition.name));
+            for (EventDefinition definition : array) {
+                output.add(new ScoutingEventDefinition(map.get(definition.type), definition.type, definition.followStamps, definition.name));
             }
             return output;
         }
-
-        private ArrayList<ScoutingEventDefinition> generateAllianceEvents() {
-            ArrayList<ScoutingEventDefinition> output = new ArrayList<>();
-            HashMap<Byte, ArrayList<Byte>> map = new HashMap<>();
-            for (EventDefinition definition : definitions) {
-                if (!definition.teamSpecific) {
-                    map.putIfAbsent((byte) byteFixer(definition.type, true), new ArrayList<>());
-                }
-            }
-            for (EventContainmentChain chain : chains) {
-                if (map.containsKey(chain.container)) {
-                    map.get((byte)byteFixer(chain.container, true)).add((byte) byteFixer(chain.contained, true));
-                }
-            }
-            for (EventDefinition definition : definitions) {
-                Object[] contained = map.remove(definition.type).toArray();
-                byte[] realContained = new byte[contained.length];
-                for (int i = 0; i < contained.length; i++) {
-                    realContained[i] = (byte) contained[i];
-                }
-                output.add(new ScoutingEventDefinition(realContained, (byte) byteFixer(definition.type, true), definition.followStamps, definition.name));
-            }
-            return output;
-        }
-
     }
 
-    private void configEnforcer() {
-        ConfigFormat format = new ConfigFormat();
-        // do format stuff
-
-        teamDefinitions = format.generateTeamEvents();
-        allianceDefinitions = format.generateAllianceEvents();
+    private void configEnforcer(Statement statement) throws IOException, SQLException {
+        ConfigFormat format = new ConfigFormat(ScoutingTreesManager.getInstance().loadDirectory(ScoutingVars.getConfigDirectory()));
+        String eventTypes = "INSERT OR IGNORE INTO " + Tables.eventTypes + " (" + Columns.eventTypeID + "," + Columns.eventName + "," + Columns.followStamp + "," + Columns.teamSpecific + ") VALUES (";
+        boolean first = true;
+        for(ScoutingEventDefinition def : teamDefinitions){
+            eventTypes += (!first ? ",(" : "") + byteFixer(def.getName(), false) + ",'" + def.getTextName() + "'," + allianceToAllianceID(def.followStamp()) + "," + allianceToAllianceID(true) + ")";
+            first = false;
+        }
+        for(ScoutingEventDefinition def : allianceDefinitions){
+            eventTypes += ",(" + byteFixer(def.getName(), false) + ",'" + def.getTextName() + "'," + allianceToAllianceID(def.followStamp()) + "," + allianceToAllianceID(true) + ")";
+        }
+        statement.execute(eventTypes + ";");
+        String chains = "INSERT OR IGNORE INTO " + Tables.containableEvents + " (" + Columns.containerEventType + "," + Columns.eventContainedType + ") VALUES(";
+        first = true;
+        for(Byte bite : format.chains.keySet()){
+            for(Byte biter : format.chains.get(bite)) {
+                chains += (!first ? ",(" : "") + byteFixer(bite, false) + "," + byteFixer(biter, false) + ")";
+                first = false;
+            }
+        }
+        statement.execute(chains + ";");
     }
 
 
@@ -392,7 +390,7 @@ public class DataBaseManager implements Closeable {
 
     protected void updateEventsOnGame(FullScoutingEvent... events) {
         try (Statement statement = database.createStatement()) {
-            if(!writeLock.isHeldByCurrentThread()) writeLock.lock();
+            if (!writeLock.isHeldByCurrentThread()) writeLock.lock();
             Short team = events[0].getTeam();
             byte competition = events[0].getCompetition();
             String alliance = allianceToAllianceID(events[0].getAlliance());
@@ -570,13 +568,13 @@ public class DataBaseManager implements Closeable {
     private String formatEventsSelect(String conditions, Integer limit) {
         return "SELECT " + Columns.eventChainID + "," + Columns.eventLocationInChain + "," + Columns.eventType + "," + Columns.timeStamps + "," + Columns.chainID + "," + Columns.alliance + "," + Columns.gameNumber + "," + Columns.competitionNumber + "," + Columns.startingLocation + " FROM " + Tables.events + System.lineSeparator() +
                 "INNER JOIN " + Tables.eventFrames + " ON " + Tables.eventFrames + "." + Columns.chainID + " = " + Tables.events + "." + Columns.eventChainID + System.lineSeparator() +
-                "INNER JOIN " + Tables.games + " ON " + Tables.games + "." + Columns.gameNumber + " = " + Tables.eventFrames + "." + Columns.gameNumber + System.lineSeparator() +
+                "INNER JOIN " + Tables.games + " ON " + Tables.games + "." + Columns.gameNumbers + " = " + Tables.eventFrames + "." + Columns.gameNumber + System.lineSeparator() +
                 (conditions == null ? "" : "WHERE " + conditions + System.lineSeparator()) +
                 "ORDER BY " + Columns.eventChainID + " ASC, " + Columns.eventLocationInChain + " ASC" + System.lineSeparator() +
                 (limit == null ? "" : "LIMIT " + limit) + ";";
     }
 
-    private String getSpecificGame(short game, String competition){
+    private String getSpecificGame(short game, String competition) {
         return Columns.gameNumbers + " = " + game + " AND " + Columns.competition + " = " + competitionsMap.get(competition);
     }
 
@@ -587,25 +585,25 @@ public class DataBaseManager implements Closeable {
     }
 
 
-    protected Object[] getTeamConfiguration(short game, String competition, Short team){
+    protected Object[] getTeamConfiguration(short game, String competition, Short team) {
         try (Statement statement = database.createStatement()) {
             readLock.lock();
             statement.execute(formatGamesSelect(getSpecificGame(game, competition), 1));
 
             ScoutedGame result = convertResultSetToGames(statement.getResultSet()).get(0);
             Byte startLoc = null;
-            if(team != null){
-                if(result.getTeamNumber1() == team){
+            if (team != null) {
+                if (result.getTeamNumber1() == team) {
                     startLoc = 1;
-                } else if(result.getTeamNumber2() == team){
+                } else if (result.getTeamNumber2() == team) {
                     startLoc = 2;
-                } else if(result.getTeamNumber3() == team){
+                } else if (result.getTeamNumber3() == team) {
                     startLoc = 3;
-                } else if(result.getTeamNumber4() == team){
+                } else if (result.getTeamNumber4() == team) {
                     startLoc = 4;
-                } else if(result.getTeamNumber5() == team){
+                } else if (result.getTeamNumber5() == team) {
                     startLoc = 5;
-                } else if(result.getTeamNumber6() == team){
+                } else if (result.getTeamNumber6() == team) {
                     startLoc = 6;
                 }
             }
@@ -671,11 +669,11 @@ public class DataBaseManager implements Closeable {
         }
     }
 
-    protected ArrayList<FullScoutingEvent> getAllianceEventsByGame(short game, String competition, boolean alliance) {
+    protected ArrayList<FullScoutingEvent> getAllAllianceEventsByGame(short game, String competition, boolean alliance) {
         try (Statement statement = database.createStatement()) {
             readLock.lock();
             statement.execute(formatEventsSelect(matchEventGameAndCompetition(game, competition) + System.lineSeparator() +
-                    "AND " +  Columns.alliance + " = " + allianceToAllianceID(alliance), null));
+                    "AND " + Columns.alliance + " = " + allianceToAllianceID(alliance), null));
 
             return convertResultSetToEvents(statement.getResultSet());
         } catch (SQLException e) {
@@ -712,7 +710,7 @@ public class DataBaseManager implements Closeable {
     protected ArrayList<ScoutedGame> getGamesList(String competition) {
         try (Statement statement = database.createStatement()) {
             readLock.lock();
-            statement.execute(formatGamesSelect(Columns.competition + " = " + competitionsMap.get(competition),null));
+            statement.execute(formatGamesSelect(Columns.competition + " = " + competitionsMap.get(competition), null));
 
             return convertResultSetToGames(statement.getResultSet());
         } catch (SQLException e) {
@@ -797,7 +795,7 @@ public class DataBaseManager implements Closeable {
             if (set.getInt(Columns.eventLocationInChain.toString()) == 1) {
                 buffer = new FullScoutingEvent(
                         new ScoutingEvent() {{
-                            this.addProgress((byte)byteFixer(set.getShort(Columns.eventType.toString()), true), set.getShort(Columns.timeStamps.toString()) == 0 ? null : set.getShort(Columns.timeStamps.toString()));
+                            this.addProgress((byte) byteFixer(set.getShort(Columns.eventType.toString()), true), set.getShort(Columns.timeStamps.toString()) == 0 ? null : set.getShort(Columns.timeStamps.toString()));
                         }},
                         set.getShort(Columns.teamNumber.toString()) == 0 ? null : set.getShort(Columns.teamNumber.toString()),
                         set.getShort(Columns.gameNumber.toString()),
@@ -822,13 +820,14 @@ public class DataBaseManager implements Closeable {
      * To fix that, any conversion to and from sqlite of event types passes through this method.
      * If the method needs to pull from sqlite, it will reduce the value by 129, so that the lowest value sqlite can supply (1), will become {@link Byte#MIN_VALUE}, and the highest value that it can supply, which is 256, will become {@link Byte#MAX_VALUE}.
      * If the value given from sqlite is above 256 or the value given to sqlite is below 1, the method will throw an {@link IllegalArgumentException} in order to avoid derpy values.
+     *
      * @param toFix The value to fix
-     * @param down Should it be lowered (aka it's being pulled from sqlite) or should it be increased (aka it's being pushed into sqlite)
+     * @param down  Should it be lowered (aka it's being pulled from sqlite) or should it be increased (aka it's being pushed into sqlite)
      * @return The converted value, in Short form (it then has to be cast)
      */
-    private short byteFixer(short toFix, boolean down) throws IllegalArgumentException{
-        if(toFix < 1 && down || toFix > 256 && !down) throw new IllegalStateException("The byte was out of bounds");
-        return (short) (toFix + (down ? - 129 : 129));
+    private short byteFixer(short toFix, boolean down) throws IllegalArgumentException {
+        if (toFix < 1 && down || toFix > 256 && !down) throw new IllegalStateException("The byte was out of bounds");
+        return (short) (toFix + (down ? -129 : 129));
     }
 
     public static class ScoutedGame {
@@ -967,8 +966,8 @@ public class DataBaseManager implements Closeable {
             this.teamNumber6 = teamNumber6;
         }
 
-        public Short[] getTeamsArray(){
-            return new Short[]{teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6};
+        public String[] getTeamsArray() {
+            return new String[]{String.valueOf(teamNumber1), String.valueOf(teamNumber2), String.valueOf(teamNumber3), String.valueOf(teamNumber4), String.valueOf(teamNumber5), String.valueOf(teamNumber6)};
         }
     }
 
