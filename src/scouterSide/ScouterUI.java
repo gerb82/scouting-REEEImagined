@@ -265,7 +265,7 @@ public class ScouterUI {
             }
             initialEvents = (byte[]) ((Object[]) (packet.getContent()))[2];
 //            playerOffset = (short) ((Object[])packet.getContent())[3];
-            mediaUrl = "https://" + main.host + ":4911/" + packet.getContentType();
+            mediaUrl = "http://" + main.host + ":4911/" + packet.getContentType();
             System.out.println(mediaUrl);
             Platform.runLater(() -> {
                 loadMedia();
