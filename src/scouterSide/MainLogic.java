@@ -13,6 +13,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 
 public class MainLogic extends Application {
@@ -44,13 +46,13 @@ public class MainLogic extends Application {
         handler.setHandler(ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), controller::teams);
         handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), controller::scoutOver);
         SelectorManager selector = new SelectorManager();
-        socket = new GBSocket(ConnectionFinder.getLocalNetHost(4590), ScoutingConnections.SCOUTER.toString(), true, selector, handler, new GBSocket.SocketConfig(), false);
+        socket = new GBSocket(addressSetter(), ScoutingConnections.SCOUTER.toString(), true, selector, handler, new GBSocket.SocketConfig(), false);
         socket.isConnected.addListener((observable, oldValue, newValue) -> {
             System.out.println(newValue);
             while (!observable.getValue()) {
                 try {
 //                root.setDisable(true);
-                    socket.setAddress(ConnectionFinder.getLocalNetHost(4590));
+                    socket.setAddress(addressSetter());
                 } catch (IllegalAccessException e) {
                     root.setDisable(false);
                     return;
@@ -59,6 +61,12 @@ public class MainLogic extends Application {
             }
         });
         socket.startConnection();
+    }
+
+    public InetSocketAddress addressSetter(){
+        InetSocketAddress address = ConnectionFinder.getLocalNetHost(4590);
+        host = address.getAddress().getHostAddress();
+        return address;
     }
 
     public void getCompetitions() throws BadPacketException {

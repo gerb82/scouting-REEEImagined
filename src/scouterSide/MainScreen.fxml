@@ -30,7 +30,7 @@
     <items>
         <SplitPane dividerPositions="0.7367906066536204" prefHeight="200.0" prefWidth="200.0">
             <items>
-                <MediaView fx:id="mediaView" fitHeight="540.0" fitWidth="750.0" SplitPane.resizableWithParent="false" />
+                <Pane fx:id="mediaView" prefWidth="740" prefHeight="500" SplitPane.resizableWithParent="false" />
                 <SplitPane dividerPositions="0.3685185185185185" orientation="VERTICAL" prefHeight="540.0" prefWidth="253.0">
                     <items>
                         <Group fx:id="panelsContainer">

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import connectionIndependent.eventsMapping.ScoutingEventTree?>
+<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>
+<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
+<?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
+<ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" alliance="false" treeNumber="1">
+    <layers>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn128" unitID="-128" name="test1" stamp="true" layoutXBuffer="330.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn127" unitID="-127" name="test2" stamp="false" layoutXBuffer="80.000000"/>
+            </units>
+        </ScoutingEventLayer>
+    </layers>
+    <children>
+        <ScoutingEventDirection start="$unitn128" end="$unitn127"/>
+    </children>
+</ScoutingEventTree>

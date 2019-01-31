@@ -32,16 +32,26 @@ public class ScouterUI {
 
     private MediaPlayer mediaPlayer;
     private Media media;
-    @FXML private MediaView mediaView;
-    @FXML private Pane controlsPanel;
-    @FXML private Pane loadControlsPanel;
-    @FXML private MenuButton competitionSelect;
-    @FXML private MenuButton gameSelect;
-    @FXML private MenuButton teamSelect;
-    @FXML private Slider volumeSlider;
-    @FXML private VBox eventsLog;
-    @FXML private FlowPane events;
-    @FXML private Group panelsContainer;
+    @FXML
+    private Pane mediaView;
+    @FXML
+    private Pane controlsPanel;
+    @FXML
+    private Pane loadControlsPanel;
+    @FXML
+    private MenuButton competitionSelect;
+    @FXML
+    private MenuButton gameSelect;
+    @FXML
+    private MenuButton teamSelect;
+    @FXML
+    private Slider volumeSlider;
+    @FXML
+    private VBox eventsLog;
+    @FXML
+    private FlowPane events;
+    @FXML
+    private Group panelsContainer;
     private Parent root;
     private short currentGameNumber;
     private String currentTeamIdentifier;
@@ -55,14 +65,15 @@ public class ScouterUI {
     private class OptionChooser extends MenuItem {
 
         private MenuButton parent;
-        private OptionChooser(String text, MenuButton parent){
+
+        private OptionChooser(String text, MenuButton parent) {
             super();
             setText(text);
             this.parent = parent;
             this.setOnAction(this::handleSelected);
         }
 
-        private void handleSelected(Event event){
+        private void handleSelected(Event event) {
             try {
                 if (this.parent.equals(competitionSelect)) {
                     currentCompetition = this.getText();
@@ -92,7 +103,7 @@ public class ScouterUI {
     }
 
     @FXML
-    private void refreshCompetitions(Event event){
+    private void refreshCompetitions(Event event) {
         try {
             competitionSelect.getItems().clear();
             gameSelect.getItems().clear();
@@ -103,57 +114,62 @@ public class ScouterUI {
         }
     }
 
-    public void setRoot(Parent root){
+    public void setRoot(Parent root) {
         this.root = root;
     }
 
-    public ScouterUI(){
+    public ScouterUI() {
         backEvent = new Button();
         backEvent.setOnAction(this::back);
     }
 
     @FXML
-    private void back10(Event event){
+    private void back10(Event event) {
         movePlayerTime(-10);
     }
 
     @FXML
-    private void back5(Event event){
+    private void back5(Event event) {
         movePlayerTime(-5);
     }
 
     @FXML
-    private void forward5(Event event){
+    private void forward5(Event event) {
         movePlayerTime(5);
     }
 
     @FXML
-    private void forward10(Event event){
+    private void forward10(Event event) {
         movePlayerTime(10);
     }
 
-    private void movePlayerTime(int dif){
+    private void movePlayerTime(int dif) {
         mediaPlayer.seek(mediaPlayer.getCurrentTime().add(Duration.seconds(dif)));
     }
 
     private String mediaUrl;
+
     @FXML
-    private void loadMedia(){
+    private void loadMedia() {
         media = new Media(mediaUrl);
         mediaPlayer = new MediaPlayer(media);
-        mediaView.setMediaPlayer(mediaPlayer);
         mediaPlayer.setAutoPlay(true);
+
+        MediaControl mediaControl = new MediaControl(mediaPlayer);
+        mediaView.getChildren().add(mediaControl);
+        mediaControl.prefWidthProperty().bind(mediaView.widthProperty());
+        mediaControl.prefHeightProperty().bind(mediaView.heightProperty());
     }
 
-    private void disable(){
-        if(mediaPlayer != null){
+    private void disable() {
+        if (mediaPlayer != null) {
             mediaPlayer.pause();
         }
         root.setDisable(true);
     }
 
     @FXML
-    private void load(Event event){
+    private void load(Event event) {
         try {
             disable();
             PacketLogger.ObservablePacketStatus status;
@@ -161,7 +177,7 @@ public class ScouterUI {
             status.addListener(this::statusChangeListener);
         } catch (BadPacketException e) {
             errored("Couldn't reload the game");
-        } catch (IllegalStateException e){
+        } catch (IllegalStateException e) {
             errored("We aren't connected");
         }
     }
@@ -175,7 +191,7 @@ public class ScouterUI {
     }
 
     public void competitions(ActionHandler.PacketOut packet) throws BadPacketException {
-        if(competitionSelect.getItems().isEmpty()) {
+        if (competitionSelect.getItems().isEmpty()) {
             Platform.runLater(() -> {
                 String[] competitions = (String[]) packet.getContent();
                 for (String comp : competitions) {
@@ -188,11 +204,11 @@ public class ScouterUI {
     }
 
     public void games(ActionHandler.PacketOut packet) throws BadPacketException {
-        if(packet.getContentType().equals(currentCompetition) && gameSelect.getItems().isEmpty()) {
+        if (packet.getContentType().equals(currentCompetition) && gameSelect.getItems().isEmpty()) {
             Platform.runLater(() -> {
                 Short[] games = (Short[]) packet.getContent();
                 for (Short game : games) {
-                    if(game != null) {
+                    if (game != null) {
                         gameSelect.getItems().add(new OptionChooser(game.toString(), gameSelect));
                     }
                 }
@@ -202,12 +218,11 @@ public class ScouterUI {
     }
 
     public void teams(ActionHandler.PacketOut packet) throws BadPacketException {
-        System.out.println(packet.getContentType());
-        if(Short.valueOf(packet.getContentType()) == currentGameNumber && teamSelect.getItems().isEmpty()) {
+        if (Short.valueOf(packet.getContentType()) == currentGameNumber && teamSelect.getItems().isEmpty()) {
             Platform.runLater(() -> {
                 String[] teams = (String[]) packet.getContent();
                 for (String team : teams) {
-                    if(team != null) {
+                    if (team != null) {
                         teamSelect.getItems().add(new OptionChooser(team, teamSelect));
                     }
                 }
@@ -216,49 +231,51 @@ public class ScouterUI {
         packet.ack();
     }
 
-    public void setMain(MainLogic main){
+    public void setMain(MainLogic main) {
         this.main = main;
     }
 
-    private void statusChangeListener(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus newValue, PacketLogger.PacketStatus oldValue){
-        if(newValue.equals(PacketLogger.PacketStatus.SEND_ERRORED)){
+    private void statusChangeListener(ObservableValue<? extends PacketLogger.PacketStatus> observable, PacketLogger.PacketStatus newValue, PacketLogger.PacketStatus oldValue) {
+        if (newValue.equals(PacketLogger.PacketStatus.SEND_ERRORED)) {
             observable.removeListener(this::statusChangeListener);
             errored("The packet errored.");
             root.setDisable(false);
-        } else if(newValue.equals(PacketLogger.PacketStatus.TIMED_OUT)) {
+        } else if (newValue.equals(PacketLogger.PacketStatus.TIMED_OUT)) {
             observable.removeListener(this::statusChangeListener);
             errored("the packet timed out.");
             root.setDisable(false);
-        } else if(newValue.equals(PacketLogger.PacketStatus.ACKED)){
+        } else if (newValue.equals(PacketLogger.PacketStatus.ACKED)) {
             observable.removeListener(this::statusChangeListener);
             root.setDisable(false);
         }
     }
 
-    private void errored(String why){
+    private void errored(String why) {
         System.out.println(why);
     }
 
     public void loadNewView(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
-            eventList = (ArrayList<ScoutingEvent>)((Object[])(packet.getContent()))[0];
+            eventList = (ArrayList<ScoutingEvent>) ((Object[]) (packet.getContent()))[0];
             validEvents.clear();
             buttons.clear();
-            for(ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>)((Object[])(packet.getContent()))[1]) {
+            for (ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>) ((Object[]) (packet.getContent()))[1]) {
                 validEvents.put(def.getName(), def);
                 buttons.put(def.getName(), new EventButton(def));
             }
-            initialEvents = (byte[]) ((Object[])(packet.getContent()))[2];
+            initialEvents = (byte[]) ((Object[]) (packet.getContent()))[2];
 //            playerOffset = (short) ((Object[])packet.getContent())[3];
             mediaUrl = "https://" + main.host + ":4911/" + packet.getContentType();
-            loadMedia();
-            Platform.runLater(() ->setActivePane(true));
+            System.out.println(mediaUrl);
+            Platform.runLater(() -> {
+                loadMedia();
+                setActivePane(true);
+            });
             packet.ack();
-        } catch (ClassCastException e){
-            System.out.println("1");
+        } catch (ClassCastException e) {
+            e.printStackTrace();
             throw new BadPacketException("The packet was poorly formatted.");
-        } catch (MediaException e){
-            System.out.println("2");
+        } catch (MediaException e) {
             throw new BadPacketException("The media link didn't work.");
         }
     }
@@ -268,7 +285,7 @@ public class ScouterUI {
     private ScoutingEvent currentlyProcessing;
 
     @FXML
-    private void cancel(Event event){
+    private void cancel(Event event) {
         try {
             main.cancelScout().addListener(this::statusChangeListener);
             disable();
@@ -278,8 +295,8 @@ public class ScouterUI {
     }
 
     @FXML
-    private void submit(Event event){
-        if(currentlyProcessing == null) {
+    private void submit(Event event) {
+        if (currentlyProcessing == null) {
             try {
                 main.submitScout(eventList).addListener(this::statusChangeListener);
                 disable();
@@ -291,7 +308,7 @@ public class ScouterUI {
         }
     }
 
-    public void setActivePane(boolean scouting){
+    public void setActivePane(boolean scouting) {
         panelsContainer.getChildren().clear();
         panelsContainer.getChildren().add(scouting ? controlsPanel : loadControlsPanel);
     }
@@ -299,14 +316,14 @@ public class ScouterUI {
     private class EventButton extends Button {
         private ScoutingEventDefinition definition;
 
-        private EventButton(ScoutingEventDefinition definition){
+        private EventButton(ScoutingEventDefinition definition) {
             super();
             this.definition = definition;
             setText(definition.getTextName());
             this.setOnAction(event -> generateEvent());
         }
 
-        private void generateEvent(){
+        private void generateEvent() {
             events.setDisable(true);
             try {
                 currentlyProcessing.addProgress(definition.getName(), definition.followStamp() ? (short) ((mediaPlayer.getCurrentTime().toMillis() / 100)/* + playerOffset */) : null);
@@ -323,22 +340,22 @@ public class ScouterUI {
                     }
                     events.getChildren().add(backEvent);
                 }
-            } catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 errored(e.getMessage());
             }
             events.setDisable(false);
         }
     }
 
-    private void back(Event event){
+    private void back(Event event) {
         events.setDisable(true);
         currentlyProcessing.removeLast();
         ScoutingEventDefinition definition = validEvents.get(currentlyProcessing.getLastType());
         events.getChildren().clear();
-        for(byte eventDef : definition.getNextStamps()) {
+        for (byte eventDef : definition.getNextStamps()) {
             events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
         }
-        if(currentlyProcessing.getSize() > 0){
+        if (currentlyProcessing.getSize() > 0) {
             events.getChildren().add(backEvent);
         }
     }

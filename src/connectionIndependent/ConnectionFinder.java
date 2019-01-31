@@ -5,7 +5,7 @@ import java.net.*;
 
 public class ConnectionFinder {
 
-    public static SocketAddress getLocalNetHost(int port) {
+    public static InetSocketAddress getLocalNetHost(int port) {
         try (MulticastSocket socket = new MulticastSocket(8000)){
             byte[] buf = new byte[15];
             InetAddress group = InetAddress.getByName("234.0.0.0");

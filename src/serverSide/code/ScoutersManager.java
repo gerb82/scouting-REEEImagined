@@ -37,7 +37,8 @@ public class ScoutersManager {
         }
 
         private boolean isEqualTo(ScoutIdentifier o) {
-            return this.competition == o.competition && this.game == o.game && this.alliance == o.alliance && this.team == o.team;
+            if(o == null) return false;
+            return this.competition.equals(o.competition) && this.game == o.game && String.valueOf(this.alliance).equals(String.valueOf(o.alliance)) && this.team == o.team;
         }
     }
 
@@ -137,7 +138,7 @@ public class ScoutersManager {
             for (ScoutIdentifier scout : currentlyScouting.values()) {
                 if (scout.isEqualTo(identifier)) throw new IllegalArgumentException("Game is already being scouted!");
             }
-            if (!currentlyScouting.putIfAbsent(packet.getSocket().isConnected, identifier).equals(identifier)) {
+            if (identifier.isEqualTo(currentlyScouting.putIfAbsent(packet.getSocket().isConnected, identifier))) {
                 throw new IllegalArgumentException("You are already scouting a game!");
             }
             packet.getSocket().isConnected.addListener(listener);
@@ -173,7 +174,7 @@ public class ScoutersManager {
             e.printStackTrace();
             throw new BadPacketException(e.getMessage());
         } catch (Exception e) {
-            System.out.println(2);
+            e.printStackTrace();
             throw new BadPacketException("Invalid game identifier!");
         }
     }
