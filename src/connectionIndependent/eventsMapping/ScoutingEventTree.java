@@ -8,10 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 import java.util.List;
@@ -24,7 +21,7 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
     private Button addLayer;
     private ScoutingEventUnit linkStarter = null;
     private boolean linkExit = false;
-    private byte treeNumber = 1;
+    private byte treeNumber = -1;
 
     public ScoutingEventUnit getLinkStarter() {
         return linkStarter;
@@ -53,19 +50,19 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
             getChildren().add(layers);
             addLayer.setLayoutX(0);
             addLayer.setLayoutY(0);
+            addLayer.setMinHeight(200);
+            VBox.setVgrow(addLayer, Priority.ALWAYS);
             addLayer.prefWidthProperty().bind(layers.widthProperty());
-            addLayer.setPrefHeight(200);
             addLayer.setOnMouseClicked(this::addLayer);
         } else {
             anchor = new Pivot<>(this);
             getChildren().addAll(layers, anchor);
         }
         layers.prefWidthProperty().bind(widthProperty());
-        layers.prefHeightProperty().bind(heightProperty());
+        layers.prefHeightProperty().bindBidirectional(prefHeightProperty());
         layers.setLayoutX(0);
         layers.setLayoutY(0);
         setWidth(1000);
-        setHeight(3000);
         ScoutingTreesManager.getInstance().addTree(this);
     }
 
@@ -77,6 +74,7 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         ScoutingEventLayer layer = new ScoutingEventLayer();
         layer.setTreeNumber(treeNumber);
         layers.getChildren().add(layers.getChildren().indexOf(addLayer), layer);
+        setPrefHeight(layers.getHeight());
     }
 
     public ObservableList<Node> getLayers(){

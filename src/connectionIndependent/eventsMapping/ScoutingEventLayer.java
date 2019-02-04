@@ -6,10 +6,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.scene.Node;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
@@ -22,12 +19,14 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
 
     public ScoutingEventLayer() {
         super();
+        VBox.setVgrow(this, Priority.ALWAYS);
         setBackground(new Background(new BackgroundFill(Color.BLUE, null, null)));
         setManaged(true);
         units = new HBox();
         units.setManaged(true);
-        setWidth(1000);
-        setHeight(200);
+        setMinWidth(1000);
+        setMinHeight(200);
+
         if (ScoutingTreesManager.getInstance().isEditing()) {
             anchor = new Pivot<>(this);
             adder = new Pivot<>(this);

@@ -26,10 +26,21 @@ public final class ScoutingTreesManager {
         return treesManager;
     }
 
+    public void prepareDirectory(File directoryPath) {
+        directoryPath.mkdirs();
+        for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".tree"))) {
+            file.delete();
+        }
+    }
+
+    public boolean mustOverride(File directoryPath) {
+        return directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".tree")).length == 0;
+    }
+
     public ArrayList<ScoutingEventTree> loadDirectory(File directoryPath) throws IOException {
         try {
             ArrayList<ScoutingEventTree> output = new ArrayList<>();
-            for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".fxml"))) {
+            for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".tree"))) {
                 FXMLLoader loader = new FXMLLoader(file.toURI().toURL());
                 loader.setController(this);
                 output.add(loader.load());
@@ -60,13 +71,13 @@ public final class ScoutingTreesManager {
         return treesMap.get(number);
     }
 
-    public void start(){
+    public void start() {
         registerTree(nowLoading);
     }
 
-    public void addTree(ScoutingEventTree tree){
+    public void addTree(ScoutingEventTree tree) {
         byte treeNumber = tree.getTreeNumber();
-        while (treesMap.keySet().contains(treeNumber)) {
+        while (treeNumber == -1 || treesMap.keySet().contains(treeNumber)) {
             treeNumber++;
         }
         tree.setTreeNumber(treeNumber);
@@ -77,17 +88,15 @@ public final class ScoutingTreesManager {
         byte treeNumber = tree.getTreeNumber();
         treesMap.put(treeNumber, tree);
         for (Node layer : tree.getLayers()) {
-            if(layer instanceof ScoutingEventLayer) {
+            if (layer instanceof ScoutingEventLayer) {
                 ((ScoutingEventLayer) layer).setTreeNumber(treeNumber);
-                ((ScoutingEventLayer) layer).setPrefHeight(200);
-                ((ScoutingEventLayer) layer).setPrefWidth(1000);
                 for (Node node : ((ScoutingEventLayer) layer).getUnits()) {
                     ScoutingEventUnit unit = (ScoutingEventUnit) node;
                     unit.init();
                 }
             }
         }
-        if(isEditing()){
+        if (isEditing()) {
             tree.initButton();
         }
         tree.requestLayout();
@@ -146,14 +155,15 @@ public final class ScoutingTreesManager {
     }
 
     private byte lastUnitID = Byte.MIN_VALUE;
-    public String treeAsFXML(byte treeNumber){
+
+    public String treeAsFXML(byte treeNumber) {
         ScoutingEventTree tree = treesMap.get(treeNumber);
         String arrows = "";
         String layers = "";
         boolean first = true;
-        for(Node layer : tree.getLayers()){
-            if(layer instanceof ScoutingEventLayer) {
-                if(first) {
+        for (Node layer : tree.getLayers()) {
+            if (layer instanceof ScoutingEventLayer) {
+                if (first) {
                     assert (((ScoutingEventLayer) layer).getUnits().size() == 1);
                     first = false;
                 }
@@ -165,8 +175,8 @@ public final class ScoutingTreesManager {
                 layers += ((ScoutingEventLayer) layer).toFXML(units) + System.lineSeparator();
             }
         }
-        for(Node direction : tree.getArrows()){
-            arrows += ((ScoutingEventDirection)direction).toFXML() + System.lineSeparator();
+        for (Node direction : tree.getArrows()) {
+            arrows += ((ScoutingEventDirection) direction).toFXML() + System.lineSeparator();
         }
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + System.lineSeparator() +
                 "<?import connectionIndependent.eventsMapping.ScoutingEventTree?>" + System.lineSeparator() +
