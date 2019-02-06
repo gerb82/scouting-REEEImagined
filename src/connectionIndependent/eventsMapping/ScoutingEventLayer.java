@@ -68,6 +68,9 @@ public class ScoutingEventLayer extends Pane implements ScoutingEventTreePart {
     }
 
     public void addNewUnit(Event event) {
+        if(getTree().getLayers().indexOf(this) == 0){
+            if(units.getChildren().size() != 0) return;
+        }
         ScoutingEventUnit unit = new ScoutingEventUnit();
         getUnits().add(unit);
     }

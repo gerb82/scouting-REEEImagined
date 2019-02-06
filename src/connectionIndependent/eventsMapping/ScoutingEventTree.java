@@ -2,6 +2,8 @@ package connectionIndependent.eventsMapping;
 
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -41,28 +43,25 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
 
     public ScoutingEventTree(){
         super();
-        setManaged(false);
+        setManaged(true);
         layers = new VBox(30);
         layers.setBackground(new Background(new BackgroundFill(Color.GREEN, null, null)));
         layers.setManaged(true);
         if(ScoutingTreesManager.getInstance().isEditing()) {
             addLayer = new Button("add new layer");
             getChildren().add(layers);
-            addLayer.setLayoutX(0);
-            addLayer.setLayoutY(0);
-            addLayer.setMinHeight(200);
             VBox.setVgrow(addLayer, Priority.ALWAYS);
             addLayer.prefWidthProperty().bind(layers.widthProperty());
             addLayer.setOnMouseClicked(this::addLayer);
+            addLayer.setPrefHeight(200);
         } else {
             anchor = new Pivot<>(this);
             getChildren().addAll(layers, anchor);
         }
         layers.prefWidthProperty().bind(widthProperty());
-        layers.prefHeightProperty().bindBidirectional(prefHeightProperty());
+        setMaxWidth(Double.MAX_VALUE);
         layers.setLayoutX(0);
         layers.setLayoutY(0);
-        setWidth(1000);
         ScoutingTreesManager.getInstance().addTree(this);
     }
 
@@ -74,7 +73,6 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         ScoutingEventLayer layer = new ScoutingEventLayer();
         layer.setTreeNumber(treeNumber);
         layers.getChildren().add(layers.getChildren().indexOf(addLayer), layer);
-        setPrefHeight(layers.getHeight());
     }
 
     public ObservableList<Node> getLayers(){

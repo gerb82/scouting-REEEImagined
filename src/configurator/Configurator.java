@@ -1,22 +1,29 @@
 package configurator;
 
-import com.sun.deploy.config.Platform;
 import connectionIndependent.eventsMapping.ScoutingEventTree;
 import connectionIndependent.eventsMapping.ScoutingTreesManager;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.layout.Pane;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Optional;
 
 public class Configurator extends Application {
 
@@ -26,16 +33,17 @@ public class Configurator extends Application {
 
     private File storageDir = new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\data\\config");
 
+    private Stage stage;
     private ScoutingTreesManager manager;
     @FXML
     private Pane root;
 
     @FXML
     private TabPane tabs;
-    private Tab addTabs;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        stage = primaryStage;
         FXMLLoader loader = new FXMLLoader(getClass().getResource("Editor.fxml"));
         ScoutingTreesManager.initialize(true);
         manager = ScoutingTreesManager.getInstance();
@@ -43,6 +51,12 @@ public class Configurator extends Application {
         primaryStage.setScene(new Scene(loader.load()));
         root.prefWidthProperty().bind(primaryStage.getScene().widthProperty());
         root.prefHeightProperty().bind(primaryStage.getScene().heightProperty());
+        for(Pair<String,ScoutingEventTree> treeTab : manager.loadDirectory(storageDir)){
+            tabs.getTabs().add(new TreeEditTab(treeTab.getKey(), treeTab.getValue(), treeTab.getValue().getAlliance()));
+        }
+        if(tabs.getTabs().size() == 0){
+            Platform.runLater(this::addNewTab);
+        }
         primaryStage.show();
     }
 
@@ -67,26 +81,68 @@ public class Configurator extends Application {
 
     @FXML
     private void addNewTab(){
-        tabs.getTabs().add(new TreeEditTab("test", false));
+        Dialog<Pair<String, Boolean>> newTab = new Dialog<>();
+        newTab.setTitle("New Tab");
+        newTab.setHeaderText("Create a new tab");
+        ButtonType loginButtonType = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
+        newTab.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        TextField fileName = new TextField();
+        fileName.setPromptText("name");
+        CheckBox alliance = new CheckBox();
+        grid.add(new Label("Tree name:"), 0, 0);
+        grid.add(fileName, 1, 0);
+        grid.add(new Label("Is alliance event:"), 0, 1);
+        grid.add(alliance, 1, 1);
+        newTab.getDialogPane().setContent(grid);
+
+        newTab.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                return new Pair<>(fileName.getText(), alliance.isSelected());
+            }
+            return null;
+        });
+
+        Optional<Pair<String, Boolean>> result = newTab.showAndWait();
+
+        tabs.getTabs().add(new TreeEditTab(result.get().getKey(), result.get().getValue()));
     }
 
     public class TreeEditTab extends Tab {
 
+        private class CustomScrollPane extends ScrollPane{
+            @Override
+            public void setHeight(double value) {
+                super.setHeight(value);
+            }
+        }
         private byte treeNumber;
         private ScoutingEventTree tree;
+        private CustomScrollPane scroll;
 
-        public TreeEditTab(String name, boolean alliance) {
+        public TreeEditTab(String name, ScoutingEventTree tree, boolean alliance){
             super(name);
-            ScrollPane scroll = new ScrollPane();
+            scroll = new CustomScrollPane();
+            scroll.setManaged(true);
             setContent(scroll);
             scroll.setMaxHeight(Double.MAX_VALUE);
-            tree = new ScoutingEventTree();
             tree.setAlliance(alliance);
+            setStyle("-fx-background-color: " + (alliance ? "yellow" : "orange"));
+            this.tree = tree;
+            treeNumber = tree.getTreeNumber();
+            scroll.setMaxHeight(Double.MAX_VALUE);
+            scroll.maxWidthProperty().bind(tabs.widthProperty());
+            tree.prefWidthProperty().bind(scroll.widthProperty());
+            scroll.setContent(tree);
+        }
+
+        public TreeEditTab(String name, boolean alliance) {
+            this(name, new ScoutingEventTree(), alliance);
             manager.registerTree(tree);
             treeNumber = tree.getTreeNumber();
-            scroll.setContent(tree);
-            scroll.prefWidthProperty().bind(tree.widthProperty());
-            scroll.prefHeightProperty().bind(tree.heightProperty());
         }
 
         public byte getTreeNumber() {

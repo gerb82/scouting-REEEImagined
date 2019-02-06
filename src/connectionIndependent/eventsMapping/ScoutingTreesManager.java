@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.util.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,14 +38,15 @@ public final class ScoutingTreesManager {
         return directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".tree")).length == 0;
     }
 
-    public ArrayList<ScoutingEventTree> loadDirectory(File directoryPath) throws IOException {
+    public ArrayList<Pair<String, ScoutingEventTree>> loadDirectory(File directoryPath) throws IOException {
         try {
-            ArrayList<ScoutingEventTree> output = new ArrayList<>();
+            ArrayList<Pair<String,ScoutingEventTree>> output = new ArrayList<>();
             for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".tree"))) {
                 FXMLLoader loader = new FXMLLoader(file.toURI().toURL());
                 loader.setController(this);
-                output.add(loader.load());
-                start();
+                ScoutingEventTree tree = loader.load();
+                registerTree(tree);
+                output.add(new Pair<>(file.getName().split("\\.")[0], tree));
             }
             return output;
         } catch (IOException e) {

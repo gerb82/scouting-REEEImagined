@@ -5,6 +5,7 @@ import connectionIndependent.ScoutingEvent;
 import connectionIndependent.ScoutingEventDefinition;
 import connectionIndependent.eventsMapping.*;
 import javafx.scene.Node;
+import javafx.util.Pair;
 
 import java.io.Closeable;
 import java.io.File;
@@ -214,15 +215,15 @@ public class DataBaseManager implements Closeable {
 
 
         private HashMap<Byte, ArrayList<Byte>> chains = new HashMap<>();
-        private ConfigFormat(ArrayList<ScoutingEventTree> trees) {
+        private ConfigFormat(ArrayList<Pair<String,ScoutingEventTree>> trees) {
             ArrayList<EventDefinition> teamEvents = new ArrayList<>();
             ArrayList<EventDefinition> allianceEvents = new ArrayList<>();
             ArrayList<Byte> events = new ArrayList<>();
             ArrayList<EventDefinition> teamStart = new ArrayList<>();
             ArrayList<EventDefinition> allianceStart = new ArrayList<>();
 
-            for (Node nodeT : trees) {
-                ScoutingEventTree tree = (ScoutingEventTree) nodeT;
+            for (Pair<String, ScoutingEventTree> nodeT : trees) {
+                ScoutingEventTree tree = nodeT.getValue();
                 boolean alliance = tree.getAlliance();
                 boolean first = true;
                 for (Node nodeA : tree.getArrows()) {
