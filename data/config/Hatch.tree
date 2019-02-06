@@ -4,136 +4,155 @@
 <?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
 <ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" alliance="false" treeNumber="1">
-<layers>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn67" unitID="-67" name="Panel Picked Up" stamp="true" layoutXBuffer="507.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn66" unitID="-66" name="Floor" stamp="false" layoutXBuffer="15.000000"/>
-<ScoutingEventUnit fx:id="unitn65" unitID="-65" name="Feeder 1" stamp="false" layoutXBuffer="257.000000"/>
-<ScoutingEventUnit fx:id="unitn64" unitID="-64" name="Enemy Feeder 1" stamp="false" layoutXBuffer="509.000000"/>
-<ScoutingEventUnit fx:id="unitn63" unitID="-63" name="Feeder 2" stamp="false" layoutXBuffer="785.000000"/>
-<ScoutingEventUnit fx:id="unitn62" unitID="-62" name="Enemy Feeder 2" stamp="false" layoutXBuffer="1042.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn61" unitID="-61" name="Was Interrupted" stamp="false" layoutXBuffer="508.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn60" unitID="-60" name="Rocket 1" stamp="true" layoutXBuffer="68.000000"/>
-<ScoutingEventUnit fx:id="unitn59" unitID="-59" name="Cargo Ship" stamp="true" layoutXBuffer="508.000000"/>
-<ScoutingEventUnit fx:id="unitn58" unitID="-58" name="Rocket 2" stamp="true" layoutXBuffer="1023.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn57" unitID="-57" name="Bottom" stamp="false" layoutXBuffer="0.000000"/>
-<ScoutingEventUnit fx:id="unitn56" unitID="-56" name="Top" stamp="false" layoutXBuffer="411.000000"/>
-<ScoutingEventUnit fx:id="unitn55" unitID="-55" name="Middle" stamp="false" layoutXBuffer="206.000000"/>
-<ScoutingEventUnit fx:id="unitn54" unitID="-54" name="Bottom" stamp="false" layoutXBuffer="1112.000000"/>
-<ScoutingEventUnit fx:id="unitn53" unitID="-53" name="Center" stamp="false" layoutXBuffer="894.000000"/>
-<ScoutingEventUnit fx:id="unitn52" unitID="-52" name="Top" stamp="false" layoutXBuffer="682.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn51" unitID="-51" name="Center Side" stamp="false" layoutXBuffer="0.000000"/>
-<ScoutingEventUnit fx:id="unitn50" unitID="-50" name="Habitat Side" stamp="false" layoutXBuffer="411.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn49" unitID="-49" name="Middle" stamp="false" layoutXBuffer="898.000000"/>
-<ScoutingEventUnit fx:id="unitn48" unitID="-48" name="Furthest" stamp="false" layoutXBuffer="684.000000"/>
-<ScoutingEventUnit fx:id="unitn47" unitID="-47" name="Closest" stamp="false" layoutXBuffer="1117.000000"/>
-<ScoutingEventUnit fx:id="unitn46" unitID="-46" name="Bottom" stamp="false" layoutXBuffer="0.000000"/>
-<ScoutingEventUnit fx:id="unitn45" unitID="-45" name="Top" stamp="false" layoutXBuffer="410.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn44" unitID="-44" name="Failed" stamp="true" layoutXBuffer="512.000000"/>
-</units>
-</ScoutingEventLayer>
-<ScoutingEventLayer treeNumber="1">
-<units>
-<ScoutingEventUnit fx:id="unitn43" unitID="-43" name="Disabled" stamp="false" layoutXBuffer="863.000000"/>
-<ScoutingEventUnit fx:id="unitn42" unitID="-42" name="Mechanical Fault" stamp="false" layoutXBuffer="107.000000"/>
-<ScoutingEventUnit fx:id="unitn41" unitID="-41" name="Driver Fault" stamp="false" layoutXBuffer="359.000000"/>
-<ScoutingEventUnit fx:id="unitn40" unitID="-40" name="Rammed" stamp="false" layoutXBuffer="615.000000"/>
-</units>
-</ScoutingEventLayer>
-</layers>
-<children>
-<ScoutingEventDirection start="$unitn67" end="$unitn66"/>
-<ScoutingEventDirection start="$unitn67" end="$unitn65"/>
-<ScoutingEventDirection start="$unitn67" end="$unitn64"/>
-<ScoutingEventDirection start="$unitn67" end="$unitn63"/>
-<ScoutingEventDirection start="$unitn67" end="$unitn62"/>
-<ScoutingEventDirection start="$unitn66" end="$unitn61"/>
-<ScoutingEventDirection start="$unitn65" end="$unitn61"/>
-<ScoutingEventDirection start="$unitn64" end="$unitn61"/>
-<ScoutingEventDirection start="$unitn63" end="$unitn61"/>
-<ScoutingEventDirection start="$unitn62" end="$unitn61"/>
-<ScoutingEventDirection start="$unitn61" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn61" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn61" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn62" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn63" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn64" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn65" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn66" end="$unitn58"/>
-<ScoutingEventDirection start="$unitn62" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn63" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn64" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn65" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn66" end="$unitn59"/>
-<ScoutingEventDirection start="$unitn66" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn65" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn64" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn63" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn62" end="$unitn60"/>
-<ScoutingEventDirection start="$unitn60" end="$unitn57"/>
-<ScoutingEventDirection start="$unitn60" end="$unitn55"/>
-<ScoutingEventDirection start="$unitn60" end="$unitn56"/>
-<ScoutingEventDirection start="$unitn59" end="$unitn52"/>
-<ScoutingEventDirection start="$unitn59" end="$unitn53"/>
-<ScoutingEventDirection start="$unitn59" end="$unitn54"/>
-<ScoutingEventDirection start="$unitn58" end="$unitn56"/>
-<ScoutingEventDirection start="$unitn58" end="$unitn55"/>
-<ScoutingEventDirection start="$unitn58" end="$unitn57"/>
-<ScoutingEventDirection start="$unitn57" end="$unitn51"/>
-<ScoutingEventDirection start="$unitn55" end="$unitn51"/>
-<ScoutingEventDirection start="$unitn56" end="$unitn51"/>
-<ScoutingEventDirection start="$unitn57" end="$unitn50"/>
-<ScoutingEventDirection start="$unitn55" end="$unitn50"/>
-<ScoutingEventDirection start="$unitn56" end="$unitn50"/>
-<ScoutingEventDirection start="$unitn53" end="$unitn45"/>
-<ScoutingEventDirection start="$unitn53" end="$unitn46"/>
-<ScoutingEventDirection start="$unitn52" end="$unitn48"/>
-<ScoutingEventDirection start="$unitn52" end="$unitn49"/>
-<ScoutingEventDirection start="$unitn52" end="$unitn47"/>
-<ScoutingEventDirection start="$unitn54" end="$unitn48"/>
-<ScoutingEventDirection start="$unitn54" end="$unitn49"/>
-<ScoutingEventDirection start="$unitn54" end="$unitn47"/>
-<ScoutingEventDirection start="$unitn44" end="$unitn43"/>
-<ScoutingEventDirection start="$unitn44" end="$unitn40"/>
-<ScoutingEventDirection start="$unitn44" end="$unitn41"/>
-<ScoutingEventDirection start="$unitn44" end="$unitn42"/>
-<ScoutingEventDirection start="$unitn59" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn60" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn58" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn61" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn66" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn65" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn64" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn63" end="$unitn44"/>
-<ScoutingEventDirection start="$unitn62" end="$unitn44"/>
-</children>
+    <layers>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn66" unitID="-66" name="Panel Picked Up" stamp="true"
+                                   layoutXBuffer="507.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn65" unitID="-65" name="Floor" stamp="false" layoutXBuffer="15.000000"/>
+                <ScoutingEventUnit fx:id="unitn64" unitID="-64" name="Top Feeder" stamp="false"
+                                   layoutXBuffer="257.000000"/>
+                <ScoutingEventUnit fx:id="unitn63" unitID="-63" name="Top Enemy Feeder" stamp="false"
+                                   layoutXBuffer="509.000000"/>
+                <ScoutingEventUnit fx:id="unitn62" unitID="-62" name="Bottom Feeder" stamp="false"
+                                   layoutXBuffer="785.000000"/>
+                <ScoutingEventUnit fx:id="unitn61" unitID="-61" name="Bottom Enemy Feeder" stamp="false"
+                                   layoutXBuffer="1042.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn60" unitID="-60" name="Was Interrupted" stamp="false"
+                                   layoutXBuffer="508.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn59" unitID="-59" name="Rocket 1" stamp="true" layoutXBuffer="68.000000"/>
+                <ScoutingEventUnit fx:id="unitn58" unitID="-58" name="Cargo Ship" stamp="true"
+                                   layoutXBuffer="508.000000"/>
+                <ScoutingEventUnit fx:id="unitn57" unitID="-57" name="Rocket 2" stamp="true"
+                                   layoutXBuffer="1023.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn56" unitID="-56" name="Bottom" stamp="false" layoutXBuffer="0.000000"/>
+                <ScoutingEventUnit fx:id="unitn55" unitID="-55" name="Top" stamp="false" layoutXBuffer="411.000000"/>
+                <ScoutingEventUnit fx:id="unitn54" unitID="-54" name="Middle" stamp="false" layoutXBuffer="206.000000"/>
+                <ScoutingEventUnit fx:id="unitn53" unitID="-53" name="Bottom" stamp="false"
+                                   layoutXBuffer="1112.000000"/>
+                <ScoutingEventUnit fx:id="unitn52" unitID="-52" name="Center" stamp="false" layoutXBuffer="894.000000"/>
+                <ScoutingEventUnit fx:id="unitn51" unitID="-51" name="Top" stamp="false" layoutXBuffer="682.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn50" unitID="-50" name="Center Side" stamp="false"
+                                   layoutXBuffer="0.000000"/>
+                <ScoutingEventUnit fx:id="unitn49" unitID="-49" name="Habitat Side" stamp="false"
+                                   layoutXBuffer="411.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn48" unitID="-48" name="Middle" stamp="false" layoutXBuffer="898.000000"/>
+                <ScoutingEventUnit fx:id="unitn47" unitID="-47" name="Furthest" stamp="false"
+                                   layoutXBuffer="684.000000"/>
+                <ScoutingEventUnit fx:id="unitn46" unitID="-46" name="Closest" stamp="false"
+                                   layoutXBuffer="1117.000000"/>
+                <ScoutingEventUnit fx:id="unitn45" unitID="-45" name="Bottom" stamp="false" layoutXBuffer="0.000000"/>
+                <ScoutingEventUnit fx:id="unitn44" unitID="-44" name="Top" stamp="false" layoutXBuffer="410.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn43" unitID="-43" name="Failed" stamp="true" layoutXBuffer="512.000000"/>
+            </units>
+        </ScoutingEventLayer>
+        <ScoutingEventLayer treeNumber="1">
+            <units>
+                <ScoutingEventUnit fx:id="unitn42" unitID="-42" name="Disabled" stamp="false"
+                                   layoutXBuffer="732.000000"/>
+                <ScoutingEventUnit fx:id="unitn41" unitID="-41" name="Mechanical Fault" stamp="false"
+                                   layoutXBuffer="107.000000"/>
+                <ScoutingEventUnit fx:id="unitn40" unitID="-40" name="Driver Fault" stamp="false"
+                                   layoutXBuffer="317.000000"/>
+                <ScoutingEventUnit fx:id="unitn39" unitID="-39" name="Rammed" stamp="false" layoutXBuffer="524.000000"/>
+                <ScoutingEventUnit fx:id="unitn38" unitID="-38" name="Misplaced" stamp="false"
+                                   layoutXBuffer="942.000000"/>
+            </units>
+        </ScoutingEventLayer>
+    </layers>
+    <children>
+        <ScoutingEventDirection start="$unitn66" end="$unitn65"/>
+        <ScoutingEventDirection start="$unitn66" end="$unitn64"/>
+        <ScoutingEventDirection start="$unitn66" end="$unitn63"/>
+        <ScoutingEventDirection start="$unitn66" end="$unitn62"/>
+        <ScoutingEventDirection start="$unitn66" end="$unitn61"/>
+        <ScoutingEventDirection start="$unitn65" end="$unitn60"/>
+        <ScoutingEventDirection start="$unitn64" end="$unitn60"/>
+        <ScoutingEventDirection start="$unitn63" end="$unitn60"/>
+        <ScoutingEventDirection start="$unitn62" end="$unitn60"/>
+        <ScoutingEventDirection start="$unitn61" end="$unitn60"/>
+        <ScoutingEventDirection start="$unitn60" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn60" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn60" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn61" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn62" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn63" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn64" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn65" end="$unitn57"/>
+        <ScoutingEventDirection start="$unitn61" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn62" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn63" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn64" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn65" end="$unitn58"/>
+        <ScoutingEventDirection start="$unitn65" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn64" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn63" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn62" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn61" end="$unitn59"/>
+        <ScoutingEventDirection start="$unitn59" end="$unitn56"/>
+        <ScoutingEventDirection start="$unitn59" end="$unitn54"/>
+        <ScoutingEventDirection start="$unitn59" end="$unitn55"/>
+        <ScoutingEventDirection start="$unitn58" end="$unitn51"/>
+        <ScoutingEventDirection start="$unitn58" end="$unitn52"/>
+        <ScoutingEventDirection start="$unitn58" end="$unitn53"/>
+        <ScoutingEventDirection start="$unitn57" end="$unitn55"/>
+        <ScoutingEventDirection start="$unitn57" end="$unitn54"/>
+        <ScoutingEventDirection start="$unitn57" end="$unitn56"/>
+        <ScoutingEventDirection start="$unitn56" end="$unitn50"/>
+        <ScoutingEventDirection start="$unitn54" end="$unitn50"/>
+        <ScoutingEventDirection start="$unitn55" end="$unitn50"/>
+        <ScoutingEventDirection start="$unitn56" end="$unitn49"/>
+        <ScoutingEventDirection start="$unitn54" end="$unitn49"/>
+        <ScoutingEventDirection start="$unitn55" end="$unitn49"/>
+        <ScoutingEventDirection start="$unitn52" end="$unitn44"/>
+        <ScoutingEventDirection start="$unitn52" end="$unitn45"/>
+        <ScoutingEventDirection start="$unitn51" end="$unitn47"/>
+        <ScoutingEventDirection start="$unitn51" end="$unitn48"/>
+        <ScoutingEventDirection start="$unitn51" end="$unitn46"/>
+        <ScoutingEventDirection start="$unitn53" end="$unitn47"/>
+        <ScoutingEventDirection start="$unitn53" end="$unitn48"/>
+        <ScoutingEventDirection start="$unitn53" end="$unitn46"/>
+        <ScoutingEventDirection start="$unitn43" end="$unitn42"/>
+        <ScoutingEventDirection start="$unitn43" end="$unitn39"/>
+        <ScoutingEventDirection start="$unitn43" end="$unitn40"/>
+        <ScoutingEventDirection start="$unitn43" end="$unitn41"/>
+        <ScoutingEventDirection start="$unitn58" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn59" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn57" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn60" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn65" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn64" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn63" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn62" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn61" end="$unitn43"/>
+        <ScoutingEventDirection start="$unitn43" end="$unitn38"/>
+    </children>
 </ScoutingEventTree>
