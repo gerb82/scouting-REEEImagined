@@ -34,9 +34,9 @@
             <units>
                 <ScoutingEventUnit fx:id="unitn121" unitID="-121" name="Cargo ship" stamp="true"
                                    layoutXBuffer="507.000000"/>
-                <ScoutingEventUnit fx:id="unitn120" unitID="-120" name="Rocket 2" stamp="true"
+                <ScoutingEventUnit fx:id="unitn120" unitID="-120" name="Bottom Rocket" stamp="true"
                                    layoutXBuffer="958.000000"/>
-                <ScoutingEventUnit fx:id="unitn119" unitID="-119" name="Rocket 1" stamp="true"
+                <ScoutingEventUnit fx:id="unitn119" unitID="-119" name="Top Rocket" stamp="true"
                                    layoutXBuffer="49.000000"/>
             </units>
         </ScoutingEventLayer>
