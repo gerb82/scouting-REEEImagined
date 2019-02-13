@@ -2,7 +2,7 @@ package scouterSide;
 
 import connectionIndependent.ConnectionFinder;
 import connectionIndependent.ScoutingConnections;
-import connectionIndependent.ScoutingEvent;
+import connectionIndependent.scouted.ScoutingEvent;
 import connectionIndependent.ScoutingPackets;
 import gbuiLib.GBSockets.*;
 import gbuiLib.ProgramWideVariable;
@@ -12,9 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.File;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 
 public class MainLogic extends Application {

@@ -1,4 +1,4 @@
-package connectionIndependent;
+package connectionIndependent.scouted;
 
 public class FullScoutingEvent {
 

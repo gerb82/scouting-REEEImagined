@@ -4,6 +4,8 @@ package serverSide.code;
 import connectionIndependent.eventsMapping.ScoutingTreesManager;
 import gbuiLib.ProgramWideVariable;
 import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 import gbuiLib.GBSockets.*;
 import org.apache.catalina.LifecycleException;
@@ -35,6 +37,10 @@ public class Main extends Application{
         Thread thread = new Thread(() -> manager = new HTTPManager());
         thread.start();
         ServerManager manager = new ServerManager();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("ControlPanel.fxml"));
+        loader.setController(manager);
+        primaryStage.setScene(new Scene(loader.load()));
+        primaryStage.show();
         Thread multiCast = new Thread(() -> {
             try {
                 DatagramSocket socket = new DatagramSocket();

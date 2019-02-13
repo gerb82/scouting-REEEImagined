@@ -1,12 +1,14 @@
 package serverSide.code;
 
-import connectionIndependent.FullScoutingEvent;
-import connectionIndependent.ScoutingEvent;
-import connectionIndependent.ScoutingEventDefinition;
+import connectionIndependent.scouted.FullScoutingEvent;
+import connectionIndependent.scouted.ScoutedGame;
+import connectionIndependent.scouted.ScoutingEvent;
+import connectionIndependent.scouted.ScoutingEventDefinition;
 import connectionIndependent.ScoutingPackets;
 import gbuiLib.GBSockets.ActionHandler;
 import gbuiLib.GBSockets.BadPacketException;
 import javafx.beans.value.ObservableValue;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,7 +92,7 @@ public class ScoutersManager {
         for (String comp : dataBase.getCompetitionsList()) {
             HashMap<Short, String[]> games = new HashMap<>();
             gamesStructure.put(comp, games);
-            for (DataBaseManager.ScoutedGame game : dataBase.getGamesList(comp)) {
+            for (ScoutedGame game : dataBase.getGamesList(comp)) {
                 games.put(game.getGame(), game.getTeamsArray());
             }
         }
@@ -150,9 +152,9 @@ public class ScoutersManager {
             } else {
                 throw new IllegalArgumentException("Alliance scouting is disabled!");
             }
-            Object[] params = dataBase.getTeamConfiguration(identifier.game, identifier.competition, identifier.team);
-            identifier.mapConfiguration = (String) params[0];
-            identifier.startingLocation = (Byte) params[1];
+            Pair<String, Byte> params = dataBase.getTeamConfiguration(identifier.game, identifier.competition, identifier.team);
+            identifier.mapConfiguration = params.getKey();
+            identifier.startingLocation = params.getValue();
             ArrayList<ScoutingEvent> events = new ArrayList<>();
             for (FullScoutingEvent event : unfiltered) {
                 events.add(event.getEvent());

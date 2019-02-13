@@ -1,7 +1,7 @@
 package scouterSide;
 
-import connectionIndependent.ScoutingEvent;
-import connectionIndependent.ScoutingEventDefinition;
+import connectionIndependent.scouted.ScoutingEvent;
+import connectionIndependent.scouted.ScoutingEventDefinition;
 import gbuiLib.GBSockets.ActionHandler;
 import gbuiLib.GBSockets.BadPacketException;
 import gbuiLib.GBSockets.PacketLogger;
@@ -21,12 +21,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
 public class ScouterUI {
 
