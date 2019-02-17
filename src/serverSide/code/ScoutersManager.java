@@ -83,16 +83,11 @@ public class ScoutersManager {
 
     protected ScoutersManager(DataBaseManager dataBase) {
         handler = new ActionHandler();
-        handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), this::scoutFinished);
-        handler.setHandler(ScoutingPackets.SCOUTER_LOADGAME.toString(), this::startScout);
-        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), this::sendCompetitions);
-        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), this::sendGames);
-        handler.setHandler(ScoutingPackets.SCOUTER_SYNC_TEAMS.toString(), this::sendTeams);
         this.dataBase = dataBase;
         for (String comp : dataBase.getCompetitionsList()) {
             HashMap<Short, String[]> games = new HashMap<>();
             gamesStructure.put(comp, games);
-            for (ScoutedGame game : dataBase.getGamesList(comp)) {
+            for (ScoutedGame game : dataBase.getGamesList(comp, true)) {
                 games.put(game.getGame(), game.getTeamsArray());
             }
         }

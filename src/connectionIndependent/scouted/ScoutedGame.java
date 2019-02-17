@@ -4,10 +4,10 @@ public class ScoutedGame {
 
     private short game;
     private byte competition;
-    private short redAllianceScore;
-    private short blueAllianceScore;
-    private byte redAllianceRP;
-    private byte blueAllianceRP;
+    private Short redAllianceScore;
+    private Short blueAllianceScore;
+    private Byte redAllianceRP;
+    private Byte blueAllianceRP;
     private String mapConfiguration;
     private short teamNumber1;
     private short teamNumber2;
@@ -15,8 +15,10 @@ public class ScoutedGame {
     private short teamNumber4;
     private short teamNumber5;
     private short teamNumber6;
+    private boolean happened;
 
     public ScoutedGame(short game, byte competition, short redAllianceScore, short blueAllianceScore, byte redAllianceRP, byte blueAllianceRP, String mapConfiguration, short teamNumber1, short teamNumber2, short teamNumber3, short teamNumber4, short teamNumber5, short teamNumber6) {
+        happened = true;
         this.game = game;
         this.competition = competition;
         this.redAllianceScore = redAllianceScore;
@@ -30,6 +32,36 @@ public class ScoutedGame {
         this.teamNumber4 = teamNumber4;
         this.teamNumber5 = teamNumber5;
         this.teamNumber6 = teamNumber6;
+    }
+
+    public ScoutedGame(short game, byte competition, short teamNumber1, short teamNumber2, short teamNumber3, short teamNumber4, short teamNumber5, short teamNumber6) {
+        happened = false;
+        this.game = game;
+        Short redAllianceScore = null;
+        Short blueAllianceScore = null;
+        Byte redAllianceRP = null;
+        Byte blueAllianceRP = null;
+        String mapConfiguration = null;
+        this.competition = competition;
+        this.teamNumber1 = teamNumber1;
+        this.teamNumber2 = teamNumber2;
+        this.teamNumber3 = teamNumber3;
+        this.teamNumber4 = teamNumber4;
+        this.teamNumber5 = teamNumber5;
+        this.teamNumber6 = teamNumber6;
+    }
+
+    public boolean didHappen() {
+        return happened;
+    }
+
+    public void justHappened(short redAllianceScore, short blueAllianceScore, byte redAllianceRP, byte blueAllianceRP, String mapConfiguration) {
+        happened = true;
+        this.redAllianceScore = redAllianceScore;
+        this.blueAllianceScore = blueAllianceScore;
+        this.redAllianceRP = redAllianceRP;
+        this.blueAllianceRP = blueAllianceRP;
+        this.mapConfiguration = mapConfiguration;
     }
 
     public short getGame() {
@@ -138,5 +170,9 @@ public class ScoutedGame {
 
     public String[] getTeamsArray() {
         return new String[]{String.valueOf(teamNumber1), String.valueOf(teamNumber2), String.valueOf(teamNumber3), String.valueOf(teamNumber4), String.valueOf(teamNumber5), String.valueOf(teamNumber6)};
+    }
+
+    public Short[] teamsArray() {
+        return new Short[]{teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6};
     }
 }

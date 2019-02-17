@@ -4,27 +4,24 @@ import connectionIndependent.ScoutingConnections;
 import connectionIndependent.scouted.ScoutedTeam;
 import gbuiLib.GBSockets.GBServerSocket;
 import gbuiLib.GBSockets.PacketLogger;
-import javafx.collections.ListChangeListener;
+import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
-import javafx.util.Pair;
+import javafx.stage.Screen;
+import javafx.stage.Window;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ServerManager {
 
@@ -41,7 +38,7 @@ public class ServerManager {
     }
 
     private void addGame(String competition, short game, Short[] teams, String mapConfig, Path originalVideo) throws IOException {
-        database.addGame(game, competition, mapConfig, teams);
+//        database.addGame(game, competition, mapConfig, teams);
         scouters.addGame(competition, game, teams);
         File video = new File(new File(ScoutingVars.getVideosDirectory(), competition), game + ".mp4");
         Files.move(originalVideo, video.toPath());
@@ -65,6 +62,20 @@ public class ServerManager {
     @FXML
     private Button games;
 
+    private String inputSanitizer(String input) {
+        Pattern pattern = Pattern.compile("[A-Za-z 0-9]+");
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.matches()) return matcher.group(0);
+        return null;
+    }
+
+    private String inputSanitizerNumbers(String input) {
+        Pattern pattern = Pattern.compile("[0-9]+");
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.matches()) return matcher.group(0);
+        return null;
+    }
+
     public void initialize() {
         teams.setOnAction(event -> {
             Dialog<HashMap<Short, ScoutedTeam>> editTeams = new Dialog<>();
@@ -74,15 +85,21 @@ public class ServerManager {
             EditGrid grid = new EditGrid() {
                 @Override
                 public void addNewRow(int rowIndex, String... values) {
-                    if (values.length == 0) {
-                        values = new String[]{"", ""};
+                    if (values.length < competitions.size() + 2) {
+                        values = new String[competitions.size() + 2];
+                        values[0] = "";
+                        values[1] = "";
+                        for (int i = 2; i < competitions.size(); i++) {
+                            values[i] = "false";
+                        }
                     }
                     addRow(rowIndex, new GridCell(values[0], 120, "name"), new GridCell(values[1], 60, "value"));
-                    for(String comp : competitions){
-                        addRow(rowIndex, new CheckCell(comp));
+                    int i = 2;
+                    for (String comp : competitions) {
+                        addRow(rowIndex, new CheckCell(comp, Boolean.valueOf(values[i++])));
                     }
-                    setAdder(new RowController(false, ++rowIndex));
-                    add(getAdder(), 0, rowIndex);
+                    setAdder(new RowController(false));
+                    addRow(++rowIndex, getAdder());
                 }
 
                 @Override
@@ -93,7 +110,7 @@ public class ServerManager {
                     Label number = new Label("Number");
                     number.setMinWidth(60);
                     addRow(0, label, name, number);
-                    for(String comp : competitions){
+                    for (String comp : competitions) {
                         addRow(0, new Label(comp));
                     }
                     getChildren().remove(label);
@@ -103,13 +120,23 @@ public class ServerManager {
             grid.setVgap(5);
             grid.setPadding(new Insets(20, 20, 20, 30));
             grid.setManaged(true);
+            scroll.setPrefViewportHeight(400);
+            scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+            scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             scroll.setContent(grid);
             scroll.setManaged(true);
             HashMap<Short, ScoutedTeam> initialTeams = new HashMap<>();
             int rowCount = 1;
             for (ScoutedTeam team : database.getTeamsList()) {
                 initialTeams.put(team.getNumber(), team);
-                grid.addNewRow(rowCount++, team.getName(), String.valueOf(team.getNumber()));
+                String[] array = new String[competitions.size() + 2];
+                array[0] = team.getName();
+                array[1] = String.valueOf(team.getNumber());
+                int i = 2;
+                for (String comp : competitions) {
+                    array[i++] = String.valueOf(team.getCompetitions().contains(comp));
+                }
+                grid.addNewRow(rowCount++, array);
             }
             editTeams.getDialogPane().setContent(scroll);
             editTeams.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -118,7 +145,7 @@ public class ServerManager {
                     HashMap<Short, ScoutedTeam> map = new HashMap<>();
                     for (Node node : grid.getChildren().filtered(node -> {
                         if (node instanceof GridCell) {
-                            ((GridCell) node).getType().equals("value");
+                            return ((GridCell) node).getType().equals("value");
                         }
                         return false;
                     })) {
@@ -130,16 +157,19 @@ public class ServerManager {
                             return false;
                         }).get(0);
                         ArrayList<String> compList = new ArrayList<>();
-                        for(Node cell : grid.getChildren().filtered(cell -> {
-                            if(cell instanceof CheckCell) {
+                        for (Node cell : grid.getChildren().filtered(cell -> {
+                            if (cell instanceof CheckCell) {
                                 return GridPane.getRowIndex(cell) == GridPane.getRowIndex(number);
                             }
                             return false;
-                        })){
+                        })) {
                             CheckCell box = (CheckCell) cell;
-                            if(box.isSelected()) compList.add(box.getType());
+                            if (box.isSelected()) compList.add(box.getType());
                         }
-                        map.put(Short.valueOf(number.getText()), new ScoutedTeam(Short.valueOf(number.getText()), name.getText(), compList));
+                        try {
+                            map.put(Short.valueOf(inputSanitizerNumbers(number.getText())), new ScoutedTeam(Short.valueOf(inputSanitizer(number.getText())), inputSanitizer(name.getText()), compList));
+                        } catch (NullPointerException | NumberFormatException e) {
+                        }
                     }
                     return map;
                 }
@@ -147,26 +177,49 @@ public class ServerManager {
             });
             Optional<HashMap<Short, ScoutedTeam>> result = editTeams.showAndWait();
             result.ifPresent(newTeams -> {
+                boolean changed = false;
+                for (Short team : initialTeams.keySet()) {
+                    try {
+                        changed = !newTeams.get(team).equals(initialTeams.get(team)) || changed;
+                    } catch (NullPointerException e){
+                        changed = true;
+                    }
+                }
+                if (changed) return;
                 Set<Short> initialSet = initialTeams.keySet();
                 Set<Short> newSet = newTeams.keySet();
                 ArrayList<ScoutedTeam> newlyAdded = new ArrayList<>();
-                ArrayList<ScoutedTeam> renamed = new ArrayList<>();
                 ArrayList<ScoutedTeam> removed = new ArrayList<>();
-                for(Short shot : newSet){
-                    if(initialSet.remove(shot)) {
-                        if(!initialTeams.get(shot).equals(newTeams.get(shot))){
-                            renamed.add(newTeams.get(shot));
-                        }
-                    } else {
-                        newlyAdded.add(newTeams.get(shot));
-                    }
+                for (Short shot : newSet) {
+                    newlyAdded.add(newTeams.get(shot));
                 }
-                for(Short shot : initialSet){
+                initialSet.removeAll(newSet);
+                for (Short shot : initialSet) {
                     removed.add(initialTeams.get(shot));
                 }
-                database.teamsChanged(newlyAdded, renamed, removed);
+                database.teamsChanged(newlyAdded, removed);
             });
         });
+        competitions.setOnAction(event -> {
+            Dialog<String> dialog = new Dialog<>();
+            dialog.setTitle("New Competition Dialog");
+            dialog.setContentText("New competition's name:");
+            BorderPane pane = new BorderPane();
+            ListView<String> competitions = new ListView<>(FXCollections.observableArrayList(database.getCompetitionsList()));
+            TextField newComp = new TextField();
+            pane.setTop(newComp);
+            pane.setCenter(competitions);
+            pane.setPrefHeight(200);
+            dialog.getDialogPane().setContent(pane);
+            dialog.setResultConverter(param -> {
+                String result = newComp.getText();
+                return inputSanitizer(result);
+            });
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(s -> addCompetition(s));
+        });
+
     }
 
     private static class GridCell extends TextField {
@@ -192,8 +245,9 @@ public class ServerManager {
 
     private static class CheckCell extends CheckBox {
 
-        public CheckCell(String propertyType) {
+        public CheckCell(String propertyType, boolean selected) {
             super();
+            setSelected(selected);
             GridPane.setHgrow(this, Priority.ALWAYS);
             GridPane.setVgrow(this, Priority.ALWAYS);
             getProperties().put("CheckType", propertyType);
@@ -208,7 +262,7 @@ public class ServerManager {
 
         private boolean deleter;
 
-        public RowController(boolean deleter, int rowIndex) {
+        public RowController(boolean deleter) {
             super(deleter ? "X" : "+");
             this.deleter = deleter;
             setOnAction(event -> {
@@ -229,7 +283,7 @@ public class ServerManager {
         public EditGrid() {
             super();
             initialRow();
-            setAdder(new RowController(false, 0));
+            setAdder(new RowController(false));
             add(getAdder(), 0, 1);
         }
 
