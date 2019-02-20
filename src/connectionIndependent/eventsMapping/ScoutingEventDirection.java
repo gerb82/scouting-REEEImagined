@@ -1,10 +1,6 @@
 package connectionIndependent.eventsMapping;
 
 import javafx.beans.NamedArg;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.shape.Line;
 
 public class ScoutingEventDirection extends Line implements ScoutingEventTreePart {

@@ -1,25 +1,35 @@
 package serverSide.code;
 
 import connectionIndependent.ScoutingConnections;
+import connectionIndependent.scouted.ScoutedGame;
 import connectionIndependent.scouted.ScoutedTeam;
 import gbuiLib.GBSockets.GBServerSocket;
 import gbuiLib.GBSockets.PacketLogger;
+import gbuiLib.gbfx.grid.CheckCell;
+import gbuiLib.gbfx.grid.EditGrid;
+import gbuiLib.gbfx.grid.GridCell;
+import gbuiLib.gbfx.grid.RowController;
+import gbuiLib.gbfx.popUpListView.PopUpEditCell;
+import gbuiLib.gbfx.popUpListView.PopUpListView;
 import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.stage.Screen;
-import javafx.stage.Window;
+import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.util.Callback;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,10 +79,10 @@ public class ServerManager {
         return null;
     }
 
-    private String inputSanitizerNumbers(String input) {
+    private Short inputSanitizerNumbers(String input) {
         Pattern pattern = Pattern.compile("[0-9]+");
         Matcher matcher = pattern.matcher(input);
-        if (matcher.matches()) return matcher.group(0);
+        if (matcher.matches()) return Short.valueOf(matcher.group(0));
         return null;
     }
 
@@ -167,7 +177,7 @@ public class ServerManager {
                             if (box.isSelected()) compList.add(box.getType());
                         }
                         try {
-                            map.put(Short.valueOf(inputSanitizerNumbers(number.getText())), new ScoutedTeam(Short.valueOf(inputSanitizer(number.getText())), inputSanitizer(name.getText()), compList));
+                            map.put(inputSanitizerNumbers(number.getText()), new ScoutedTeam(Short.valueOf(inputSanitizer(number.getText())), inputSanitizer(name.getText()), compList));
                         } catch (NullPointerException | NumberFormatException e) {
                         }
                     }
@@ -181,7 +191,7 @@ public class ServerManager {
                 for (Short team : initialTeams.keySet()) {
                     try {
                         changed = !newTeams.get(team).equals(initialTeams.get(team)) || changed;
-                    } catch (NullPointerException e){
+                    } catch (NullPointerException e) {
                         changed = true;
                     }
                 }
@@ -219,99 +229,138 @@ public class ServerManager {
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(s -> addCompetition(s));
         });
+        games.setOnAction(event -> {
+            Dialog<ArrayList<ScoutedGame>> dialog = new Dialog<>();
+            dialog.setTitle("Game Config Dialog");
+            TabPane tabs = new TabPane();
+            for (String comp : database.getCompetitionsList()) {
+                Tab tab = new Tab(comp);
+                PopUpListView<ScoutedGame> listView = new PopUpListView<ScoutedGame>() {
+                    @Override
+                    protected Callback<ListView<ScoutedGame>, ListCell<ScoutedGame>> customCellFactory() {
+                        return list -> new PopUpEditCell<ScoutedGame>() {
+                            @Override
+                            protected Callback<ScoutedGame, Dialog<ScoutedGame>> createDialog() {
+                                return game -> {
+                                    Dialog<ScoutedGame> editor = new Dialog<>();
+                                    GridPane pane = new GridPane();
+                                    TextField gameName = new TextField();
+                                    CheckBox happened = new CheckBox();
+                                    TextField team1 = new TextField();
+                                    TextField team2 = new TextField();
+                                    TextField team3 = new TextField();
+                                    TextField team4 = new TextField();
+                                    TextField team5 = new TextField();
+                                    TextField team6 = new TextField();
+                                    TextField blueScore = new TextField();
+                                    TextField redScore = new TextField();
+                                    TextField blueRP = new TextField();
+                                    TextField redRP = new TextField();
+                                    TextField mapConfiguration = new TextField();
+                                    if (game != null) {
+                                        gameName.setText(game.getName());
+                                        happened.setSelected(game.didHappen());
+                                        team1.setText(game.getTeamNumber1() == null ? "" : String.valueOf(game.getTeamNumber1()));
+                                        team2.setText(game.getTeamNumber2() == null ? "" : String.valueOf(game.getTeamNumber2()));
+                                        team3.setText(game.getTeamNumber3() == null ? "" : String.valueOf(game.getTeamNumber3()));
+                                        team4.setText(game.getTeamNumber4() == null ? "" : String.valueOf(game.getTeamNumber4()));
+                                        team5.setText(game.getTeamNumber5() == null ? "" : String.valueOf(game.getTeamNumber5()));
+                                        team6.setText(game.getTeamNumber6() == null ? "" : String.valueOf(game.getTeamNumber6()));
+                                        if (game.didHappen()) {
+                                            blueScore.setText(String.valueOf(game.getBlueAllianceScore()));
+                                            redScore.setText(String.valueOf(game.getRedAllianceScore()));
+                                            blueRP.setText(String.valueOf(game.getBlueAllianceRP()));
+                                            redRP.setText(String.valueOf(game.getRedAllianceRP()));
+                                            mapConfiguration.setText(game.getMapConfiguration() == null ? "" : game.getMapConfiguration());
+                                        }
+                                    }
+                                    blueScore.editableProperty().bind(happened.selectedProperty());
+                                    redScore.editableProperty().bind(happened.selectedProperty());
+                                    blueRP.editableProperty().bind(happened.selectedProperty());
+                                    redRP.editableProperty().bind(happened.selectedProperty());
+                                    mapConfiguration.editableProperty().bind(happened.selectedProperty());
+                                    pane.addRow(0, new Label("Game Name:"), gameName);
+                                    pane.addRow(1, new Label("Blue Alliance Team 1:"), team1);
+                                    pane.addRow(2, new Label("Blue Alliance Team 2:"), team2);
+                                    pane.addRow(3, new Label("Blue Alliance Team 3:"), team3);
+                                    pane.addRow(4, new Label("Red Alliance Team 1:"), team4);
+                                    pane.addRow(5, new Label("Red Alliance Team 2:"), team5);
+                                    pane.addRow(6, new Label("Red Alliance Team 3:"), team6);
+                                    pane.addRow(7, new Label("Game Already Completed?"), happened);
+                                    pane.addRow(8, new Label("Blue Alliance Score:"), blueScore);
+                                    pane.addRow(9, new Label("Red Alliance Score:"), redScore);
+                                    pane.addRow(10, new Label("Blue Alliance RP:"), blueRP);
+                                    pane.addRow(11, new Label("Red Alliance RP:"), redRP);
+                                    pane.addRow(12, new Label("Map Configuration:"), mapConfiguration);
+                                    pane.setVgap(10);
+                                    pane.setHgap(20);
+                                    editor.getDialogPane().setContent(pane);
+                                    editor.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                                    editor.setResultConverter(param -> {
+                                        if(param == ButtonType.OK) {
+                                            try {
+                                                return (happened.isSelected() ?
+                                                        new ScoutedGame(
+                                                                game == null ? (short) list.getItems().indexOf(game) : game.getGame(),
+                                                                database.getCompetitionFromName(comp),
+                                                                inputSanitizer(gameName.getText()),
+                                                                inputSanitizerNumbers(blueScore.getText()),
+                                                                inputSanitizerNumbers(redScore.getText()),
+                                                                inputSanitizerNumbers(blueRP.getText()).byteValue(),
+                                                                inputSanitizerNumbers(redRP.getText()).byteValue(),
+                                                                inputSanitizer(mapConfiguration.getText()),
+                                                                inputSanitizerNumbers(team1.getText()),
+                                                                inputSanitizerNumbers(team2.getText()),
+                                                                inputSanitizerNumbers(team3.getText()),
+                                                                inputSanitizerNumbers(team4.getText()),
+                                                                inputSanitizerNumbers(team5.getText()),
+                                                                inputSanitizerNumbers(team6.getText())) :
+                                                        new ScoutedGame(
+                                                                game == null ? (short) list.getItems().indexOf(game) : game.getGame(),
+                                                                database.getCompetitionFromName(comp),
+                                                                inputSanitizer(gameName.getText()),
+                                                                inputSanitizerNumbers(team1.getText()),
+                                                                inputSanitizerNumbers(team2.getText()),
+                                                                inputSanitizerNumbers(team3.getText()),
+                                                                inputSanitizerNumbers(team4.getText()),
+                                                                inputSanitizerNumbers(team5.getText()),
+                                                                inputSanitizerNumbers(team6.getText())));
+                                            } catch (NullPointerException e) {
+                                                return null;
+                                            }
+                                        }
+                                        return null;
+                                    });
+                                    return editor;
+                                };
+                            }
 
-    }
-
-    private static class GridCell extends TextField {
-
-        public GridCell(String text, String propertyType) {
-            super(text);
-            setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
-            editableProperty().bind(focusedProperty());
-            GridPane.setHgrow(this, Priority.ALWAYS);
-            GridPane.setVgrow(this, Priority.ALWAYS);
-            getProperties().put("CellType", propertyType);
-        }
-
-        public GridCell(String text, double width, String propertyType) {
-            this(text, propertyType);
-            setMaxWidth(width);
-        }
-
-        public String getType() {
-            return (String) getProperties().get("CellType");
-        }
-    }
-
-    private static class CheckCell extends CheckBox {
-
-        public CheckCell(String propertyType, boolean selected) {
-            super();
-            setSelected(selected);
-            GridPane.setHgrow(this, Priority.ALWAYS);
-            GridPane.setVgrow(this, Priority.ALWAYS);
-            getProperties().put("CheckType", propertyType);
-        }
-
-        public String getType() {
-            return (String) getProperties().get("CheckType");
-        }
-    }
-
-    private static class RowController extends Button {
-
-        private boolean deleter;
-
-        public RowController(boolean deleter) {
-            super(deleter ? "X" : "+");
-            this.deleter = deleter;
-            setOnAction(event -> {
-                EditGrid parent = (EditGrid) getParent();
-                if (this.deleter) {
-                    parent.removeMyRow(this);
-                } else {
-                    this.deleter = true;
-                    setText("X");
-                    parent.addNewRow(GridPane.getRowIndex(this));
+                            @Override
+                            protected void refreshGraphic(ScoutedGame item, boolean empty) {
+                                if(item != null){
+                                    setText(item.getName());
+                                } else if (this.getItem() == null && getIndex() == list.getItems().size() - 1){
+                                    setText("Add Game");
+                                }
+                            }
+                        };
+                    }
+                };
+                listView.getItems().addAll(database.getGamesList(comp, false));
+                listView.getItems().add(null);
+                tab.setContent(listView);
+                tabs.getTabs().add(tab);
+            }
+            dialog.setResultConverter(param -> {
+                ArrayList<ScoutedGame> games = new ArrayList<>();
+                for(Tab tab : tabs.getTabs()){
+                    games.addAll(((PopUpListView<ScoutedGame>)tab.getContent()).getItems());
                 }
+                return games;
             });
-        }
-    }
-
-    private static abstract class EditGrid extends GridPane {
-
-        public EditGrid() {
-            super();
-            initialRow();
-            setAdder(new RowController(false));
-            add(getAdder(), 0, 1);
-        }
-
-        public void removeMyRow(RowController deleter) {
-            int rowID = GridPane.getRowIndex(deleter);
-            getChildren().removeIf(node -> GridPane.getRowIndex(node) == rowID);
-            for (Node node : getChildren().filtered(node -> GridPane.getRowIndex(node) > rowID)) {
-                GridPane.setRowIndex(node, GridPane.getRowIndex(node) - 1);
-            }
-            deleter.setOnAction(null);
-        }
-
-        private RowController adder = null;
-
-        public RowController getAdder() {
-            return adder;
-        }
-
-        public void setAdder(RowController adder) {
-            if (this.adder != null) {
-                this.adder.deleter = true;
-                this.adder.setText("X");
-            }
-            this.adder = adder;
-        }
-
-        public abstract void addNewRow(int rowIndex, String... values);
-
-        protected abstract void initialRow();
+            dialog.getDialogPane().setContent(tabs);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            dialog.showAndWait();
+        });
     }
 }

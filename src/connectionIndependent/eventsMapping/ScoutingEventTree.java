@@ -1,11 +1,5 @@
 package connectionIndependent.eventsMapping;
 
-import javafx.beans.DefaultProperty;
-import javafx.beans.NamedArg;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.scene.Node;
@@ -14,7 +8,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
 

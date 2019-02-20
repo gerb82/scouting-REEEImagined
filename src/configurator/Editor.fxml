@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import connectionIndependent.eventsMapping.ScoutingEventTree?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.Pane?>
-
-<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>
-<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <Pane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1">
     <children>
         <MenuBar prefHeight="25.0" prefWidth="${root.width}">

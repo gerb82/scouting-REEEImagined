@@ -13,8 +13,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
-import java.util.function.Predicate;
-
 public class WomboComboBox<T> extends ComboBox {
 
     private ObservableList<T> allOptions;

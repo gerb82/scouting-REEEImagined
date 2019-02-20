@@ -1,8 +1,8 @@
 package gbuiLib.GBSockets;
 
-import javafx.beans.property.SimpleObjectProperty;
 import gbuiLib.GBUILibGlobals;
 import gbuiLib.Utils;
+import javafx.beans.property.SimpleObjectProperty;
 
 import java.io.*;
 import java.net.SocketAddress;

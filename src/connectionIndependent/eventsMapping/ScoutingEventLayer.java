@@ -1,8 +1,5 @@
 package connectionIndependent.eventsMapping;
 
-import javafx.beans.DefaultProperty;
-import javafx.beans.NamedArg;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.scene.Node;

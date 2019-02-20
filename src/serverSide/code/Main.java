@@ -7,16 +7,13 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import gbuiLib.GBSockets.*;
-import org.apache.catalina.LifecycleException;
 
-import javax.servlet.ServletException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
 
 
 public class Main extends Application{

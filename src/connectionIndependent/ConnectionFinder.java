@@ -1,7 +1,10 @@
 package connectionIndependent;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
 
 public class ConnectionFinder {
 

@@ -1,7 +1,7 @@
 package serverSide.code;
 
-import connectionIndependent.scouted.*;
 import connectionIndependent.eventsMapping.*;
+import connectionIndependent.scouted.*;
 import javafx.scene.Node;
 import javafx.util.Pair;
 
@@ -9,7 +9,10 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class DataBaseManager implements Closeable {
@@ -41,7 +44,8 @@ public class DataBaseManager implements Closeable {
         containerEventType, eventContainedType, // containers table
         competitionID, competitionName, // competitions
         teamNumbers, teamNames, participatedIn, // teams table
-        gameNumbers, mapConfiguration, wasCompleted, competition, redAllianceScore, blueAllianceScore, redAllianceRP, blueAllianceRP, teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6, // games table
+        gameNumbers, mapConfiguration, gameName, wasCompleted, competition, redAllianceScore, blueAllianceScore, redAllianceRP, blueAllianceRP, teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6, // games table
+        whichGame, whichCompetition, whichTeam, currentState, scoutPriority,
         chainID, gameNumber, competitionNumber, teamNumber, alliance, startingLocation, // main events table
         eventChainID, eventLocationInChain, eventType, timeStamps, // stamps table
         commentContent, associatedTeam, associatedGame, associatedChain, timeStamp // comments table
@@ -50,7 +54,7 @@ public class DataBaseManager implements Closeable {
     private enum Tables {
         eventTypes, containableEvents, // event definers
         competitions, teamNumbers, games, // basis data
-        eventFrames, events, comments // event data
+        gamesProgress, eventFrames, events, comments // event data
     }
 
     private ReentrantReadWriteLock accessLimiter;
@@ -98,9 +102,10 @@ public class DataBaseManager implements Closeable {
             // gamesList
             statement.execute("CREATE TABLE IF NOT EXISTS " + Tables.games + "(" + System.lineSeparator() +
                     Columns.gameNumbers + " integer NOT NULL," + System.lineSeparator() +
-                    Columns.mapConfiguration + " text," + System.lineSeparator() +
-                    Columns.wasCompleted + " boolean NOT NULL," + System.lineSeparator() +
                     Columns.competition + " integer NOT NULL," + System.lineSeparator() +
+                    Columns.gameName + " text NOT NULL," + System.lineSeparator() +
+                    Columns.wasCompleted + " boolean NOT NULL," + System.lineSeparator() +
+                    Columns.mapConfiguration + " text," + System.lineSeparator() +
                     Columns.blueAllianceScore + " integer NOT NULL," + System.lineSeparator() +
                     Columns.redAllianceScore + " integer NOT NULL," + System.lineSeparator() +
                     Columns.blueAllianceRP + " integer NOT NULL," + System.lineSeparator() +
@@ -619,7 +624,7 @@ public class DataBaseManager implements Closeable {
     }
 
     private String formatGamesSelect(String conditions, Integer limit) {
-        return "SELECT " + Columns.gameNumbers + "," + Columns.competition + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + " FROM " + Tables.games + System.lineSeparator() +
+        return "SELECT " + Columns.gameNumbers + "," + Columns.competition + ","  + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + " FROM " + Tables.games + System.lineSeparator() +
                 (conditions == null ? "" : "WHERE " + conditions + System.lineSeparator()) +
                 (limit == null ? "" : "LIMIT " + limit) + ";";
     }
@@ -655,7 +660,7 @@ public class DataBaseManager implements Closeable {
             } else if (result.getTeamNumber6() == team) {
                 startLoc = 6;
             }
-            return new Pair<String, Byte>(result.getMapConfiguration(), startLoc);
+            return new Pair<>(result.getMapConfiguration(), startLoc);
         } catch (SQLException e) {
             throw new IllegalArgumentException("The query could not be completed.", e);
         } finally {
@@ -816,6 +821,7 @@ public class DataBaseManager implements Closeable {
                 result.add(new ScoutedGame(
                         set.getShort(Columns.gameNumbers.toString()),
                         set.getByte(Columns.competition.toString()),
+                        set.getString(Columns.gameName.toString()),
                         set.getShort(Columns.redAllianceScore.toString()),
                         set.getShort(Columns.blueAllianceScore.toString()),
                         set.getByte(Columns.redAllianceRP.toString()),
@@ -832,6 +838,7 @@ public class DataBaseManager implements Closeable {
                 result.add(new ScoutedGame(
                         set.getShort(Columns.gameNumbers.toString()),
                         set.getByte(Columns.competition.toString()),
+                        set.getString(Columns.gameName.toString()),
                         set.getShort(Columns.teamNumber1.toString()),
                         set.getShort(Columns.teamNumber2.toString()),
                         set.getShort(Columns.teamNumber3.toString()),

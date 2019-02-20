@@ -1,10 +1,6 @@
 package gbuiLib;
 
-import javafx.scene.Node;
 import javafx.scene.paint.Paint;
-
-import java.io.File;
-import java.io.OutputStream;
 
 public class Console extends ConsoleImplementation{
 

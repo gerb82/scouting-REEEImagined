@@ -1,6 +1,5 @@
 package connectionIndependent.eventsMapping;
 
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;

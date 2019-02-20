@@ -2,8 +2,8 @@ package scouterSide;
 
 import connectionIndependent.ConnectionFinder;
 import connectionIndependent.ScoutingConnections;
-import connectionIndependent.scouted.ScoutingEvent;
 import connectionIndependent.ScoutingPackets;
+import connectionIndependent.scouted.ScoutingEvent;
 import gbuiLib.GBSockets.*;
 import gbuiLib.ProgramWideVariable;
 import javafx.application.Application;

@@ -1,10 +1,10 @@
 package serverSide.code;
 
+import connectionIndependent.ScoutingPackets;
 import connectionIndependent.scouted.FullScoutingEvent;
 import connectionIndependent.scouted.ScoutedGame;
 import connectionIndependent.scouted.ScoutingEvent;
 import connectionIndependent.scouted.ScoutingEventDefinition;
-import connectionIndependent.ScoutingPackets;
 import gbuiLib.GBSockets.ActionHandler;
 import gbuiLib.GBSockets.BadPacketException;
 import javafx.beans.value.ObservableValue;
