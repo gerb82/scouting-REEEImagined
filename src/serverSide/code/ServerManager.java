@@ -21,6 +21,8 @@ import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.util.Callback;
+import javafx.util.Pair;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,17 +49,27 @@ public class ServerManager {
         socket.initSelector();
     }
 
-    private void addGame(String competition, short game, Short[] teams, String mapConfig, Path originalVideo) throws IOException {
-//        database.addGame(game, competition, mapConfig, teams);
-        scouters.addGame(competition, game, teams);
-        File video = new File(new File(ScoutingVars.getVideosDirectory(), competition), game + ".mp4");
-        Files.move(originalVideo, video.toPath());
-    }
-
     private void addCompetition(String competition) {
         database.addNewCompetition(competition);
         scouters.addCompetition(competition);
         new File(ScoutingVars.getVideosDirectory(), competition).mkdirs();
+    }
+
+    private void refreshGames(ArrayList<Pair<ScoutedGame, Path>> games) throws IOException {
+        ArrayList<ScoutedGame> gamesList = new ArrayList<>();
+        for (Pair<ScoutedGame, Path> gamePair : games) {
+            gamesList.add(gamePair.getKey());
+            if (gamePair.getValue() != null) {
+                File destination = new File(new File(ScoutingVars.getVideosDirectory(), String.valueOf(gamePair.getKey().getCompetition())), gamePair.getKey().getGame() + ".mp4");
+                FFmpegFrameGrabber grabbber = new FFmpegFrameGrabber(gamePair.getValue().toFile());
+//                grabbber.setImageScalingFlags();
+                        //-i input -c:v libx264 -crf 23 -preset medium -c:a libfdk_aac -vbr 4 \
+                //-movflags +faststart -vf scale=-2:720,format=yuv420p $output
+            }
+        }
+        database.refreshGames(gamesList);
+//        scouters.addGame(competition, game, teams);
+//        FFmpegFrameGrabber ffmpeg = new FFmpegFrameGrabber()
     }
 
     @FXML
@@ -297,7 +309,7 @@ public class ServerManager {
                                     editor.getDialogPane().setContent(pane);
                                     editor.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
                                     editor.setResultConverter(param -> {
-                                        if(param == ButtonType.OK) {
+                                        if (param == ButtonType.OK) {
                                             try {
                                                 return (happened.isSelected() ?
                                                         new ScoutedGame(
@@ -337,9 +349,9 @@ public class ServerManager {
 
                             @Override
                             protected void refreshGraphic(ScoutedGame item, boolean empty) {
-                                if(item != null){
+                                if (item != null) {
                                     setText(item.getName());
-                                } else if (this.getItem() == null && getIndex() == list.getItems().size() - 1){
+                                } else if (this.getItem() == null && getIndex() == list.getItems().size() - 1) {
                                     setText("Add Game");
                                 }
                             }
@@ -353,8 +365,8 @@ public class ServerManager {
             }
             dialog.setResultConverter(param -> {
                 ArrayList<ScoutedGame> games = new ArrayList<>();
-                for(Tab tab : tabs.getTabs()){
-                    games.addAll(((PopUpListView<ScoutedGame>)tab.getContent()).getItems());
+                for (Tab tab : tabs.getTabs()) {
+                    games.addAll(((PopUpListView<ScoutedGame>) tab.getContent()).getItems());
                 }
                 return games;
             });
