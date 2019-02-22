@@ -11,21 +11,19 @@ import javafx.scene.shape.Polygon;
 
 import java.util.ArrayList;
 
-public class MyGroup extends Group {
+class MyPolyGroup extends Group implements PossibleHitBox {
 
-    private Color fill;
     private double radius = 4;
     private ArrayList<MyPoint> myPoints = new ArrayList<>();
     private Polygon poly;
-    public MyGroup(double[] doubles, boolean isEditing){
+    MyPolyGroup(double[] doubles, boolean isEditing){
         super();
         poly = new Polygon(doubles);
         getChildren().add(poly);
         poly.setStrokeWidth(2.5);
-        fill = Color.BLACK;
+        Color fill = Color.BLACK;
         poly.setFill(fill);
-        boolean editing = isEditing;
-        if (editing) {
+        if (isEditing) {
             for (int i = 0; i < doubles.length; i += 2) {
                 MyPoint myPoint = new MyPoint(doubles[i], doubles[i + 1], radius, i, this);
                 myPoints.add(myPoint);
@@ -43,30 +41,25 @@ public class MyGroup extends Group {
 
             poly.setOnMousePressed(event -> {
                 mousePosition.set(new Point2D(event.getSceneX(), event.getSceneY()));
-                Editing.polyPressed = this;
-                Editing.circPressed = null;
-                Editing.pointPressed = null;
+                Editing.currentlyPressed = this;
                 poly.setStroke(Color.MEDIUMPURPLE);
             });
 
             poly.setOnMouseDragged(event -> {
                 boolean goodToDrag = true;
-                for (int i = 0; i < myPoints.size(); i++) {
-                    if (myPoints.get(i).getCenterX()-radius<0){
+                for (MyPoint myPoint : myPoints) {
+                    if (myPoint.getCenterX() - radius < 0) {
                         goodToDrag = false;
-                        myPoints.get(i).setCenterX(radius);
-                    }
-                    else if (myPoints.get(i).getCenterX()+radius> Main.getPane().getWidth()){
+                        myPoint.setCenterX(radius);
+                    } else if (myPoint.getCenterX() + radius > Main.getPane().getWidth()) {
                         goodToDrag = false;
-                        myPoints.get(i).setCenterX(Main.getPane().getWidth()-radius);
-                    }
-                    else if (myPoints.get(i).getCenterY()-radius<0){
+                        myPoint.setCenterX(Main.getPane().getWidth() - radius);
+                    } else if (myPoint.getCenterY() - radius < 0) {
                         goodToDrag = false;
-                        myPoints.get(i).setCenterY(radius);
-                    }
-                    else if (myPoints.get(i).getCenterY()+radius> Main.getPane().getHeight()){
+                        myPoint.setCenterY(radius);
+                    } else if (myPoint.getCenterY() + radius > Main.getPane().getHeight()) {
                         goodToDrag = false;
-                        myPoints.get(i).setCenterY(Main.getPane().getHeight()-radius);
+                        myPoint.setCenterY(Main.getPane().getHeight() - radius);
                     }
                 }
                 if (goodToDrag) {
@@ -77,36 +70,19 @@ public class MyGroup extends Group {
                 }
             });
 
-            poly.setOnMouseReleased(event -> {
-                poly.setStroke(null);
-            });
+            poly.setOnMouseReleased(event -> poly.setStroke(null));
 
             poly.setOnKeyPressed(event -> {
-                if (Editing.polyPressed == this) {
+                if (Editing.currentlyPressed == this) {
                     if (event.getSource() == KeyCode.LEFT) {
                         double deltaX = 5;
-                        for (int i = 0; i < poly.getPoints().size(); i += 2) {
-                            poly.getPoints().set(i, poly.getPoints().get(i) - deltaX);
-                        }
-                        for (int i = 0; i < poly.getPoints().size(); i += 2) {
-                            myPoints.get(i / 2).setCenterX(poly.getPoints().get(i));
-                        }
+                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()-deltaX);
                     } else if (event.getSource() == KeyCode.RIGHT) {
                         double deltaX = 5;
-                        for (int i = 0; i < poly.getPoints().size(); i += 2) {
-                            poly.getPoints().set(i, poly.getPoints().get(i) + deltaX);
-                        }
-                        for (int i = 0; i < poly.getPoints().size(); i += 2) {
-                            myPoints.get(i / 2).setCenterX(poly.getPoints().get(i));
-                        }
+                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()+deltaX);
                     } else if (event.getSource() == KeyCode.DOWN) {
                         double deltaY = 5;
-                        for (int i = 1; i < poly.getPoints().size(); i += 2) {
-                            poly.getPoints().set(i, poly.getPoints().get(i) + deltaY);
-                        }
-                        for (int i = 1; i < poly.getPoints().size(); i += 2) {
-                            myPoints.get(i / 2).setCenterY(poly.getPoints().get(i));
-                        }
+                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()-deltaY);
 
                     } else if (event.getSource() == KeyCode.UP) {
                         double deltaY = 5;
@@ -124,16 +100,17 @@ public class MyGroup extends Group {
         else {
             Main.getPane().getChildren().add(poly);
             poly.setOnMouseClicked(event -> {
+                //actionHere(bytes);
                 System.out.println("לבחירתך");
             });
         }
     }
 
-    public double getRadius(){
+    double getRadius(){
         return radius;
     }
 
-    public Polygon getPoly() {
+    Polygon getPoly() {
         return poly;
     }
 }
