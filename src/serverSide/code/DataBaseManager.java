@@ -545,10 +545,10 @@ public class DataBaseManager implements Closeable {
         updateEventsOnGame(new FullScoutingEvent(event, team, game, competitionsMap.get(competition), null, (byte) -1, alliance));
     }
 
-    protected void addGames(ScoutedGame... games) {
+    protected void refreshGames(ArrayList<ScoutedGame> games) {
         try (Statement statement = database.createStatement()) {
             writeLock.lock();
-            String gameCreate = "INSERT OR REPLACE INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "." + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + ") values";
+            String gameUpdate = "INSERT OR REPLACE INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "." + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + ") values";
             boolean first = true;
             for (ScoutedGame game : games) {
                 ArrayList<Short> testList = new ArrayList<>();
@@ -559,19 +559,19 @@ public class DataBaseManager implements Closeable {
                         continue;
                     }
                 }
-                gameCreate += (!first ? "," : "") + "(" + game.getGame() + "," + competitionsMap.get(game.getCompetition());
+                gameUpdate += (!first ? "," : "") + "(" + game.getGame() + "," + competitionsMap.get(game.getCompetition());
                 if(game.didHappen()){
-                    gameCreate += "," + booleanFixer(true) + "," + game.getMapConfiguration() + "," + game.getBlueAllianceScore() + "," + game.getRedAllianceScore() + "," + game.getBlueAllianceRP() + "," + game.getRedAllianceRP();
+                    gameUpdate += "," + booleanFixer(true) + "," + game.getMapConfiguration() + "," + game.getBlueAllianceScore() + "," + game.getRedAllianceScore() + "," + game.getBlueAllianceRP() + "," + game.getRedAllianceRP();
                 } else {
-                    gameCreate += "," + booleanFixer(false) + "," + null + "," + null + "," + null + "," + null + "," + null;
+                    gameUpdate += "," + booleanFixer(false) + "," + null + "," + null + "," + null + "," + null + "," + null;
                 }
                 for (Short teamNum : game.teamsArray()) {
-                    gameCreate += "," + String.valueOf(teamNum);
+                    gameUpdate += "," + String.valueOf(teamNum);
                 }
-                gameCreate += ")";
+                gameUpdate += ")";
                 first = false;
             }
-            statement.execute(gameCreate + ";");
+            statement.execute(gameUpdate + ";");
             database.commit();
         } catch (SQLException e) {
             try {

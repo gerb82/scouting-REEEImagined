@@ -562,12 +562,12 @@ public class GBSocket implements Closeable{
     }
 
     // done
-    public void ack(int[] ids, String packetType) throws BadPacketException {
+    protected void ack(int[] ids, String packetType) throws BadPacketException {
         manager.ack(ids, packetType);
     }
 
     // done
-    public void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType) throws BadPacketException {
+    protected void smartAck(int[] IDs, String originalPacketType, Object content, String packetType, String contentType) throws BadPacketException {
         manager.smartAck(IDs, originalPacketType, content, contentType, packetType);
     }
 
