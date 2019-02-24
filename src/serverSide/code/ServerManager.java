@@ -5,6 +5,7 @@ import connectionIndependent.scouted.ScoutedGame;
 import connectionIndependent.scouted.ScoutedTeam;
 import gbuiLib.GBSockets.GBServerSocket;
 import gbuiLib.GBSockets.PacketLogger;
+import gbuiLib.gbfx.WomboComboBox;
 import gbuiLib.gbfx.grid.CheckCell;
 import gbuiLib.gbfx.grid.EditGrid;
 import gbuiLib.gbfx.grid.GridCell;
@@ -17,16 +18,17 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegFrameRecorder;
+import org.bytedeco.javacv.Frame;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,15 +63,22 @@ public class ServerManager {
             gamesList.add(gamePair.getKey());
             if (gamePair.getValue() != null) {
                 File destination = new File(new File(ScoutingVars.getVideosDirectory(), String.valueOf(gamePair.getKey().getCompetition())), gamePair.getKey().getGame() + ".mp4");
-                FFmpegFrameGrabber grabbber = new FFmpegFrameGrabber(gamePair.getValue().toFile());
-//                grabbber.setImageScalingFlags();
-                        //-i input -c:v libx264 -crf 23 -preset medium -c:a libfdk_aac -vbr 4 \
+                if (!destination.exists()) {
+                    FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(gamePair.getValue().toFile());
+                    grabber.start();
+                    FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(new FileOutputStream(destination), 700, 500);
+                    recorder.start();
+                    Frame frame;
+                    while ((frame = grabber.grabFrame()) != null) {
+                        recorder.record(frame);
+                    }
+                }
+                //-i input -c:v libx264 -crf 23 -preset medium -c:a libfdk_aac -vbr 4 \
                 //-movflags +faststart -vf scale=-2:720,format=yuv420p $output
             }
         }
         database.refreshGames(gamesList);
 //        scouters.addGame(competition, game, teams);
-//        FFmpegFrameGrabber ffmpeg = new FFmpegFrameGrabber()
     }
 
     @FXML
@@ -207,7 +216,7 @@ public class ServerManager {
                         changed = true;
                     }
                 }
-                if (changed) return;
+                if (!changed) return;
                 Set<Short> initialSet = initialTeams.keySet();
                 Set<Short> newSet = newTeams.keySet();
                 ArrayList<ScoutedTeam> newlyAdded = new ArrayList<>();
@@ -254,31 +263,48 @@ public class ServerManager {
                             @Override
                             protected Callback<ScoutedGame, Dialog<ScoutedGame>> createDialog() {
                                 return game -> {
+                                    ArrayList<ScoutedTeam> teams = database.getAllTeamsForCompetition(comp);
                                     Dialog<ScoutedGame> editor = new Dialog<>();
                                     GridPane pane = new GridPane();
                                     TextField gameName = new TextField();
                                     CheckBox happened = new CheckBox();
-                                    TextField team1 = new TextField();
-                                    TextField team2 = new TextField();
-                                    TextField team3 = new TextField();
-                                    TextField team4 = new TextField();
-                                    TextField team5 = new TextField();
-                                    TextField team6 = new TextField();
+                                    WomboComboBox<ScoutedTeam> team1 = new WomboComboBox<>();
+                                    WomboComboBox<ScoutedTeam> team2 = new WomboComboBox<>();
+                                    WomboComboBox<ScoutedTeam> team3 = new WomboComboBox<>();
+                                    WomboComboBox<ScoutedTeam> team4 = new WomboComboBox<>();
+                                    WomboComboBox<ScoutedTeam> team5 = new WomboComboBox<>();
+                                    WomboComboBox<ScoutedTeam> team6 = new WomboComboBox<>();
                                     TextField blueScore = new TextField();
                                     TextField redScore = new TextField();
                                     TextField blueRP = new TextField();
                                     TextField redRP = new TextField();
                                     TextField mapConfiguration = new TextField();
+                                    team1.getOptions().addAll(teams);
+                                    team2.getOptions().addAll(teams);
+                                    team3.getOptions().addAll(teams);
+                                    team4.getOptions().addAll(teams);
+                                    team5.getOptions().addAll(teams);
+                                    team6.getOptions().addAll(teams);
                                     if (game != null) {
                                         gameName.setText(game.getName());
                                         happened.setSelected(game.didHappen());
-                                        team1.setText(game.getTeamNumber1() == null ? "" : String.valueOf(game.getTeamNumber1()));
-                                        team2.setText(game.getTeamNumber2() == null ? "" : String.valueOf(game.getTeamNumber2()));
-                                        team3.setText(game.getTeamNumber3() == null ? "" : String.valueOf(game.getTeamNumber3()));
-                                        team4.setText(game.getTeamNumber4() == null ? "" : String.valueOf(game.getTeamNumber4()));
-                                        team5.setText(game.getTeamNumber5() == null ? "" : String.valueOf(game.getTeamNumber5()));
-                                        team6.setText(game.getTeamNumber6() == null ? "" : String.valueOf(game.getTeamNumber6()));
-                                        if (game.didHappen()) {
+                                        class TeamSelector implements Callback<Short, ScoutedTeam> {
+                                            @Override
+                                            public ScoutedTeam call(Short param) {
+                                                for (ScoutedTeam team : teams) {
+                                                    if (team.getNumber() == param) return team;
+                                                }
+                                                return null;
+                                            }
+                                        }
+                                        team1.setValue(new TeamSelector().call(game.getTeamNumber1()));
+                                        team2.setValue(new TeamSelector().call(game.getTeamNumber2()));
+                                        team3.setValue(new TeamSelector().call(game.getTeamNumber3()));
+                                        team4.setValue(new TeamSelector().call(game.getTeamNumber4()));
+                                        team5.setValue(new TeamSelector().call(game.getTeamNumber5()));
+                                        team6.setValue(new TeamSelector().call(game.getTeamNumber6()));
+                                        if (game.didHappen())
+                                        {
                                             blueScore.setText(String.valueOf(game.getBlueAllianceScore()));
                                             redScore.setText(String.valueOf(game.getRedAllianceScore()));
                                             blueRP.setText(String.valueOf(game.getBlueAllianceRP()));
@@ -321,22 +347,22 @@ public class ServerManager {
                                                                 inputSanitizerNumbers(blueRP.getText()).byteValue(),
                                                                 inputSanitizerNumbers(redRP.getText()).byteValue(),
                                                                 inputSanitizer(mapConfiguration.getText()),
-                                                                inputSanitizerNumbers(team1.getText()),
-                                                                inputSanitizerNumbers(team2.getText()),
-                                                                inputSanitizerNumbers(team3.getText()),
-                                                                inputSanitizerNumbers(team4.getText()),
-                                                                inputSanitizerNumbers(team5.getText()),
-                                                                inputSanitizerNumbers(team6.getText())) :
+                                                                team1.getValue().getNumber(),
+                                                                team2.getValue().getNumber(),
+                                                                team3.getValue().getNumber(),
+                                                                team4.getValue().getNumber(),
+                                                                team5.getValue().getNumber(),
+                                                                team6.getValue().getNumber()) :
                                                         new ScoutedGame(
                                                                 game == null ? (short) list.getItems().indexOf(game) : game.getGame(),
                                                                 database.getCompetitionFromName(comp),
                                                                 inputSanitizer(gameName.getText()),
-                                                                inputSanitizerNumbers(team1.getText()),
-                                                                inputSanitizerNumbers(team2.getText()),
-                                                                inputSanitizerNumbers(team3.getText()),
-                                                                inputSanitizerNumbers(team4.getText()),
-                                                                inputSanitizerNumbers(team5.getText()),
-                                                                inputSanitizerNumbers(team6.getText())));
+                                                                team1.getValue().getNumber(),
+                                                                team2.getValue().getNumber(),
+                                                                team3.getValue().getNumber(),
+                                                                team4.getValue().getNumber(),
+                                                                team5.getValue().getNumber(),
+                                                                team6.getValue().getNumber()));
                                             } catch (NullPointerException e) {
                                                 return null;
                                             }
@@ -344,7 +370,9 @@ public class ServerManager {
                                         return null;
                                     });
                                     return editor;
-                                };
+                                }
+
+                                        ;
                             }
 
                             @Override
@@ -355,13 +383,21 @@ public class ServerManager {
                                     setText("Add Game");
                                 }
                             }
-                        };
+                        }
+
+                                ;
                     }
                 };
-                listView.getItems().addAll(database.getGamesList(comp, false));
-                listView.getItems().add(null);
+                listView.getItems().
+
+                        addAll(database.getGamesList(comp, false));
+                listView.getItems().
+
+                        add(null);
                 tab.setContent(listView);
-                tabs.getTabs().add(tab);
+                tabs.getTabs().
+
+                        add(tab);
             }
             dialog.setResultConverter(param -> {
                 ArrayList<ScoutedGame> games = new ArrayList<>();

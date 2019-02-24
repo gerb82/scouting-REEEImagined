@@ -37,5 +37,10 @@ public class ScoutedTeam {
     public void setCompetitions(ArrayList<String> competitions) {
         this.competitions = competitions;
     }
+
+    @Override
+    public String toString() {
+        return name + " " + number;
+    }
 }
 

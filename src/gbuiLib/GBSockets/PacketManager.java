@@ -55,13 +55,20 @@ public class PacketManager {
                 if(nextTask != -1){
                     discarder.schedule(new DiscarderTask(line), nextTask);
                 } else {
-                    if(line.getPacket().isImportant()){
+                    if(line.getPacket().isImportant() && line.getStatusProperty().get() == PacketLogger.PacketStatus.ACKED){
                         if(socket.isServer()) {
                             socket.stopServerSideConnection();
                         } else {
                             socket.disconnect();
                         }
                         logger.connectionTimedOutImportant(line.getPacket());
+                    } else if (line.getPacket().isImportant() && line.getStatusProperty().get() == PacketLogger.PacketStatus.SEND_ERRORED){
+                        if(socket.isServer()) {
+                            socket.stopServerSideConnection();
+                        } else {
+                            socket.disconnect();
+                        }
+                        logger.importantPacketErrored(line.getPacket());
                     }
                 }
             } catch (BadPacketException e){

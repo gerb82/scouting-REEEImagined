@@ -809,8 +809,16 @@ public class DataBaseManager implements Closeable {
         return null;
     }
 
-    protected ArrayList<FullScoutingEvent> getAllTeamsForCompetition() {
-        return null;
+    protected ArrayList<ScoutedTeam> getAllTeamsForCompetition(String competition) {
+        try (Statement statement = database.createStatement()) {
+            readLock.lock();
+            statement.execute(formatTeamsSelect(Columns.participatedIn.toString() + getCompetitionFromName(competition) + " = " + booleanFixer(true), null));
+            return convertResultSetToTeams(statement.getResultSet());
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("The query could not be completed.", e);
+        } finally {
+            readLock.unlock();
+        }
     }
 
 
