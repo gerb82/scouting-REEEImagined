@@ -1,4 +1,4 @@
-package serverSide.code;
+package serverSide;
 
 import connectionIndependent.eventsMapping.*;
 import connectionIndependent.scouted.*;
@@ -44,7 +44,7 @@ public class DataBaseManager implements Closeable {
         containerEventType, eventContainedType, // containers table
         competitionID, competitionName, // competitions
         teamNumbers, teamNames, participatedIn, // teams table
-        gameNumbers, mapConfiguration, gameName, wasCompleted, competition, redAllianceScore, blueAllianceScore, redAllianceRP, blueAllianceRP, teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6, // games table
+        gameNumbers, mapConfiguration, gameName, wasCompleted, competition, redAllianceScore, blueAllianceScore, redAllianceRP, blueAllianceRP, teamNumber1, teamNumber2, teamNumber3, teamNumber4, teamNumber5, teamNumber6, videoOffset, // games table
         whichGame, whichCompetition, whichTeam, currentState, scoutPriority,
         chainID, gameNumber, competitionNumber, teamNumber, alliance, startingLocation, // main events table
         eventChainID, eventLocationInChain, eventType, timeStamps, // stamps table
@@ -116,6 +116,7 @@ public class DataBaseManager implements Closeable {
                     Columns.teamNumber4 + " integer," + System.lineSeparator() +
                     Columns.teamNumber5 + " integer," + System.lineSeparator() +
                     Columns.teamNumber6 + " integer," + System.lineSeparator() +
+                    Columns.videoOffset + " integer," + System.lineSeparator() +
                     "PRIMARY KEY(" + Columns.gameNumbers + "," + Columns.competition + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.competition + ") REFERENCES " + Tables.competitions + "(" + Columns.competitionID + ")," + System.lineSeparator() +
                     "FOREIGN KEY(" + Columns.teamNumber1 + ") REFERENCES " + Tables.teamNumbers + "(" + Columns.teamNumbers + ")," + System.lineSeparator() +
@@ -382,25 +383,26 @@ public class DataBaseManager implements Closeable {
             String competitionColumns = "";
             String values = "";
             String removeVals = "";
-            for(String comp : getCompetitionsList()){
+            for (String comp : getCompetitionsList()) {
                 competitionColumns += "," + Columns.participatedIn + getCompetitionFromName(comp);
             }
             boolean first = true;
-            for(ScoutedTeam team : add){
+            for (ScoutedTeam team : add) {
                 values += (!first ? "," : "") + "(" + team.getNumber() + ",'" + team.getName() + "'";
-                for(String comp : getCompetitionsList()){
+                for (String comp : getCompetitionsList()) {
                     values += "," + (team.getCompetitions().contains(comp) ? 1 : 0);
                 }
                 values += ")";
                 first = false;
             }
-            if(values != "") statement.execute("INSERT OR REPLACE INTO " + Tables.teamNumbers + "(" + Columns.teamNumbers + "," + Columns.teamNames + competitionColumns + ") values" + values + ";");
+            if (values != "")
+                statement.execute("INSERT OR REPLACE INTO " + Tables.teamNumbers + "(" + Columns.teamNumbers + "," + Columns.teamNames + competitionColumns + ") values" + values + ";");
             first = true;
-            for(ScoutedTeam rip : remove) {
+            for (ScoutedTeam rip : remove) {
                 removeVals += (!first ? " OR " : "") + Columns.teamNumbers + " = " + rip.getNumber();
                 first = false;
             }
-            if(removeVals != "") statement.execute("DELETE FROM " + Tables.teamNumbers + " WHERE " + removeVals + ";");
+            if (removeVals != "") statement.execute("DELETE FROM " + Tables.teamNumbers + " WHERE " + removeVals + ";");
             database.commit();
         } catch (SQLException e) {
             try {
@@ -414,22 +416,22 @@ public class DataBaseManager implements Closeable {
         }
     }
 
-    protected void removeTeam(ScoutedTeam team) {
-        try (Statement statement = database.createStatement()) {
-            writeLock.lock();
-            statement.execute("DELETE FROM " + Tables.teamNumbers + " WHERE " + Columns.teamNumbers + " = " + team.getNumber() + " AND " + Columns.teamNames + " = '" + team.getName() + "';");
-            database.commit();
-        } catch (SQLException e) {
-            try {
-                database.rollback();
-            } catch (SQLException e1) {
-                throw new Error("could not roll back database changes!", e1);
-            }
-            throw new IllegalArgumentException("The transaction could not be completed.", e);
-        } finally {
-            writeLock.unlock();
-        }
-    }
+//    protected void removeTeam(ScoutedTeam team) {
+//        try (Statement statement = database.createStatement()) {
+//            writeLock.lock();
+//            statement.execute("DELETE FROM " + Tables.teamNumbers + " WHERE " + Columns.teamNumbers + " = " + team.getNumber() + " AND " + Columns.teamNames + " = '" + team.getName() + "';");
+//            database.commit();
+//        } catch (SQLException e) {
+//            try {
+//                database.rollback();
+//            } catch (SQLException e1) {
+//                throw new Error("could not roll back database changes!", e1);
+//            }
+//            throw new IllegalArgumentException("The transaction could not be completed.", e);
+//        } finally {
+//            writeLock.unlock();
+//        }
+//    }
 
     protected void updateEventsOnGame(FullScoutingEvent... events) {
         try (Statement statement = database.createStatement()) {
@@ -520,35 +522,35 @@ public class DataBaseManager implements Closeable {
         }
     }
 
-    protected void removeEvent(FullScoutingEvent event) {
-        try (Statement statement = database.createStatement()) {
-            writeLock.lock();
-            statement.execute("DELETE FROM " + Tables.events + " WHERE " + Columns.chainID + " = " + event.getEvent().getChainID() + ";");
-            statement.execute("DELETE FROM " + Tables.eventFrames + " WHERE " + Columns.eventChainID + " = " + event.getEvent().getChainID() + ";");
-            database.commit();
-        } catch (SQLException e) {
-            try {
-                database.rollback();
-            } catch (SQLException e1) {
-                throw new Error("could not roll back database changes!", e1);
-            }
-            throw new IllegalArgumentException("The transaction could not be completed.", e);
-        } finally {
-            writeLock.unlock();
-        }
-    }
+//    protected void removeEvent(FullScoutingEvent event) {
+//        try (Statement statement = database.createStatement()) {
+//            writeLock.lock();
+//            statement.execute("DELETE FROM " + Tables.events + " WHERE " + Columns.chainID + " = " + event.getEvent().getChainID() + ";");
+//            statement.execute("DELETE FROM " + Tables.eventFrames + " WHERE " + Columns.eventChainID + " = " + event.getEvent().getChainID() + ";");
+//            database.commit();
+//        } catch (SQLException e) {
+//            try {
+//                database.rollback();
+//            } catch (SQLException e1) {
+//                throw new Error("could not roll back database changes!", e1);
+//            }
+//            throw new IllegalArgumentException("The transaction could not be completed.", e);
+//        } finally {
+//            writeLock.unlock();
+//        }
+//    }
 
-    protected void cleanUpGameEventsForTeam(short game, String competition, Short team, boolean alliance) {
-        writeLock.lock();
-        ScoutingEvent event = new ScoutingEvent();
-        event.setChainID(-2);
-        updateEventsOnGame(new FullScoutingEvent(event, team, game, competitionsMap.get(competition), null, (byte) -1, alliance));
-    }
+//    protected void cleanUpGameEventsForTeam(short game, String competition, Short team, boolean alliance) {
+//        writeLock.lock();
+//        ScoutingEvent event = new ScoutingEvent();
+//        event.setChainID(-2);
+//        updateEventsOnGame(new FullScoutingEvent(event, team, game, competitionsMap.get(competition), null, (byte) -1, alliance));
+//    }
 
     protected void refreshGames(ArrayList<ScoutedGame> games) {
         try (Statement statement = database.createStatement()) {
             writeLock.lock();
-            String gameUpdate = "INSERT OR REPLACE INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "." + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + ") values";
+            String gameUpdate = "INSERT OR REPLACE INTO " + Tables.games + "(" + Columns.gameNumbers + "," + Columns.competition + "," + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + "," + Columns.videoOffset + ") values";
             boolean first = true;
             for (ScoutedGame game : games) {
                 ArrayList<Short> testList = new ArrayList<>();
@@ -559,16 +561,16 @@ public class DataBaseManager implements Closeable {
                         continue;
                     }
                 }
-                gameUpdate += (!first ? "," : "") + "(" + game.getGame() + "," + competitionsMap.get(game.getCompetition());
-                if(game.didHappen()){
-                    gameUpdate += "," + booleanFixer(true) + "," + game.getMapConfiguration() + "," + game.getBlueAllianceScore() + "," + game.getRedAllianceScore() + "," + game.getBlueAllianceRP() + "," + game.getRedAllianceRP();
+                gameUpdate += (!first ? "," : "") + "(" + game.getGame() + "," + game.getCompetition() + ",'" + game.getName() ;
+                if (game.didHappen()) {
+                    gameUpdate += "'," + booleanFixer(true) + "," + game.getMapConfiguration() + "," + game.getBlueAllianceScore() + "," + game.getRedAllianceScore() + "," + game.getBlueAllianceRP() + "," + game.getRedAllianceRP();
                 } else {
-                    gameUpdate += "," + booleanFixer(false) + "," + null + "," + null + "," + null + "," + null + "," + null;
+                    gameUpdate += "'," + booleanFixer(false) + "," + null + "," + null + "," + null + "," + null;
                 }
                 for (Short teamNum : game.teamsArray()) {
                     gameUpdate += "," + String.valueOf(teamNum);
                 }
-                gameUpdate += ")";
+                gameUpdate += "," + (game.didHappen() ? game.getVideoOffset() : null) + ")";
                 first = false;
             }
             statement.execute(gameUpdate + ";");
@@ -624,14 +626,14 @@ public class DataBaseManager implements Closeable {
     }
 
     private String formatGamesSelect(String conditions, Integer limit) {
-        return "SELECT " + Columns.gameNumbers + "," + Columns.competition + ","  + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + " FROM " + Tables.games + System.lineSeparator() +
+        return "SELECT " + Columns.gameNumbers + "," + Columns.competition + "," + Columns.gameName + "," + Columns.wasCompleted + "," + Columns.mapConfiguration + "," + Columns.blueAllianceScore + "," + Columns.redAllianceScore + "," + Columns.blueAllianceRP + "," + Columns.redAllianceRP + "," + Columns.teamNumber1 + "," + Columns.teamNumber2 + "," + Columns.teamNumber3 + "," + Columns.teamNumber4 + "," + Columns.teamNumber5 + "," + Columns.teamNumber6 + "," + Columns.videoOffset + " FROM " + Tables.games + System.lineSeparator() +
                 (conditions == null ? "" : "WHERE " + conditions + System.lineSeparator()) +
                 (limit == null ? "" : "LIMIT " + limit) + ";";
     }
 
     private String formatTeamsSelect(String conditions, Integer limit) {
         String competitionsColumns = "";
-        for(String comp : getCompetitionsList()){
+        for (String comp : getCompetitionsList()) {
             competitionsColumns += "," + Columns.participatedIn + getCompetitionFromName(comp);
         }
         return "SELECT " + Columns.teamNumbers + "," + Columns.teamNames + competitionsColumns + " FROM " + Tables.teamNumbers + System.lineSeparator() +
@@ -825,36 +827,34 @@ public class DataBaseManager implements Closeable {
     private ArrayList<ScoutedGame> convertResultSetToGames(ResultSet set) throws SQLException {
         ArrayList<ScoutedGame> result = new ArrayList<>();
         while (set.next()) {
-            if(set.getBoolean(Columns.wasCompleted.toString())) {
-                result.add(new ScoutedGame(
-                        set.getShort(Columns.gameNumbers.toString()),
-                        set.getByte(Columns.competition.toString()),
-                        set.getString(Columns.gameName.toString()),
-                        set.getShort(Columns.redAllianceScore.toString()),
-                        set.getShort(Columns.blueAllianceScore.toString()),
-                        set.getByte(Columns.redAllianceRP.toString()),
-                        set.getByte(Columns.blueAllianceRP.toString()),
-                        set.getString(Columns.mapConfiguration.toString()),
-                        set.getShort(Columns.teamNumber1.toString()),
-                        set.getShort(Columns.teamNumber2.toString()),
-                        set.getShort(Columns.teamNumber3.toString()),
-                        set.getShort(Columns.teamNumber4.toString()),
-                        set.getShort(Columns.teamNumber5.toString()),
-                        set.getShort(Columns.teamNumber6.toString()))
-                );
-            } else {
-                result.add(new ScoutedGame(
-                        set.getShort(Columns.gameNumbers.toString()),
-                        set.getByte(Columns.competition.toString()),
-                        set.getString(Columns.gameName.toString()),
-                        set.getShort(Columns.teamNumber1.toString()),
-                        set.getShort(Columns.teamNumber2.toString()),
-                        set.getShort(Columns.teamNumber3.toString()),
-                        set.getShort(Columns.teamNumber4.toString()),
-                        set.getShort(Columns.teamNumber5.toString()),
-                        set.getShort(Columns.teamNumber6.toString()))
-                );
-            }
+            result.add(set.getBoolean(Columns.wasCompleted.toString()) ?
+                    new ScoutedGame(
+                            set.getShort(Columns.gameNumbers.toString()),
+                            set.getByte(Columns.competition.toString()),
+                            set.getString(Columns.gameName.toString()),
+                            set.getShort(Columns.redAllianceScore.toString()),
+                            set.getShort(Columns.blueAllianceScore.toString()),
+                            set.getByte(Columns.redAllianceRP.toString()),
+                            set.getByte(Columns.blueAllianceRP.toString()),
+                            set.getString(Columns.mapConfiguration.toString()),
+                            set.getShort(Columns.teamNumber1.toString()),
+                            set.getShort(Columns.teamNumber2.toString()),
+                            set.getShort(Columns.teamNumber3.toString()),
+                            set.getShort(Columns.teamNumber4.toString()),
+                            set.getShort(Columns.teamNumber5.toString()),
+                            set.getShort(Columns.teamNumber6.toString()),
+                            set.getShort(Columns.videoOffset.toString())) :
+                    new ScoutedGame(
+                            set.getShort(Columns.gameNumbers.toString()),
+                            set.getByte(Columns.competition.toString()),
+                            set.getString(Columns.gameName.toString()),
+                            set.getShort(Columns.teamNumber1.toString()),
+                            set.getShort(Columns.teamNumber2.toString()),
+                            set.getShort(Columns.teamNumber3.toString()),
+                            set.getShort(Columns.teamNumber4.toString()),
+                            set.getShort(Columns.teamNumber5.toString()),
+                            set.getShort(Columns.teamNumber6.toString()))
+            );
         }
         set.close();
         return result;
@@ -864,8 +864,9 @@ public class DataBaseManager implements Closeable {
         ArrayList<ScoutedTeam> result = new ArrayList<>();
         while (set.next()) {
             ArrayList<String> competitions = new ArrayList<>();
-            for(String comp : getCompetitionsList()){
-                if(set.getBoolean(Columns.participatedIn.toString() + getCompetitionFromName(comp))) competitions.add(comp);
+            for (String comp : getCompetitionsList()) {
+                if (set.getBoolean(Columns.participatedIn.toString() + getCompetitionFromName(comp)))
+                    competitions.add(comp);
             }
             result.add(new ScoutedTeam(
                     set.getShort(Columns.teamNumbers.toString()),

@@ -1,4 +1,4 @@
-package serverSide.code;
+package serverSide;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;

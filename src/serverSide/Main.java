@@ -1,4 +1,4 @@
-package serverSide.code;
+package serverSide;
 
 
 import connectionIndependent.eventsMapping.ScoutingTreesManager;
@@ -7,6 +7,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.bytedeco.javacpp.opencv_core;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,10 +44,13 @@ public class Main extends Application{
                 DatagramSocket socket = new DatagramSocket();
                 socket.connect(new InetSocketAddress("234.0.0.0", 8000));
                 while(true) {
-                    socket.send(new DatagramPacket("Hi I'm hosting".getBytes(), 0, 14));
                     try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {}
+                        socket.send(new DatagramPacket("Hi I'm hosting".getBytes(), 0, 14));
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                        }
+                    } catch (SocketException e){}
                 }
             } catch (SocketException e) {
                 throw new Error(e);

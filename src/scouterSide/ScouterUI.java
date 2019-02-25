@@ -5,6 +5,7 @@ import connectionIndependent.scouted.ScoutingEventDefinition;
 import gbuiLib.GBSockets.ActionHandler;
 import gbuiLib.GBSockets.BadPacketException;
 import gbuiLib.GBSockets.PacketLogger;
+import gbuiLib.gbfx.MediaControl;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.event.Event;

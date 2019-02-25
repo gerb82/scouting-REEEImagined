@@ -17,9 +17,10 @@ public class ScoutedGame {
     private Short teamNumber5;
     private Short teamNumber6;
     private boolean happened;
+    private Short videoOffset;
 
-    public ScoutedGame(short game, byte competition, String name, short redAllianceScore, short blueAllianceScore, byte redAllianceRP, byte blueAllianceRP, String mapConfiguration, Short teamNumber1, Short teamNumber2, Short teamNumber3, Short teamNumber4, Short teamNumber5, Short teamNumber6) {
-        happened = true;
+    public ScoutedGame(short game, byte competition, String name, short redAllianceScore, short blueAllianceScore, byte redAllianceRP, byte blueAllianceRP, String mapConfiguration, Short teamNumber1, Short teamNumber2, Short teamNumber3, Short teamNumber4, Short teamNumber5, Short teamNumber6, short videoOffset) {
+        this.happened = true;
         this.game = game;
         this.competition = competition;
         this.name = name;
@@ -34,24 +35,26 @@ public class ScoutedGame {
         this.teamNumber4 = teamNumber4;
         this.teamNumber5 = teamNumber5;
         this.teamNumber6 = teamNumber6;
+        this.videoOffset = videoOffset;
     }
 
     public ScoutedGame(short game, byte competition, String name, Short teamNumber1, Short teamNumber2, Short teamNumber3, Short teamNumber4, Short teamNumber5, Short teamNumber6) {
-        happened = false;
+        this.happened = false;
         this.game = game;
         this.competition = competition;
         this.name = name;
-        redAllianceScore = null;
-        blueAllianceScore = null;
-        redAllianceRP = null;
-        blueAllianceRP = null;
-        mapConfiguration = null;
+        this.redAllianceScore = null;
+        this.blueAllianceScore = null;
+        this.redAllianceRP = null;
+        this.blueAllianceRP = null;
+        this.mapConfiguration = null;
         this.teamNumber1 = teamNumber1;
         this.teamNumber2 = teamNumber2;
         this.teamNumber3 = teamNumber3;
         this.teamNumber4 = teamNumber4;
         this.teamNumber5 = teamNumber5;
         this.teamNumber6 = teamNumber6;
+        this.videoOffset = null;
     }
 
     public boolean didHappen() {
@@ -185,5 +188,9 @@ public class ScoutedGame {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Short getVideoOffset() {
+        return videoOffset;
     }
 }

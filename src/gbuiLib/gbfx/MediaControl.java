@@ -30,7 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package scouterSide;
+package gbuiLib.gbfx;
 
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
@@ -120,7 +120,6 @@ public class MediaControl extends BorderPane {
 
         mp.setOnPaused(new Runnable() {
             public void run() {
-                System.out.println("onPaused");
                 playButton.setText(">");
             }
         });

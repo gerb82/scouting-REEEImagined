@@ -1,10 +1,11 @@
-package serverSide.code;
+package serverSide;
 
 import connectionIndependent.ScoutingConnections;
 import connectionIndependent.scouted.ScoutedGame;
 import connectionIndependent.scouted.ScoutedTeam;
 import gbuiLib.GBSockets.GBServerSocket;
 import gbuiLib.GBSockets.PacketLogger;
+import gbuiLib.gbfx.MediaControl;
 import gbuiLib.gbfx.WomboComboBox;
 import gbuiLib.gbfx.grid.CheckCell;
 import gbuiLib.gbfx.grid.EditGrid;
@@ -12,6 +13,9 @@ import gbuiLib.gbfx.grid.GridCell;
 import gbuiLib.gbfx.grid.RowController;
 import gbuiLib.gbfx.popUpListView.PopUpEditCell;
 import gbuiLib.gbfx.popUpListView.PopUpListView;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -20,20 +24,31 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.stage.FileChooser;
 import javafx.util.Callback;
-import javafx.util.Pair;
+import org.bytedeco.javacpp.avutil;
+import org.bytedeco.javacpp.opencv_core;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegFrameRecorder;
 import org.bytedeco.javacv.Frame;
+//import org.bytedeco.javacv.FFmpegFrameGrabber;
+//import org.bytedeco.javacv.FFmpegFrameRecorder;
+//import org.bytedeco.javacv.Frame;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +56,7 @@ public class ServerManager {
 
     private ScoutersManager scouters;
     private DataBaseManager database;
+    private File originalVidDirectory = null;
 
     protected ServerManager() {
         database = new DataBaseManager();
@@ -55,30 +71,6 @@ public class ServerManager {
         database.addNewCompetition(competition);
         scouters.addCompetition(competition);
         new File(ScoutingVars.getVideosDirectory(), competition).mkdirs();
-    }
-
-    private void refreshGames(ArrayList<Pair<ScoutedGame, Path>> games) throws IOException {
-        ArrayList<ScoutedGame> gamesList = new ArrayList<>();
-        for (Pair<ScoutedGame, Path> gamePair : games) {
-            gamesList.add(gamePair.getKey());
-            if (gamePair.getValue() != null) {
-                File destination = new File(new File(ScoutingVars.getVideosDirectory(), String.valueOf(gamePair.getKey().getCompetition())), gamePair.getKey().getGame() + ".mp4");
-                if (!destination.exists()) {
-                    FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(gamePair.getValue().toFile());
-                    grabber.start();
-                    FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(new FileOutputStream(destination), 700, 500);
-                    recorder.start();
-                    Frame frame;
-                    while ((frame = grabber.grabFrame()) != null) {
-                        recorder.record(frame);
-                    }
-                }
-                //-i input -c:v libx264 -crf 23 -preset medium -c:a libfdk_aac -vbr 4 \
-                //-movflags +faststart -vf scale=-2:720,format=yuv420p $output
-            }
-        }
-        database.refreshGames(gamesList);
-//        scouters.addGame(competition, game, teams);
     }
 
     @FXML
@@ -208,15 +200,6 @@ public class ServerManager {
             });
             Optional<HashMap<Short, ScoutedTeam>> result = editTeams.showAndWait();
             result.ifPresent(newTeams -> {
-                boolean changed = false;
-                for (Short team : initialTeams.keySet()) {
-                    try {
-                        changed = !newTeams.get(team).equals(initialTeams.get(team)) || changed;
-                    } catch (NullPointerException e) {
-                        changed = true;
-                    }
-                }
-                if (!changed) return;
                 Set<Short> initialSet = initialTeams.keySet();
                 Set<Short> newSet = newTeams.keySet();
                 ArrayList<ScoutedTeam> newlyAdded = new ArrayList<>();
@@ -274,17 +257,103 @@ public class ServerManager {
                                     WomboComboBox<ScoutedTeam> team4 = new WomboComboBox<>();
                                     WomboComboBox<ScoutedTeam> team5 = new WomboComboBox<>();
                                     WomboComboBox<ScoutedTeam> team6 = new WomboComboBox<>();
-                                    TextField blueScore = new TextField();
-                                    TextField redScore = new TextField();
-                                    TextField blueRP = new TextField();
-                                    TextField redRP = new TextField();
-                                    TextField mapConfiguration = new TextField();
                                     team1.getOptions().addAll(teams);
                                     team2.getOptions().addAll(teams);
                                     team3.getOptions().addAll(teams);
                                     team4.getOptions().addAll(teams);
                                     team5.getOptions().addAll(teams);
                                     team6.getOptions().addAll(teams);
+                                    TextField blueScore = new TextField();
+                                    TextField redScore = new TextField();
+                                    TextField blueRP = new TextField();
+                                    TextField redRP = new TextField();
+                                    TextField mapConfiguration = new TextField();
+                                    Label currentVideoOffset = new Label("No Video Available");
+                                    Button videoEdit = new Button("Edit Game Video");
+                                    SimpleObjectProperty<Short> videoOffset = new SimpleObjectProperty<>();
+                                    videoOffset.addListener((observable, oldValue, newValue) -> currentVideoOffset.setText("Video offset: " + videoOffset.get()/1000 + "." + (videoOffset.get()-((videoOffset.get()/1000)*1000))));
+                                    happened.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                                        blueScore.setEditable(newValue);
+                                        redScore.setEditable(newValue);
+                                        blueRP.setEditable(newValue);
+                                        redRP.setEditable(newValue);
+                                        mapConfiguration.setEditable(newValue);
+                                        videoEdit.setDisable(!newValue);
+                                    });
+                                    videoEdit.setOnAction(clicked -> {
+                                        Dialog<Short> videoDialog = new Dialog<>();
+                                        Media video;
+                                        MediaPlayer player;
+                                        MediaControl media;
+                                        File destination = new File(new File(ScoutingVars.getVideosDirectory(), comp), (game == null ? (short) list.getItems().indexOf(game) : game.getGame()) + ".mp4");
+                                        if (!destination.exists()) {
+                                            FileChooser originalVideoPath = new FileChooser();
+                                            originalVideoPath.setInitialDirectory(originalVidDirectory != null ? originalVidDirectory : null);
+                                            File path = originalVideoPath.showOpenDialog(editor.getDialogPane().getScene().getWindow());
+                                            if (path == null) return;
+                                            try {
+//                                                FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(path);
+////                                                grabber.setFrameRate(23);
+//                                                FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(new FileOutputStream(destination), 700, 500, 2);
+////                                                recorder.setFrameRate(23);
+////                                                recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+////                                                recorder.setImageWidth(700);
+////                                                recorder.setImageHeight(500);
+//                                                recorder.setVideoCodec(13);
+//                                                recorder.setFrameRate(30);
+//                                                recorder.setFormat("mp4");
+////                                                recorder.setVideoCodec(13);
+////                                                recorder.setAudioCodecName("libfdk_aac");
+////                                                recorder.setVideoBitrate(4);
+//                                                Frame frame;
+//                                                long t = 0;
+//                                                try {
+//                                                    recorder.start();
+//                                                    grabber.start();
+//                                                    while (true) {
+//                                                        try {
+//                                                            t += 1000/recorder.getFrameRate();
+//                                                            if (t > recorder.getTimestamp()) {
+//                                                                recorder.setTimestamp(t);
+//                                                                grabber.setTimestamp(t);
+//                                                            }
+//                                                            frame = grabber.grab();
+//                                                            if (frame == null) {
+//                                                                System.out.println("!!! Failed cvQueryFrame");
+//                                                                break;
+//                                                            }
+//                                                            recorder.record(frame);
+//                                                        } catch (Exception e) {
+//                                                        }
+//                                                    }
+//                                                    recorder.stop();
+//                                                    recorder.release();
+//                                                    grabber.stop();
+//                                                    grabber.release();
+//                                                } catch (Exception e) {
+//                                                    e.printStackTrace();
+//                                                }
+                                                Files.copy(path.toPath(), destination.toPath());
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                                return;
+                                            }
+                                        }
+                                        try {
+                                            video = new Media(destination.toURI().toURL().toString());
+                                        } catch (MalformedURLException e) {
+                                            return;
+                                        }
+                                        player = new MediaPlayer(video);
+                                        media = new MediaControl(player);
+                                        ((MediaView)((Pane)media.getCenter()).getChildren().get(0)).setFitWidth(700);
+                                        ((MediaView)((Pane)media.getCenter()).getChildren().get(0)).setFitHeight(500);
+                                        videoDialog.getDialogPane().setContent(media);
+                                        videoDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                                        videoDialog.setResultConverter(param -> ((Double) player.getCurrentTime().toMillis()).shortValue());
+                                        Optional<Short> result = videoDialog.showAndWait();
+                                        result.ifPresent(aShort -> videoOffset.set(aShort));
+                                    });
                                     if (game != null) {
                                         gameName.setText(game.getName());
                                         happened.setSelected(game.didHappen());
@@ -303,33 +372,31 @@ public class ServerManager {
                                         team4.setValue(new TeamSelector().call(game.getTeamNumber4()));
                                         team5.setValue(new TeamSelector().call(game.getTeamNumber5()));
                                         team6.setValue(new TeamSelector().call(game.getTeamNumber6()));
-                                        if (game.didHappen())
-                                        {
+                                        if (game.didHappen()) {
                                             blueScore.setText(String.valueOf(game.getBlueAllianceScore()));
                                             redScore.setText(String.valueOf(game.getRedAllianceScore()));
                                             blueRP.setText(String.valueOf(game.getBlueAllianceRP()));
                                             redRP.setText(String.valueOf(game.getRedAllianceRP()));
                                             mapConfiguration.setText(game.getMapConfiguration() == null ? "" : game.getMapConfiguration());
+                                            videoOffset.set(game.getVideoOffset());
                                         }
                                     }
-                                    blueScore.editableProperty().bind(happened.selectedProperty());
-                                    redScore.editableProperty().bind(happened.selectedProperty());
-                                    blueRP.editableProperty().bind(happened.selectedProperty());
-                                    redRP.editableProperty().bind(happened.selectedProperty());
-                                    mapConfiguration.editableProperty().bind(happened.selectedProperty());
-                                    pane.addRow(0, new Label("Game Name:"), gameName);
-                                    pane.addRow(1, new Label("Blue Alliance Team 1:"), team1);
-                                    pane.addRow(2, new Label("Blue Alliance Team 2:"), team2);
-                                    pane.addRow(3, new Label("Blue Alliance Team 3:"), team3);
-                                    pane.addRow(4, new Label("Red Alliance Team 1:"), team4);
-                                    pane.addRow(5, new Label("Red Alliance Team 2:"), team5);
-                                    pane.addRow(6, new Label("Red Alliance Team 3:"), team6);
-                                    pane.addRow(7, new Label("Game Already Completed?"), happened);
-                                    pane.addRow(8, new Label("Blue Alliance Score:"), blueScore);
-                                    pane.addRow(9, new Label("Red Alliance Score:"), redScore);
-                                    pane.addRow(10, new Label("Blue Alliance RP:"), blueRP);
-                                    pane.addRow(11, new Label("Red Alliance RP:"), redRP);
-                                    pane.addRow(12, new Label("Map Configuration:"), mapConfiguration);
+                                    int rowCount = 0;
+                                    pane.addRow(rowCount++, new Label("Game Name:"), gameName);
+                                    pane.addRow(rowCount++, new Label("Blue Alliance Team 1:"), team1);
+                                    pane.addRow(rowCount++, new Label("Blue Alliance Team 2:"), team2);
+                                    pane.addRow(rowCount++, new Label("Blue Alliance Team 3:"), team3);
+                                    pane.addRow(rowCount++, new Label("Red Alliance Team 1:"), team4);
+                                    pane.addRow(rowCount++, new Label("Red Alliance Team 2:"), team5);
+                                    pane.addRow(rowCount++, new Label("Red Alliance Team 3:"), team6);
+                                    if (!happened.isSelected())
+                                        pane.addRow(rowCount++, new Label("Game Already Completed?"), happened);
+                                    pane.addRow(rowCount++, new Label("Blue Alliance Score:"), blueScore);
+                                    pane.addRow(rowCount++, new Label("Red Alliance Score:"), redScore);
+                                    pane.addRow(rowCount++, new Label("Blue Alliance RP:"), blueRP);
+                                    pane.addRow(rowCount++, new Label("Red Alliance RP:"), redRP);
+                                    pane.addRow(rowCount++, new Label("Map Configuration:"), mapConfiguration);
+                                    pane.addRow(rowCount++, new Label("Video"), currentVideoOffset, videoEdit);
                                     pane.setVgap(10);
                                     pane.setHgap(20);
                                     editor.getDialogPane().setContent(pane);
@@ -352,7 +419,8 @@ public class ServerManager {
                                                                 team3.getValue().getNumber(),
                                                                 team4.getValue().getNumber(),
                                                                 team5.getValue().getNumber(),
-                                                                team6.getValue().getNumber()) :
+                                                                team6.getValue().getNumber(),
+                                                                videoOffset.get()) :
                                                         new ScoutedGame(
                                                                 game == null ? (short) list.getItems().indexOf(game) : game.getGame(),
                                                                 database.getCompetitionFromName(comp),
@@ -370,9 +438,7 @@ public class ServerManager {
                                         return null;
                                     });
                                     return editor;
-                                }
-
-                                        ;
+                                };
                             }
 
                             @Override
@@ -383,32 +449,28 @@ public class ServerManager {
                                     setText("Add Game");
                                 }
                             }
-                        }
-
-                                ;
+                        };
                     }
                 };
-                listView.getItems().
-
-                        addAll(database.getGamesList(comp, false));
-                listView.getItems().
-
-                        add(null);
+                listView.getItems().addAll(database.getGamesList(comp, false));
+                listView.getItems().add(null);
                 tab.setContent(listView);
-                tabs.getTabs().
-
-                        add(tab);
+                tabs.getTabs().add(tab);
             }
             dialog.setResultConverter(param -> {
-                ArrayList<ScoutedGame> games = new ArrayList<>();
-                for (Tab tab : tabs.getTabs()) {
-                    games.addAll(((PopUpListView<ScoutedGame>) tab.getContent()).getItems());
+                if(param == ButtonType.OK) {
+                    ArrayList<ScoutedGame> games = new ArrayList<>();
+                    for (Tab tab : tabs.getTabs()) {
+                        games.addAll(((PopUpListView<ScoutedGame>) tab.getContent()).getItems().filtered(scoutedGame -> scoutedGame != null));
+                    }
+                    return games;
                 }
-                return games;
+                return null;
             });
             dialog.getDialogPane().setContent(tabs);
             dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-            dialog.showAndWait();
+            Optional<ArrayList<ScoutedGame>> finalGames = dialog.showAndWait();
+            finalGames.ifPresent(games -> database.refreshGames(games));
         });
     }
 }

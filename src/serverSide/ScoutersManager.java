@@ -1,4 +1,4 @@
-package serverSide.code;
+package serverSide;
 
 import connectionIndependent.ScoutingPackets;
 import connectionIndependent.scouted.FullScoutingEvent;
