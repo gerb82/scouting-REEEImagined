@@ -10,6 +10,5 @@
     <orderEntry type="library" name="org.xerial:sqlite-jdbc:3.25.2" level="project" />
     <orderEntry type="library" name="org.apache.tomcat.embed:tomcat-embed-core:9.0.14" level="project" />
     <orderEntry type="library" name="org.apache.tomcat:tomcat-jasper:9.0.14" level="project" />
-    <orderEntry type="library" name="javacv" level="project" />
   </component>
 </module>

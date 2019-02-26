@@ -33,7 +33,7 @@ public class HTTPManager implements Closeable {
                 @Override
                 public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
                     if (req.getRequestURI().contains("video")) {
-                        File file = new File(new File(ScoutingVars.getVideosDirectory(), "competition " + req.getParameter("competition")), req.getParameter("game") + ".mp4");
+                        File file = new File(new File(ScoutingVars.getVideosDirectory(), req.getParameter("competition")), req.getParameter("game") + ".mp4");
                         if (!file.canRead()) {
                             resp.sendError(404, "Game not found");
                             return;

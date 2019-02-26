@@ -8,7 +8,7 @@ import java.util.*;
 public class PacketManager {
     // constructor
 
-    PacketLogger logger;
+    protected PacketLogger logger;
 
     protected PacketManager(HashSet<String> sendTypes, int connectionID, GBSocket socket, ActionHandler actionHandler, PacketLogger logger, Timer discarder) {
         this.logger = logger;

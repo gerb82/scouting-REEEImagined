@@ -1,14 +1,17 @@
 package connectionIndependent.scouted;
 
-public class ScoutedGame {
+import java.io.*;
 
+public class ScoutedGame implements Serializable {
+
+    public static final long serialVersionUID = 1000L;
     private short game;
     private String name;
     private byte competition;
-    private Short redAllianceScore;
     private Short blueAllianceScore;
-    private Byte redAllianceRP;
+    private Short redAllianceScore;
     private Byte blueAllianceRP;
+    private Byte redAllianceRP;
     private String mapConfiguration;
     private Short teamNumber1;
     private Short teamNumber2;
@@ -24,10 +27,10 @@ public class ScoutedGame {
         this.game = game;
         this.competition = competition;
         this.name = name;
-        this.redAllianceScore = redAllianceScore;
         this.blueAllianceScore = blueAllianceScore;
-        this.redAllianceRP = redAllianceRP;
+        this.redAllianceScore = redAllianceScore;
         this.blueAllianceRP = blueAllianceRP;
+        this.redAllianceRP = redAllianceRP;
         this.mapConfiguration = mapConfiguration;
         this.teamNumber1 = teamNumber1;
         this.teamNumber2 = teamNumber2;
@@ -43,10 +46,10 @@ public class ScoutedGame {
         this.game = game;
         this.competition = competition;
         this.name = name;
-        this.redAllianceScore = null;
         this.blueAllianceScore = null;
-        this.redAllianceRP = null;
+        this.redAllianceScore = null;
         this.blueAllianceRP = null;
+        this.redAllianceRP = null;
         this.mapConfiguration = null;
         this.teamNumber1 = teamNumber1;
         this.teamNumber2 = teamNumber2;

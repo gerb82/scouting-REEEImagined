@@ -4,74 +4,137 @@
 <?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
 <ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" alliance="false" treeNumber="4">
-    <layers>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn83" unitID="-83" name="Climb Started" stamp="true"
-                                   layoutXBuffer="376.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn82" unitID="-82" name="Climbed To Level 1" stamp="true"
-                                   layoutXBuffer="534.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn81" unitID="-81" name="Climbed To Level 2" stamp="true"
-                                   layoutXBuffer="194.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn80" unitID="-80" name="Climbed To Level 3" stamp="true"
-                                   layoutXBuffer="543.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn79" unitID="-79" name="Supported By Level 2" stamp="false"
-                                   layoutXBuffer="522.000000"/>
-                <ScoutingEventUnit fx:id="unitn78" unitID="-78" name="Supported By Level 1" stamp="false"
-                                   layoutXBuffer="283.000000"/>
-                <ScoutingEventUnit fx:id="unitn77" unitID="-77" name="Supported By Level 3" stamp="false"
-                                   layoutXBuffer="756.000000"/>
-                <ScoutingEventUnit fx:id="unitn76" unitID="-76" name="Supported By Other Bot" stamp="false"
-                                   layoutXBuffer="48.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="4">
-            <units>
-                <ScoutingEventUnit fx:id="unitn75" unitID="-75" name="Team Bot 2" stamp="false"
-                                   layoutXBuffer="284.000000"/>
-                <ScoutingEventUnit fx:id="unitn74" unitID="-74" name="Team Bot 3" stamp="false"
-                                   layoutXBuffer="522.000000"/>
-                <ScoutingEventUnit fx:id="unitn73" unitID="-73" name="Team Bot 1" stamp="false"
-                                   layoutXBuffer="45.000000"/>
-            </units>
-        </ScoutingEventLayer>
-    </layers>
-    <children>
-        <ScoutingEventDirection start="$unitn83" end="$unitn82"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn81"/>
-        <ScoutingEventDirection start="$unitn83" end="$unitn81"/>
-        <ScoutingEventDirection start="$unitn81" end="$unitn80"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn80"/>
-        <ScoutingEventDirection start="$unitn76" end="$unitn73"/>
-        <ScoutingEventDirection start="$unitn76" end="$unitn75"/>
-        <ScoutingEventDirection start="$unitn76" end="$unitn74"/>
-        <ScoutingEventDirection start="$unitn80" end="$unitn78"/>
-        <ScoutingEventDirection start="$unitn80" end="$unitn79"/>
-        <ScoutingEventDirection start="$unitn80" end="$unitn77"/>
-        <ScoutingEventDirection start="$unitn80" end="$unitn76"/>
-        <ScoutingEventDirection start="$unitn81" end="$unitn76"/>
-        <ScoutingEventDirection start="$unitn81" end="$unitn78"/>
-        <ScoutingEventDirection start="$unitn81" end="$unitn79"/>
-        <ScoutingEventDirection start="$unitn81" end="$unitn77"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn76"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn78"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn79"/>
-        <ScoutingEventDirection start="$unitn82" end="$unitn77"/>
-    </children>
+<layers>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn82" unitID="-82" name="Climb Started" stamp="true" layoutXBuffer="376.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn81" unitID="-81" name="Climbed To Level 1" stamp="true" layoutXBuffer="534.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn80" unitID="-80" name="Climbed To Level 2" stamp="true" layoutXBuffer="194.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn79" unitID="-79" name="Climbed To Level 3" stamp="true" layoutXBuffer="543.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn78" unitID="-78" name="Supported By Level 2" stamp="false" layoutXBuffer="522.000000"/>
+<ScoutingEventUnit fx:id="unitn77" unitID="-77" name="Supported By Level 1" stamp="false" layoutXBuffer="283.000000"/>
+<ScoutingEventUnit fx:id="unitn76" unitID="-76" name="Supported By Level 3" stamp="false" layoutXBuffer="756.000000"/>
+<ScoutingEventUnit fx:id="unitn75" unitID="-75" name="Supported By Other Bot" stamp="false" layoutXBuffer="48.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn74" unitID="-74" name="Team Bot 2" stamp="false" layoutXBuffer="284.000000"/>
+<ScoutingEventUnit fx:id="unitn73" unitID="-73" name="Team Bot 3" stamp="false" layoutXBuffer="522.000000"/>
+<ScoutingEventUnit fx:id="unitn72" unitID="-72" name="Team Bot 1" stamp="false" layoutXBuffer="45.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn71" unitID="-71" name="Fell" stamp="true" layoutXBuffer="44.000000"/>
+<ScoutingEventUnit fx:id="unitn70" unitID="-70" name="Game Finished" stamp="false" layoutXBuffer="757.000000"/>
+<ScoutingEventUnit fx:id="unitn69" unitID="-69" name="Failed" stamp="true" layoutXBuffer="282.000000"/>
+<ScoutingEventUnit fx:id="unitn68" unitID="-68" name="Supporter Changed" stamp="true" layoutXBuffer="522.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn67" unitID="-67" name="Collided With Another Bot" stamp="false" layoutXBuffer="677.000000"/>
+<ScoutingEventUnit fx:id="unitn66" unitID="-66" name="Another Bot Mechanical Fail" stamp="false" layoutXBuffer="282.000000"/>
+<ScoutingEventUnit fx:id="unitn65" unitID="-65" name="Mechanical Failure" stamp="false" layoutXBuffer="44.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn64" unitID="-64" name="Team Bot 1" stamp="false" layoutXBuffer="235.000000"/>
+<ScoutingEventUnit fx:id="unitn63" unitID="-63" name="Team Bot 2" stamp="false" layoutXBuffer="455.000000"/>
+<ScoutingEventUnit fx:id="unitn62" unitID="-62" name="Team Bot 3" stamp="false" layoutXBuffer="677.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="4">
+<units>
+<ScoutingEventUnit fx:id="unitn61" unitID="-61" name="Currently Level 1" stamp="false" layoutXBuffer="455.000000"/>
+<ScoutingEventUnit fx:id="unitn60" unitID="-60" name="Currently Level 2" stamp="false" layoutXBuffer="676.000000"/>
+<ScoutingEventUnit fx:id="unitn59" unitID="-59" name="Currently Not In Habitat" stamp="false" layoutXBuffer="234.000000"/>
+</units>
+</ScoutingEventLayer>
+</layers>
+<children>
+<ScoutingEventDirection start="$unitn82" end="$unitn81"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn80"/>
+<ScoutingEventDirection start="$unitn82" end="$unitn80"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn79"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn79"/>
+<ScoutingEventDirection start="$unitn75" end="$unitn72"/>
+<ScoutingEventDirection start="$unitn75" end="$unitn74"/>
+<ScoutingEventDirection start="$unitn75" end="$unitn73"/>
+<ScoutingEventDirection start="$unitn79" end="$unitn77"/>
+<ScoutingEventDirection start="$unitn79" end="$unitn78"/>
+<ScoutingEventDirection start="$unitn79" end="$unitn76"/>
+<ScoutingEventDirection start="$unitn79" end="$unitn75"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn75"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn77"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn78"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn76"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn75"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn77"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn78"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn76"/>
+<ScoutingEventDirection start="$unitn72" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn74" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn73" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn78" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn77" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn76" end="$unitn71"/>
+<ScoutingEventDirection start="$unitn72" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn73" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn74" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn76" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn78" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn77" end="$unitn70"/>
+<ScoutingEventDirection start="$unitn79" end="$unitn69"/>
+<ScoutingEventDirection start="$unitn80" end="$unitn69"/>
+<ScoutingEventDirection start="$unitn81" end="$unitn69"/>
+<ScoutingEventDirection start="$unitn67" end="$unitn64"/>
+<ScoutingEventDirection start="$unitn67" end="$unitn63"/>
+<ScoutingEventDirection start="$unitn67" end="$unitn62"/>
+<ScoutingEventDirection start="$unitn69" end="$unitn67"/>
+<ScoutingEventDirection start="$unitn71" end="$unitn67"/>
+<ScoutingEventDirection start="$unitn66" end="$unitn64"/>
+<ScoutingEventDirection start="$unitn66" end="$unitn63"/>
+<ScoutingEventDirection start="$unitn66" end="$unitn62"/>
+<ScoutingEventDirection start="$unitn69" end="$unitn66"/>
+<ScoutingEventDirection start="$unitn71" end="$unitn66"/>
+<ScoutingEventDirection start="$unitn69" end="$unitn65"/>
+<ScoutingEventDirection start="$unitn71" end="$unitn65"/>
+<ScoutingEventDirection start="$unitn64" end="$unitn59"/>
+<ScoutingEventDirection start="$unitn63" end="$unitn59"/>
+<ScoutingEventDirection start="$unitn62" end="$unitn59"/>
+<ScoutingEventDirection start="$unitn64" end="$unitn61"/>
+<ScoutingEventDirection start="$unitn63" end="$unitn61"/>
+<ScoutingEventDirection start="$unitn62" end="$unitn61"/>
+<ScoutingEventDirection start="$unitn62" end="$unitn60"/>
+<ScoutingEventDirection start="$unitn63" end="$unitn60"/>
+<ScoutingEventDirection start="$unitn64" end="$unitn60"/>
+<ScoutingEventDirection start="$unitn65" end="$unitn59"/>
+<ScoutingEventDirection start="$unitn65" end="$unitn61"/>
+<ScoutingEventDirection start="$unitn65" end="$unitn60"/>
+<ScoutingEventDirection start="$unitn73" end="$unitn68"/>
+<ScoutingEventDirection start="$unitn74" end="$unitn68"/>
+<ScoutingEventDirection start="$unitn72" end="$unitn68"/>
+<ScoutingEventDirection start="$unitn76" end="$unitn68"/>
+<ScoutingEventDirection start="$unitn78" end="$unitn68"/>
+<ScoutingEventDirection start="$unitn77" end="$unitn68"/>
+</children>
 </ScoutingEventTree>

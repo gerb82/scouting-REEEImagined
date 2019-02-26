@@ -13,6 +13,7 @@ public abstract class PopUpEditCell<T> extends EditCell<T> {
             Optional<T> result = createDialog().call(this.getItem()).showAndWait();
             if (result.isPresent()) commitEdit(result.get());
             else cancelEdit();
+
         } else if (this.getItem() == null && this.getIndex() == this.getListView().getItems().size() - 1) {
             Optional<T> result = createDialog().call(this.getItem()).showAndWait();
             if (result.isPresent()) {

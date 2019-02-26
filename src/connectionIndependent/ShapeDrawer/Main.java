@@ -6,7 +6,6 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 
-
 public class Main extends Application {
     private static Pane pane = new Pane();
 
@@ -17,8 +16,11 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage){
+        pane.setManaged(true);
         Scene scene = new Scene(pane, 625, 500);
-        Editing.initialize(true);
+        scene.heightProperty().addListener((observable, oldValue, newValue) -> pane.requestLayout());
+        scene.widthProperty().addListener((observable, oldValue, newValue) -> pane.requestLayout());
+        Editor.initialize(true);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

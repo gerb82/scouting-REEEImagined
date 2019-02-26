@@ -193,6 +193,14 @@ public class MediaControl extends BorderPane {
         setBottom(mediaBar);
     }
 
+    public void setFitToWidth(int width){
+        mediaView.setFitWidth(width);
+    }
+
+    public void setFitToHeight(int height){
+        mediaView.setFitHeight(height);
+    }
+
     protected void updateValues() {
         if (playTime != null && timeSlider != null && volumeSlider != null) {
             Platform.runLater(new Runnable() {

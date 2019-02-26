@@ -100,7 +100,13 @@ public class ActionHandler {
             PacketOut packetOut = new PacketOut(packet, socket);
             PacketHandler handler = handlers.get(packet.getPacketType());
             assert (handler != null);
-            handler.handle(packetOut);
+            try {
+                handler.handle(packetOut);
+            } catch (BadPacketException e){
+                throw e;
+            } catch (Exception e){
+                e.printStackTrace();
+            }
             if (!packetOut.acked && !socket.allowNoAck()) {
                 throw new ActionHandlerException("Packet was not acked by the action handler.", packet.getPacketType(), handlers.get(packet.getPacketType()));
             }

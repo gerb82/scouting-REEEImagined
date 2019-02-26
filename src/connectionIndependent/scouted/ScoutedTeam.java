@@ -40,7 +40,7 @@ public class ScoutedTeam {
 
     @Override
     public String toString() {
-        return name + " " + number;
+        return name + " #" + number;
     }
 }
 

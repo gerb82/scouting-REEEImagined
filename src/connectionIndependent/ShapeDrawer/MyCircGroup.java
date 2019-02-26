@@ -32,7 +32,7 @@ class MyCircGroup extends Group implements PossibleHitBox{
                 orgLayoutY = ((MyCircGroup) event.getSource()).circle.getCenterY();
                 circle.setStroke(Color.MEDIUMPURPLE);
                 circle.setStrokeWidth(2.5);
-                Editing.currentlyPressed = this;
+                Editor.currentlyPressed = this;
             });
 
 
@@ -54,7 +54,7 @@ class MyCircGroup extends Group implements PossibleHitBox{
             setOnMouseReleased(event -> circle.setStrokeWidth(0));
 
             setOnKeyPressed(event -> {
-                if (Editing.currentlyPressed == this) {
+                if (Editor.currentlyPressed == this) {
                     if (event.getSource() == KeyCode.LEFT) {
                         double deltaX = 5;
                         double newLayoutX = circle.getCenterX() - deltaX;

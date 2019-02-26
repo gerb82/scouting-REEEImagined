@@ -14,33 +14,22 @@ import gbuiLib.gbfx.grid.RowController;
 import gbuiLib.gbfx.popUpListView.PopUpEditCell;
 import gbuiLib.gbfx.popUpListView.PopUpListView;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
-import org.bytedeco.javacpp.avutil;
-import org.bytedeco.javacpp.opencv_core;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.FFmpegFrameRecorder;
-import org.bytedeco.javacv.Frame;
-//import org.bytedeco.javacv.FFmpegFrameGrabber;
-//import org.bytedeco.javacv.FFmpegFrameRecorder;
-//import org.bytedeco.javacv.Frame;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -48,9 +37,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+//import org.bytedeco.javacv.FFmpegFrameGrabber;
+//import org.bytedeco.javacv.FFmpegFrameRecorder;
+//import org.bytedeco.javacv.Frame;
 
 public class ServerManager {
 
@@ -69,13 +61,7 @@ public class ServerManager {
 
     private void addCompetition(String competition) {
         database.addNewCompetition(competition);
-        scouters.addCompetition(competition);
         new File(ScoutingVars.getVideosDirectory(), competition).mkdirs();
-    }
-
-    @FXML
-    private void pickCurrentComp(Event event) {
-        scouters.pickCurrentCompetition(((MenuItem) event.getTarget()).getText());
     }
 
     @FXML
@@ -86,17 +72,15 @@ public class ServerManager {
     private Button games;
 
     private String inputSanitizer(String input) {
-        Pattern pattern = Pattern.compile("[A-Za-z 0-9]+");
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.matches()) return matcher.group(0);
-        return null;
+        String out;
+        if ((out = input.replaceAll("[^A-Za-z 0-9]+", "")) == "") return null;
+        else return out;
     }
 
     private Short inputSanitizerNumbers(String input) {
-        Pattern pattern = Pattern.compile("[0-9]+");
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.matches()) return Short.valueOf(matcher.group(0));
-        return null;
+        String out;
+        if ((out = input.replaceAll("[^0-9]+", "")) == "") return null;
+        else return Short.valueOf(out);
     }
 
     public void initialize() {
@@ -190,7 +174,7 @@ public class ServerManager {
                             if (box.isSelected()) compList.add(box.getType());
                         }
                         try {
-                            map.put(inputSanitizerNumbers(number.getText()), new ScoutedTeam(Short.valueOf(inputSanitizer(number.getText())), inputSanitizer(name.getText()), compList));
+                            map.put(inputSanitizerNumbers(number.getText()), new ScoutedTeam(inputSanitizerNumbers(number.getText()), inputSanitizer(name.getText()), compList));
                         } catch (NullPointerException | NumberFormatException e) {
                         }
                     }
@@ -271,7 +255,7 @@ public class ServerManager {
                                     Label currentVideoOffset = new Label("No Video Available");
                                     Button videoEdit = new Button("Edit Game Video");
                                     SimpleObjectProperty<Short> videoOffset = new SimpleObjectProperty<>();
-                                    videoOffset.addListener((observable, oldValue, newValue) -> currentVideoOffset.setText("Video offset: " + videoOffset.get()/1000 + "." + (videoOffset.get()-((videoOffset.get()/1000)*1000))));
+                                    videoOffset.addListener((observable, oldValue, newValue) -> currentVideoOffset.setText("Video offset: " + videoOffset.get() / 1000 + "." + (videoOffset.get() - ((videoOffset.get() / 1000) * 1000))));
                                     happened.selectedProperty().addListener((observable, oldValue, newValue) -> {
                                         blueScore.setEditable(newValue);
                                         redScore.setEditable(newValue);
@@ -293,18 +277,20 @@ public class ServerManager {
                                             if (path == null) return;
                                             try {
 //                                                FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(path);
-////                                                grabber.setFrameRate(23);
+//                                                FfmpegVideo test = new FfmpegVideo();
+//                                                test.load("test", new ImageStorage<>());
+//                                                grabber.setFrameRate(23);
 //                                                FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(new FileOutputStream(destination), 700, 500, 2);
-////                                                recorder.setFrameRate(23);
-////                                                recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
-////                                                recorder.setImageWidth(700);
-////                                                recorder.setImageHeight(500);
+//                                                recorder.setFrameRate(23);
+//                                                recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+//                                                recorder.setImageWidth(700);
+//                                                recorder.setImageHeight(500);
 //                                                recorder.setVideoCodec(13);
 //                                                recorder.setFrameRate(30);
 //                                                recorder.setFormat("mp4");
-////                                                recorder.setVideoCodec(13);
-////                                                recorder.setAudioCodecName("libfdk_aac");
-////                                                recorder.setVideoBitrate(4);
+//                                                recorder.setVideoCodec(13);
+//                                                recorder.setAudioCodecName("libfdk_aac");
+//                                                recorder.setVideoBitrate(4);
 //                                                Frame frame;
 //                                                long t = 0;
 //                                                try {
@@ -324,7 +310,6 @@ public class ServerManager {
 //                                                            }
 //                                                            recorder.record(frame);
 //                                                        } catch (Exception e) {
-//                                                        }
 //                                                    }
 //                                                    recorder.stop();
 //                                                    recorder.release();
@@ -346,13 +331,21 @@ public class ServerManager {
                                         }
                                         player = new MediaPlayer(video);
                                         media = new MediaControl(player);
-                                        ((MediaView)((Pane)media.getCenter()).getChildren().get(0)).setFitWidth(700);
-                                        ((MediaView)((Pane)media.getCenter()).getChildren().get(0)).setFitHeight(500);
+                                        media.setFitToHeight(500);
+                                        media.setFitToWidth(700);
                                         videoDialog.getDialogPane().setContent(media);
-                                        videoDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-                                        videoDialog.setResultConverter(param -> ((Double) player.getCurrentTime().toMillis()).shortValue());
+                                        ButtonType fromEnd = new ButtonType("From End", ButtonBar.ButtonData.YES);
+                                        ButtonType fromStart = new ButtonType("From Start", ButtonBar.ButtonData.NO);
+                                        videoDialog.getDialogPane().getButtonTypes().addAll(fromEnd, fromStart, ButtonType.CANCEL);
+                                        videoDialog.setResultConverter(param -> {
+                                            if (param.getButtonData() == ButtonBar.ButtonData.NO)
+                                                return ((Double) player.getCurrentTime().toMillis()).shortValue();
+                                            if (param.getButtonData() == ButtonBar.ButtonData.YES)
+                                                return (short) (150000 - ((Double) player.getCurrentTime().toMillis()).shortValue());
+                                            return null;
+                                        });
                                         Optional<Short> result = videoDialog.showAndWait();
-                                        result.ifPresent(aShort -> videoOffset.set(aShort));
+                                        result.ifPresent(videoOffset::set);
                                     });
                                     if (game != null) {
                                         gameName.setText(game.getName());
@@ -361,7 +354,7 @@ public class ServerManager {
                                             @Override
                                             public ScoutedTeam call(Short param) {
                                                 for (ScoutedTeam team : teams) {
-                                                    if (team.getNumber() == param) return team;
+                                                    if (param != null) if (team.getNumber() == param) return team;
                                                 }
                                                 return null;
                                             }
@@ -401,6 +394,16 @@ public class ServerManager {
                                     pane.setHgap(20);
                                     editor.getDialogPane().setContent(pane);
                                     editor.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                                    editor.getDialogPane().lookupButton(ButtonType.OK).addEventFilter(ActionEvent.ACTION, okEvent -> {
+                                        if (inputSanitizer(gameName.getText()).equals("") ||
+                                                (happened.isSelected() && (
+                                                        inputSanitizerNumbers(blueScore.getText()).equals("") ||
+                                                                inputSanitizerNumbers(redScore.getText()).equals("") ||
+                                                                inputSanitizerNumbers(blueRP.getText()).equals("") ||
+                                                                inputSanitizerNumbers(redRP.getText()).equals("") ||
+                                                                videoOffset.get() == null)))
+                                            okEvent.consume();
+                                    });
                                     editor.setResultConverter(param -> {
                                         if (param == ButtonType.OK) {
                                             try {
@@ -414,23 +417,23 @@ public class ServerManager {
                                                                 inputSanitizerNumbers(blueRP.getText()).byteValue(),
                                                                 inputSanitizerNumbers(redRP.getText()).byteValue(),
                                                                 inputSanitizer(mapConfiguration.getText()),
-                                                                team1.getValue().getNumber(),
-                                                                team2.getValue().getNumber(),
-                                                                team3.getValue().getNumber(),
-                                                                team4.getValue().getNumber(),
-                                                                team5.getValue().getNumber(),
-                                                                team6.getValue().getNumber(),
+                                                                team1.getValueInItems() == null ? null : team1.getValueInItems().getNumber(),
+                                                                team2.getValueInItems() == null ? null : team2.getValueInItems().getNumber(),
+                                                                team3.getValueInItems() == null ? null : team3.getValueInItems().getNumber(),
+                                                                team4.getValueInItems() == null ? null : team4.getValueInItems().getNumber(),
+                                                                team5.getValueInItems() == null ? null : team5.getValueInItems().getNumber(),
+                                                                team6.getValueInItems() == null ? null : team6.getValueInItems().getNumber(),
                                                                 videoOffset.get()) :
                                                         new ScoutedGame(
                                                                 game == null ? (short) list.getItems().indexOf(game) : game.getGame(),
                                                                 database.getCompetitionFromName(comp),
                                                                 inputSanitizer(gameName.getText()),
-                                                                team1.getValue().getNumber(),
-                                                                team2.getValue().getNumber(),
-                                                                team3.getValue().getNumber(),
-                                                                team4.getValue().getNumber(),
-                                                                team5.getValue().getNumber(),
-                                                                team6.getValue().getNumber()));
+                                                                team1.getValueInItems() == null ? null : team1.getValueInItems().getNumber(),
+                                                                team2.getValueInItems() == null ? null : team2.getValueInItems().getNumber(),
+                                                                team3.getValueInItems() == null ? null : team3.getValueInItems().getNumber(),
+                                                                team4.getValueInItems() == null ? null : team4.getValueInItems().getNumber(),
+                                                                team5.getValueInItems() == null ? null : team5.getValueInItems().getNumber(),
+                                                                team6.getValueInItems() == null ? null : team6.getValueInItems().getNumber()));
                                             } catch (NullPointerException e) {
                                                 return null;
                                             }
@@ -458,7 +461,7 @@ public class ServerManager {
                 tabs.getTabs().add(tab);
             }
             dialog.setResultConverter(param -> {
-                if(param == ButtonType.OK) {
+                if (param == ButtonType.OK) {
                     ArrayList<ScoutedGame> games = new ArrayList<>();
                     for (Tab tab : tabs.getTabs()) {
                         games.addAll(((PopUpListView<ScoutedGame>) tab.getContent()).getItems().filtered(scoutedGame -> scoutedGame != null));

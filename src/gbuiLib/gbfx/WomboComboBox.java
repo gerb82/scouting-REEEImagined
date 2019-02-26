@@ -54,6 +54,10 @@ public class WomboComboBox<T> extends ComboBox<T> {
         });
     }
 
+    public T getValueInItems(){
+        return allOptions.contains(getValue()) ? getValue() : null;
+    }
+
     public void refreshItems() {
         hide();
         getItems().clear();

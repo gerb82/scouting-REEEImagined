@@ -1,7 +1,9 @@
 package connectionIndependent.ShapeDrawer;
 
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -10,9 +12,11 @@ class MyPoint extends Circle implements PossibleHitBox{
     private double orgSceneY;
     private double orgLayoutY;
     private Color fill = Color.RED;
+    private int offset;
 
     MyPoint(double x, double y, double radius, int of, MyPolyGroup myPolyGroup){
         super(x, y, radius);
+        this.offset = of;
         setFill(fill);
         setOnMousePressed(event -> {
             orgSceneY = event.getY();
@@ -26,7 +30,7 @@ class MyPoint extends Circle implements PossibleHitBox{
                 else if(newX > ((Region) myPolyGroup.getParent()).getWidth() - radius) newX = myPolyGroup.sceneToLocal(((Region) myPolyGroup.getParent()).getWidth() - radius, scene.getY()).getX();
                 else newX = point.getX();
                 ((Circle) (event.getSource())).setCenterX(newX);
-                myPolyGroup.getPoly().getPoints().set(of, getCenterX());
+                myPolyGroup.getPoly().getPoints().set(offset, getCenterX());
 
 
                 double newY = scene.getY();
@@ -34,32 +38,45 @@ class MyPoint extends Circle implements PossibleHitBox{
                 else if(newY > ((Region) myPolyGroup.getParent()).getHeight() - radius) newY = myPolyGroup.sceneToLocal(scene.getX(), ((Region) myPolyGroup.getParent()).getHeight() - radius).getY();
                 else newY = point.getY();
                 ((Circle) (event.getSource())).setCenterY(newY);
-                myPolyGroup.getPoly().getPoints().set(of + 1, getCenterY());
+                myPolyGroup.getPoly().getPoints().set(offset + 1, getCenterY());
+            });
+
+            setOnMouseClicked(event -> {
+                if(event.getButton() == MouseButton.SECONDARY){
+                    myPolyGroup.getPoly().getPoints().remove(offset, offset+2);
+                    for(Node node : myPolyGroup.getChildren()){
+                        if(node instanceof MyPoint){
+                            if(((MyPoint) node).offset > offset) ((MyPoint) node).offset -= 2;
+                        }
+                    }
+                    myPolyGroup.getChildren().remove(this);
+                    myPolyGroup.getMyPoints().remove(this);
+                }
             });
 
         setOnKeyPressed(event -> {
-            if (Editing.currentlyPressed == this) {
+            if (Editor.currentlyPressed == this) {
                 if (event.getSource() == KeyCode.LEFT) {
                     double deltaX = 5;
                     double newLayoutX = getCenterX() - deltaX;
                     ((Circle)(event.getSource())).setCenterX(newLayoutX);
-                    myPolyGroup.getPoly().getPoints().set(of, getCenterX());
+                    myPolyGroup.getPoly().getPoints().set(offset, getCenterX());
                 } else if (event.getSource() == KeyCode.RIGHT) {
                     double deltaX = 5;
                     double newLayoutX = getCenterX()+deltaX;
                     ((Circle)(event.getSource())).setCenterX(newLayoutX);
-                    myPolyGroup.getPoly().getPoints().set(of, getCenterX());
+                    myPolyGroup.getPoly().getPoints().set(offset, getCenterX());
                 } else if (event.getSource() == KeyCode.DOWN) {
                     double deltaY = 5;
                     double newLayoutY = getCenterY() + deltaY;
                     ((Circle)(event.getSource())).setCenterX(newLayoutY);
-                    myPolyGroup.getPoly().getPoints().set(of+1, getCenterY());
+                    myPolyGroup.getPoly().getPoints().set(offset+1, getCenterY());
 
                 } else if (event.getSource() == KeyCode.UP) {
                     double deltaY = 5;
                     double newLayoutY = getCenterY() - deltaY;
                     ((Circle)(event.getSource())).setCenterX(newLayoutY);
-                    myPolyGroup.getPoly().getPoints().set(of+1, getCenterY());
+                    myPolyGroup.getPoly().getPoints().set(offset+1, getCenterY());
                 }
             }
         });
@@ -92,7 +109,7 @@ class MyPoint extends Circle implements PossibleHitBox{
 
 
         setOnKeyPressed(event -> {
-            if (Editing.currentlyPressed == this) {
+            if (Editor.currentlyPressed == this) {
                 double lastCircleY = myCircGroup.getCircle().getCenterY();
                 double lastY = getCenterY();
                 if (event.getSource() == KeyCode.LEFT) {

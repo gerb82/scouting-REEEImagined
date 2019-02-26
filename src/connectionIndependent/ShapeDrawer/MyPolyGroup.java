@@ -27,7 +27,6 @@ class MyPolyGroup extends Group implements PossibleHitBox {
             for (int i = 0; i < doubles.length; i += 2) {
                 MyPoint myPoint = new MyPoint(doubles[i], doubles[i + 1], radius, i, this);
                 myPoints.add(myPoint);
-                System.out.println(myPoints.indexOf(myPoint) + ": " + doubles[i] + " " + doubles[i + 1]);
                 getChildren().add(myPoint);
             }
 
@@ -41,7 +40,7 @@ class MyPolyGroup extends Group implements PossibleHitBox {
 
             poly.setOnMousePressed(event -> {
                 mousePosition.set(new Point2D(event.getSceneX(), event.getSceneY()));
-                Editing.currentlyPressed = this;
+                Editor.currentlyPressed = this;
                 poly.setStroke(Color.MEDIUMPURPLE);
             });
 
@@ -66,23 +65,22 @@ class MyPolyGroup extends Group implements PossibleHitBox {
                     setLayoutX(getLayoutX() - (mousePosition.get().getX() - event.getSceneX()));
                     setLayoutY(getLayoutY() - (mousePosition.get().getY() - event.getSceneY()));
                     mousePosition.set(new Point2D(event.getSceneX(), event.getSceneY()));
-                    System.out.println(poly.getPoints());
                 }
             });
 
             poly.setOnMouseReleased(event -> poly.setStroke(null));
 
             poly.setOnKeyPressed(event -> {
-                if (Editing.currentlyPressed == this) {
+                if (Editor.currentlyPressed == this) {
                     if (event.getSource() == KeyCode.LEFT) {
                         double deltaX = 5;
-                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()-deltaX);
+                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()-deltaX);
                     } else if (event.getSource() == KeyCode.RIGHT) {
                         double deltaX = 5;
-                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()+deltaX);
+                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()+deltaX);
                     } else if (event.getSource() == KeyCode.DOWN) {
                         double deltaY = 5;
-                        ((MyPolyGroup)Editing.currentlyPressed).setLayoutX(((MyPolyGroup)Editing.currentlyPressed).getLayoutX()-deltaY);
+                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()-deltaY);
 
                     } else if (event.getSource() == KeyCode.UP) {
                         double deltaY = 5;
@@ -101,16 +99,19 @@ class MyPolyGroup extends Group implements PossibleHitBox {
             Main.getPane().getChildren().add(poly);
             poly.setOnMouseClicked(event -> {
                 //actionHere(bytes);
-                System.out.println("לבחירתך");
             });
         }
     }
 
-    double getRadius(){
+    public double getRadius(){
         return radius;
     }
 
-    Polygon getPoly() {
+    public Polygon getPoly() {
         return poly;
+    }
+
+    public ArrayList<MyPoint> getMyPoints() {
+        return myPoints;
     }
 }

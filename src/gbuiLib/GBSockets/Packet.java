@@ -8,6 +8,7 @@ import java.time.Instant;
 
 public class Packet implements Serializable{
 
+    public static final long serialVersionUID = 4590L;
     private Object content;
     private String packetType;
     private String contentType;

@@ -1,5 +1,7 @@
 package scouterSide;
 
+import connectionIndependent.scouted.ScoutIdentifier;
+import connectionIndependent.scouted.ScoutedGame;
 import connectionIndependent.scouted.ScoutingEvent;
 import connectionIndependent.scouted.ScoutingEventDefinition;
 import gbuiLib.GBSockets.ActionHandler;
@@ -7,25 +9,28 @@ import gbuiLib.GBSockets.BadPacketException;
 import gbuiLib.GBSockets.PacketLogger;
 import gbuiLib.gbfx.MediaControl;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Slider;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaException;
 import javafx.scene.media.MediaPlayer;
+import javafx.util.Callback;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
 
 public class ScouterUI {
 
@@ -36,14 +41,6 @@ public class ScouterUI {
     @FXML
     private Pane controlsPanel;
     @FXML
-    private Pane loadControlsPanel;
-    @FXML
-    private MenuButton competitionSelect;
-    @FXML
-    private MenuButton gameSelect;
-    @FXML
-    private MenuButton teamSelect;
-    @FXML
     private Slider volumeSlider;
     @FXML
     private VBox eventsLog;
@@ -52,74 +49,190 @@ public class ScouterUI {
     @FXML
     private Group panelsContainer;
     private Parent root;
-    private short currentGameNumber;
-    private String currentTeamIdentifier;
-    private String currentCompetition;
+    private SimpleObjectProperty<ArrayList<String>> competitions = new SimpleObjectProperty<>();
+    private SimpleObjectProperty<ArrayList<ScoutedGame>> gamesList = new SimpleObjectProperty<>();
+    private HashMap<ScoutedGame, ArrayList<ScoutIdentifier>> identifiers = new HashMap<>();
     private ArrayList<ScoutingEvent> eventList;
     private HashMap<Byte, ScoutingEventDefinition> validEvents = new HashMap<>();
     private MainLogic main;
     private Button backEvent;
     private short playerOffset;
-
-    private class OptionChooser extends MenuItem {
-
-        private MenuButton parent;
-
-        private OptionChooser(String text, MenuButton parent) {
-            super();
-            setText(text);
-            this.parent = parent;
-            this.setOnAction(this::handleSelected);
-        }
-
-        private void handleSelected(Event event) {
-            try {
-                if (this.parent.equals(competitionSelect)) {
-                    currentCompetition = this.getText();
-                    competitionSelect.setText(currentCompetition);
-                    main.getGames(this.getText());
-                    gameSelect.getItems().clear();
-                    teamSelect.getItems().clear();
-                } else if (this.parent.equals(gameSelect)) {
-                    currentGameNumber = Short.parseShort(this.getText());
-                    main.getTeams(currentCompetition, currentGameNumber);
-                    gameSelect.setText(this.getText());
-                    teamSelect.getItems().clear();
-                } else {
-                    currentTeamIdentifier = this.getText();
-                    teamSelect.setText(this.getText());
-                }
-            } catch (BadPacketException e) {
-                errored("Couldn't build the packet to get the data!");
-            }
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            this.setOnAction(null);
-            super.finalize();
-        }
-    }
-
-    @FXML
-    private void refreshCompetitions(Event event) {
-        try {
-            competitionSelect.getItems().clear();
-            gameSelect.getItems().clear();
-            teamSelect.getItems().clear();
-            main.getCompetitions();
-        } catch (BadPacketException e) {
-            errored("Couldn't get the competitions");
-        }
-    }
+    private SimpleBooleanProperty isScouting = new SimpleBooleanProperty(true);
 
     public void setRoot(Parent root) {
         this.root = root;
     }
 
     public ScouterUI() {
-        backEvent = new Button();
+        backEvent = new Button("back");
         backEvent.setOnAction(this::back);
+        isScouting.addListener((observable, oldValue, newValue) -> {
+            SimpleIntegerProperty lastTry = new SimpleIntegerProperty(1);
+            main.setShowing(newValue);
+            if (!newValue) {
+                while (lastTry.get() == 0) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+                while (lastTry.get() == 1) {
+                    Dialog<SimpleIntegerProperty> dialog = new Dialog<>();
+                    GridPane grid = new GridPane();
+                    Label competition = new Label();
+                    Button changeCompetition = new Button("Change Competition");
+                    Spinner<Integer> minimumPriority = new Spinner<>(0, Integer.MAX_VALUE, 0);
+                    CheckBox showScouted = new CheckBox();
+                    changeCompetition.setOnAction(event -> {
+                        Dialog<String> compPick = new Dialog<>();
+                        ComboBox<String> combo = new ComboBox<>();
+                        combo.setValue(competition.getText());
+                        ChangeListener<ArrayList<String>> listener = (observable1, oldValue1, newValue1) -> {
+                            Platform.runLater(() -> {
+                                combo.hide();
+                                combo.setItems(FXCollections.observableArrayList(newValue1));
+                                if (combo.getItems().size() > 0) combo.show();
+                            });
+                        };
+                        competitions.addListener(listener);
+                        GridPane compGrid = new GridPane();
+                        Button reload = new Button("reload");
+                        reload.setOnAction(event1 -> {
+                            try {
+                                main.getCompetitions();
+                            } catch (BadPacketException e) {
+                                errored("Couldn't fetch the competitions");
+                            }
+                        });
+                        compGrid.addRow(0, combo, reload);
+                        compGrid.setHgap(40);
+                        compPick.getDialogPane().setContent(compGrid);
+                        compPick.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+                        compPick.setResultConverter(param -> {
+                            competitions.removeListener(listener);
+                            competitions.set(null);
+                            if (param == ButtonType.OK) return combo.getValue();
+                            return null;
+                        });
+                        Optional<String> out = compPick.showAndWait();
+                        out.ifPresent(s -> competition.setText(out.get()));
+                    });
+                    competition.textProperty().addListener((observable12, oldValue12, newValue12) -> {
+                        try {
+                            if (newValue12 == null) {
+                                gamesList.set(null);
+                                return;
+                            }
+                            main.getGames(newValue12);
+                        } catch (BadPacketException e) {
+                            errored("Couldn't fetch the games for the competition: " + newValue12);
+                        }
+                    });
+                    ComboBox<ScoutedGame> games = new ComboBox<>();
+                    games.setCellFactory(new Callback<ListView<ScoutedGame>, ListCell<ScoutedGame>>() {
+                        @Override
+                        public ListCell<ScoutedGame> call(ListView<ScoutedGame> param) {
+                            return new ListCell<ScoutedGame>() {
+                                @Override
+                                protected void updateItem(ScoutedGame item, boolean empty) {
+                                    super.updateItem(item, empty);
+                                    if (item != null) setText(item.getName());
+                                }
+                            };
+                        }
+                    });
+                    games.setButtonCell(new ListCell<ScoutedGame>() {
+                        @Override
+                        protected void updateItem(ScoutedGame item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item != null) setText(item.getName());
+                        }
+                    });
+                    Callback<ScoutIdentifier, Boolean> legit = param -> (param.getState() < 2 || (param.getState() == 2 && showScouted.isSelected())) && minimumPriority.getValue() <= ((int) param.getPriority());
+                    ComboBox<ScoutIdentifier> identifier = new ComboBox<>();
+                    ChangeListener<ArrayList<ScoutedGame>> listener = (observable13, oldValue13, newValue13) -> {
+                        Platform.runLater(() -> {
+                            games.hide();
+                            if (newValue13 == null) {
+                                games.setItems(FXCollections.observableArrayList());
+                                return;
+                            }
+                            games.setItems(FXCollections.observableArrayList(newValue13).filtered(scoutedGame -> {
+                                for (ScoutIdentifier identifier1 : identifiers.get(scoutedGame)) {
+                                    if (legit.call(identifier1)) {
+                                        return true;
+                                    }
+                                }
+                                return false;
+                            }));
+                            identifier.hide();
+                            identifier.setItems(FXCollections.observableArrayList());
+                        });
+                    };
+                    gamesList.addListener(listener);
+                    showScouted.selectedProperty().addListener((observable15, oldValue15, newValue15) -> {
+                        listener.changed(gamesList, gamesList.getValue(), gamesList.getValue());
+                        Platform.runLater(() -> {
+                            identifier.hide();
+                            if(games.getValue() != null) identifier.setItems(FXCollections.observableArrayList(identifiers.get(games.getValue())).filtered(identifier1 -> legit.call(identifier1)));
+                            else identifier.setItems(FXCollections.observableArrayList());
+                        });
+                    });
+                    minimumPriority.valueProperty().addListener((observable15, oldValue15, newValue15) -> {
+                        listener.changed(gamesList, gamesList.getValue(), gamesList.getValue());
+                        Platform.runLater(() -> {
+                            identifier.hide();
+                            if(games.getValue() != null) identifier.setItems(FXCollections.observableArrayList(identifiers.get(games.getValue())).filtered(identifier1 -> legit.call(identifier1)));
+                            else identifier.setItems(FXCollections.observableArrayList());
+                        });
+                    });
+                    games.valueProperty().addListener((observable14, oldValue14, newValue14) -> {
+                        Platform.runLater(() -> {
+                            identifier.hide();
+                            if(games.getValue() != null) identifier.setItems(FXCollections.observableArrayList(identifiers.get(games.getValue())).filtered(identifier1 -> legit.call(identifier1)));
+                            else identifier.setItems(FXCollections.observableArrayList());
+                        });
+                    });
+                    int rowcount = 0;
+                    grid.addRow(rowcount++, competition, changeCompetition);
+                    grid.addRow(rowcount++, new Label("Show already scouted games"), showScouted);
+                    grid.addRow(rowcount++, new Label("The minimum priority for games"), minimumPriority);
+                    grid.addRow(rowcount++, new Label("Select a game"), games);
+                    grid.addRow(rowcount++, new Label("Select a team/alliance"), identifier);
+                    grid.setVgap(20);
+                    grid.setHgap(50);
+                    dialog.getDialogPane().setContent(grid);
+                    dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
+                    dialog.getDialogPane().lookupButton(ButtonType.OK).addEventFilter(ActionEvent.ACTION, event -> {
+                        if (identifier.getValue() == null)
+                            event.consume();
+                    });
+                    dialog.setResultConverter(param -> {
+                        try {
+                            SimpleIntegerProperty state = new SimpleIntegerProperty(0);
+                            main.loadGame(identifier.getValue()).addListener((observable16, oldValue16, newValue16) -> {
+                                if (newValue16 == PacketLogger.PacketStatus.ACKED)
+                                    state.set(2);
+                                if (newValue16 == PacketLogger.PacketStatus.SEND_ERRORED || newValue16 == PacketLogger.PacketStatus.TIMED_OUT)
+                                    state.set(1);
+                            });
+                            return state;
+                        } catch (BadPacketException e) {
+                            throw new Error("Something messed up");
+                        }
+                    });
+                    Optional<SimpleIntegerProperty> scouting = dialog.showAndWait();
+                    if (scouting.isPresent()) {
+                        lastTry.set(0);
+                        scouting.get().addListener((observable17, oldValue17, newValue17) -> lastTry.set(newValue17.intValue()));
+                    }
+                }
+            }
+        });
+    }
+
+    public void init() {
+        isScouting.set(false);
     }
 
     @FXML
@@ -155,9 +268,12 @@ public class ScouterUI {
         mediaPlayer.setAutoPlay(true);
 
         MediaControl mediaControl = new MediaControl(mediaPlayer);
+        mediaControl.setFitToWidth(700);
+        mediaControl.setFitToHeight(500);
+        mediaControl.setPrefHeight(500);
+        mediaControl.setPrefWidth(700);
         mediaView.getChildren().add(mediaControl);
-        mediaControl.prefWidthProperty().bind(mediaView.widthProperty());
-        mediaControl.prefHeightProperty().bind(mediaView.heightProperty());
+        SplitPane.setResizableWithParent(mediaControl, false);
     }
 
     private void disable() {
@@ -167,66 +283,30 @@ public class ScouterUI {
         root.setDisable(true);
     }
 
-    @FXML
-    private void load(Event event) {
-        try {
-            disable();
-            PacketLogger.ObservablePacketStatus status;
-            status = main.loadGame(currentCompetition, currentGameNumber, currentTeamIdentifier);
-            status.addListener(this::statusChangeListener);
-        } catch (BadPacketException e) {
-            errored("Couldn't reload the game");
-        } catch (IllegalStateException e) {
-            errored("We aren't connected");
-        }
-    }
-
     public void scoutOver(ActionHandler.PacketOut packet) throws BadPacketException {
         mediaPlayer = null;
         media = null;
         mediaUrl = null;
-        setActivePane(false);
+        gamesList.set(null);
+        identifiers.clear();
         packet.ack();
     }
 
     public void competitions(ActionHandler.PacketOut packet) throws BadPacketException {
-        if (competitionSelect.getItems().isEmpty()) {
-            Platform.runLater(() -> {
-                String[] competitions = (String[]) packet.getContent();
-                for (String comp : competitions) {
-                    competitionSelect.getItems().add(new OptionChooser(comp, competitionSelect));
-                }
-                currentCompetition = packet.getContentType();
-            });
-        }
+        competitions.set((ArrayList<String>) packet.getContent());
         packet.ack();
     }
 
     public void games(ActionHandler.PacketOut packet) throws BadPacketException {
-        if (packet.getContentType().equals(currentCompetition) && gameSelect.getItems().isEmpty()) {
-            Platform.runLater(() -> {
-                Short[] games = (Short[]) packet.getContent();
-                for (Short game : games) {
-                    if (game != null) {
-                        gameSelect.getItems().add(new OptionChooser(game.toString(), gameSelect));
-                    }
-                }
-            });
+        ArrayList<ScoutedGame> games = (ArrayList<ScoutedGame>) ((Object[]) packet.getContent())[0];
+        for (ScoutIdentifier identifier : (ArrayList<ScoutIdentifier>) ((Object[]) packet.getContent())[1]) {
+            ScoutedGame game = games.get(identifier.getGame());
+            if (identifiers.get(game) == null) {
+                identifiers.put(game, new ArrayList<>());
+            }
+            identifiers.get(game).add(identifier);
         }
-        packet.ack();
-    }
-
-    public void teams(ActionHandler.PacketOut packet) throws BadPacketException {
-        if (Short.valueOf(packet.getContentType()) == currentGameNumber && teamSelect.getItems().isEmpty()) {
-            Platform.runLater(() -> {
-                String[] teams = (String[]) packet.getContent();
-                for (String team : teams) {
-                    if (team != null) {
-                        teamSelect.getItems().add(new OptionChooser(team, teamSelect));
-                    }
-                }
-            });
-        }
+        gamesList.set(games);
         packet.ack();
     }
 
@@ -255,39 +335,50 @@ public class ScouterUI {
 
     public void loadNewView(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
-            eventList = (ArrayList<ScoutingEvent>) ((Object[]) (packet.getContent()))[0];
+            events.getChildren().clear();
             validEvents.clear();
             buttons.clear();
-            for (ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>) ((Object[]) (packet.getContent()))[1]) {
+            for (ScoutingEventDefinition def : (ArrayList<ScoutingEventDefinition>) ((Object[]) (packet.getContent()))[0]) {
                 validEvents.put(def.getName(), def);
                 buttons.put(def.getName(), new EventButton(def));
             }
-            initialEvents = (byte[]) ((Object[]) (packet.getContent()))[2];
-//            playerOffset = (short) ((Object[])packet.getContent())[3];
-            mediaUrl = "http://" + main.host + ":4911/" + packet.getContentType();
-            System.out.println(mediaUrl);
+            ArrayList<ScoutingEventDefinition> initialDefs = (ArrayList<ScoutingEventDefinition>) ((Object[]) (packet.getContent()))[1];
+            initialEvents = new byte[initialDefs.size()];
+            int i = 0;
+            for (ScoutingEventDefinition def : initialDefs) {
+                initialEvents[i++] = def.getName();
+            }
+            eventList = (ArrayList<ScoutingEvent>) ((Object[]) (packet.getContent()))[2];
             Platform.runLater(() -> {
-                loadMedia();
-                setActivePane(true);
+                for (Byte bite : initialEvents) {
+                    try {
+                        events.getChildren().add(buttons.get(bite));
+                    } catch (MediaException e) {
+                        errored("The media link didn't work.");
+                    }
+                }
             });
+            playerOffset = (Short) ((Object[]) packet.getContent())[3];
+            mediaUrl = "http://" + main.host + ":4911/" + packet.getContentType().replace(" ", "+");
+            System.out.println(mediaUrl);
+            Platform.runLater(() -> loadMedia());
+            isScouting.set(true);
             packet.ack();
         } catch (ClassCastException e) {
             e.printStackTrace();
             throw new BadPacketException("The packet was poorly formatted.");
-        } catch (MediaException e) {
-            throw new BadPacketException("The media link didn't work.");
         }
     }
 
     private HashMap<Byte, EventButton> buttons = new HashMap<>();
     private byte[] initialEvents;
-    private ScoutingEvent currentlyProcessing;
+    private ScoutingEvent currentlyProcessing = new ScoutingEvent();
 
     @FXML
     private void cancel(Event event) {
         try {
             main.cancelScout().addListener(this::statusChangeListener);
-            disable();
+            isScouting.set(false);
         } catch (BadPacketException e) {
             errored("Couldn't cancel the game");
         }
@@ -295,21 +386,16 @@ public class ScouterUI {
 
     @FXML
     private void submit(Event event) {
-        if (currentlyProcessing == null) {
+        if (currentlyProcessing.getStamps().isEmpty()) {
             try {
                 main.submitScout(eventList).addListener(this::statusChangeListener);
-                disable();
+                isScouting.set(false);
             } catch (BadPacketException e) {
                 errored("Couldn't send the game");
             }
         } else {
             errored("Complete the current chain before you submit the game");
         }
-    }
-
-    public void setActivePane(boolean scouting) {
-        panelsContainer.getChildren().clear();
-        panelsContainer.getChildren().add(scouting ? controlsPanel : loadControlsPanel);
     }
 
     private class EventButton extends Button {
@@ -323,15 +409,15 @@ public class ScouterUI {
         }
 
         private void generateEvent() {
-            events.setDisable(true);
             try {
-                currentlyProcessing.addProgress(definition.getName(), definition.followStamp() ? (short) ((mediaPlayer.getCurrentTime().toMillis() / 100)/* + playerOffset */) : null);
+                currentlyProcessing.addProgress(definition.getName(), definition.followStamp() ? (short) Math.max(0, (mediaPlayer.getCurrentTime().toMillis() / 100) - (playerOffset / 100)) : null);
+                System.out.println(currentlyProcessing.getStamps().get(currentlyProcessing.getSize()-1));
                 events.getChildren().clear();
                 if (definition.getNextStamps() == null) {
                     eventList.add(currentlyProcessing);
                     currentlyProcessing = new ScoutingEvent();
-                    for (int i : initialEvents) {
-                        events.getChildren().add(buttons.get(i));
+                    for (Byte bite : initialEvents) {
+                        events.getChildren().add(buttons.get(bite));
                     }
                 } else {
                     for (byte eventDef : definition.getNextStamps()) {
@@ -342,20 +428,27 @@ public class ScouterUI {
             } catch (IllegalArgumentException e) {
                 errored(e.getMessage());
             }
-            events.setDisable(false);
         }
     }
 
     private void back(Event event) {
         events.setDisable(true);
         currentlyProcessing.removeLast();
-        ScoutingEventDefinition definition = validEvents.get(currentlyProcessing.getLastType());
-        events.getChildren().clear();
-        for (byte eventDef : definition.getNextStamps()) {
-            events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
+        if (currentlyProcessing.getSize() == 0) {
+            events.getChildren().clear();
+            for (byte eventDef : initialEvents) {
+                events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
+            }
+        } else {
+            ScoutingEventDefinition definition = validEvents.get(currentlyProcessing.getType());
+            events.getChildren().clear();
+            for (byte eventDef : definition.getNextStamps()) {
+                events.getChildren().add(buttons.get(validEvents.get(eventDef).getName()));
+            }
+            if (currentlyProcessing.getSize() > 0) {
+                events.getChildren().add(backEvent);
+            }
         }
-        if (currentlyProcessing.getSize() > 0) {
-            events.getChildren().add(backEvent);
-        }
+        events.setDisable(false);
     }
 }

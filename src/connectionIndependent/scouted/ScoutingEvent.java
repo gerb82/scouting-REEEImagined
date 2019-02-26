@@ -5,8 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.BitSet;
 
 public class ScoutingEvent implements Serializable {
+
+    private static final long serialVersionUID = 1001L;
 
     public static class EventTimeStamp {
 
@@ -25,10 +28,15 @@ public class ScoutingEvent implements Serializable {
         public Short getTimeStamp() {
             return timeStamp;
         }
+
+        @Override
+        public String toString() {
+            return type + (timeStamp == null ? "" : " " + timeStamp);
+        }
     }
 
-    private ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
-    private int chainID = -1;
+    private transient ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
+    private transient int chainID = -1;
 
     public byte getType() {
         return timeStamps.get(0).type;
@@ -106,14 +114,13 @@ public class ScoutingEvent implements Serializable {
         stream.writeByte(timeStamps.size());
         for (short i = 0; timeStamps.size() > i; i += 8) {
             short amount = (short) (timeStamps.size() % 8);
-            byte signifier = 0;
+            BitSet set = BitSet.valueOf(new byte[]{Byte.MIN_VALUE});
             for (short j = 0; amount > j; j++) {
                 if (timeStamps.get(i + j).timeStamp != null) {
-                    signifier++;
+                    set.set(j);
                 }
-                signifier = (byte) (signifier << 1);
             }
-            stream.writeByte(signifier);
+            stream.writeByte(set.toByteArray()[0]);
             for (short j = 0; amount > j; j++) {
                 stream.writeByte(timeStamps.get(i + j).type);
                 if (timeStamps.get(i + j).timeStamp != null) {
@@ -123,20 +130,19 @@ public class ScoutingEvent implements Serializable {
         }
     }
 
-    private void readObject(ObjectInputStream stream) throws IOException {
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         chainID = stream.readInt();
         byte timeStampsCount = stream.readByte();
         timeStamps = new ArrayList<>();
         for (short i = 0; timeStampsCount > i; i += 8) {
             short amount = (short) (timeStampsCount % 8);
-            byte signifier = (byte) (stream.readByte() << 7 - amount);
+            BitSet signifier = BitSet.valueOf(new byte[]{stream.readByte()});
             for (short j = 0; amount > j; j++) {
-                if (signifier >>> 7 == 1) {
+                if (signifier.get(j)) {
                     timeStamps.add(new EventTimeStamp(stream.readByte(), stream.readShort()));
                 } else {
                     timeStamps.add(new EventTimeStamp(stream.readByte(), null));
                 }
-                signifier = (byte) (signifier << 1);
             }
         }
     }

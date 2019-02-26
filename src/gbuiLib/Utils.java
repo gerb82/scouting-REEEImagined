@@ -3,6 +3,9 @@ package gbuiLib;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.function.Predicate;
 
 public class Utils {
 
@@ -40,5 +43,14 @@ public class Utils {
             default:
                 return SpecialChars.INVALID;
         }
+    }
+
+    public static <T> T firstIn(Collection<T> list, Predicate<T> condition){
+        for(T checking : list){
+            if(condition.test(checking)) {
+                return checking;
+            }
+        }
+        return null;
     }
 }

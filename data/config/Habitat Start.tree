@@ -4,40 +4,36 @@
 <?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
 <ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" alliance="false" treeNumber="3">
-    <layers>
-        <ScoutingEventLayer treeNumber="3">
-            <units>
-                <ScoutingEventUnit fx:id="unitn72" unitID="-72" name="Game Started" stamp="false"
-                                   layoutXBuffer="455.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="3">
-            <units>
-                <ScoutingEventUnit fx:id="unitn71" unitID="-71" name="Level 1 Start" stamp="false"
-                                   layoutXBuffer="453.000000"/>
-                <ScoutingEventUnit fx:id="unitn70" unitID="-70" name="Unknown Start" stamp="false"
-                                   layoutXBuffer="201.000000"/>
-                <ScoutingEventUnit fx:id="unitn69" unitID="-69" name="Level 2 Start" stamp="false"
-                                   layoutXBuffer="712.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="3">
-            <units>
-                <ScoutingEventUnit fx:id="unitn68" unitID="-68" name="Dropped To Level 1" stamp="false"
-                                   layoutXBuffer="712.000000"/>
-            </units>
-        </ScoutingEventLayer>
-        <ScoutingEventLayer treeNumber="3">
-            <units>
-                <ScoutingEventUnit fx:id="unitn67" unitID="-67" name="Exited Habitat" stamp="true"
-                                   layoutXBuffer="457.000000"/>
-            </units>
-        </ScoutingEventLayer>
-    </layers>
-    <children>
-        <ScoutingEventDirection start="$unitn72" end="$unitn70"/>
-        <ScoutingEventDirection start="$unitn69" end="$unitn68"/>
-        <ScoutingEventDirection start="$unitn68" end="$unitn67"/>
-        <ScoutingEventDirection start="$unitn71" end="$unitn67"/>
-    </children>
+<layers>
+<ScoutingEventLayer treeNumber="3">
+<units>
+<ScoutingEventUnit fx:id="unitn58" unitID="-58" name="Game Started" stamp="false" layoutXBuffer="455.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="3">
+<units>
+<ScoutingEventUnit fx:id="unitn57" unitID="-57" name="Level 1 Start" stamp="false" layoutXBuffer="453.000000"/>
+<ScoutingEventUnit fx:id="unitn56" unitID="-56" name="Unknown Start" stamp="false" layoutXBuffer="201.000000"/>
+<ScoutingEventUnit fx:id="unitn55" unitID="-55" name="Level 2 Start" stamp="false" layoutXBuffer="712.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="3">
+<units>
+<ScoutingEventUnit fx:id="unitn54" unitID="-54" name="Dropped To Level 1" stamp="false" layoutXBuffer="712.000000"/>
+</units>
+</ScoutingEventLayer>
+<ScoutingEventLayer treeNumber="3">
+<units>
+<ScoutingEventUnit fx:id="unitn53" unitID="-53" name="Exited Habitat" stamp="true" layoutXBuffer="457.000000"/>
+</units>
+</ScoutingEventLayer>
+</layers>
+<children>
+<ScoutingEventDirection start="$unitn58" end="$unitn56"/>
+<ScoutingEventDirection start="$unitn55" end="$unitn54"/>
+<ScoutingEventDirection start="$unitn54" end="$unitn53"/>
+<ScoutingEventDirection start="$unitn57" end="$unitn53"/>
+<ScoutingEventDirection start="$unitn58" end="$unitn57"/>
+<ScoutingEventDirection start="$unitn58" end="$unitn55"/>
+</children>
 </ScoutingEventTree>
