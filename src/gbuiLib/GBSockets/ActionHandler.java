@@ -5,7 +5,7 @@ import java.util.*;
 
 public class ActionHandler {
 
-    protected enum DefaultPacketTypes {
+    public enum DefaultPacketTypes {
         Ack, SmartAck, HeartBeat, HandShake, Error
     }
 

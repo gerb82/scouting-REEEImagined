@@ -214,6 +214,7 @@ public class DataBaseManager implements Closeable {
             try {
                 database = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath().toString());
                 database.setAutoCommit(false);
+                database.rollback();
                 Statement statement = database.createStatement();
                 configEnforcer(statement);
                 statement.execute("SELECT " + Columns.competitionID + "," + Columns.competitionName + " FROM " + Tables.competitions + ";");
@@ -561,7 +562,6 @@ public class DataBaseManager implements Closeable {
                     first = false;
                 }
             }
-            System.out.println(framesFixer + "; " + stampsFixer + ";");
             statement.execute(framesFixer + ";");
             statement.execute( stampsFixer + ";");
             database.commit();

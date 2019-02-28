@@ -333,6 +333,10 @@ public class ScouterUI {
         System.out.println(why);
     }
 
+    protected void packetErrored(ActionHandler.PacketOut packet){
+        errored("A" + packet.getPacketType() + " request failed because of: " + packet.getContent());
+    }
+
     public void loadNewView(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
             events.getChildren().clear();
@@ -411,8 +415,7 @@ public class ScouterUI {
         private void generateEvent() {
             try {
                 currentlyProcessing.addProgress(definition.getName(), definition.followStamp() ? (short) Math.max(0, (mediaPlayer.getCurrentTime().toMillis() / 100) - (playerOffset / 100)) : null);
-                System.out.println(currentlyProcessing.getStamps().get(currentlyProcessing.getSize()-1));
-                events.getChildren().clear();
+                 events.getChildren().clear();
                 if (definition.getNextStamps() == null) {
                     eventList.add(currentlyProcessing);
                     currentlyProcessing = new ScoutingEvent();

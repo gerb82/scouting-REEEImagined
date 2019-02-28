@@ -34,6 +34,7 @@ public class MainLogic extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Platform.setImplicitExit(false);
         stage = primaryStage;
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MainScreen.fxml"));
         root = loader.load();
@@ -52,6 +53,7 @@ public class MainLogic extends Application {
         handler.setHandler(ScoutingPackets.SCOUTER_SYNC_COMPS.toString(), controller::competitions);
         handler.setHandler(ScoutingPackets.SCOUTER_SYNC_GAMES.toString(), controller::games);
         handler.setHandler(ScoutingPackets.SCOUTER_SUBMITGAME.toString(), controller::scoutOver);
+        handler.setHandler(ActionHandler.DefaultPacketTypes.Error.toString(), controller::packetErrored);
         SelectorManager selector = new SelectorManager();
         socket = new GBSocket(addressSetter(), ScoutingConnections.SCOUTER.toString(), false, selector, handler, new GBSocket.SocketConfig(), false);
         socket.isConnected.addListener((observable, oldValue, newValue) -> {
