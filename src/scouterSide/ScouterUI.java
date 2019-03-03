@@ -269,8 +269,8 @@ public class ScouterUI {
 
         MediaControl mediaControl = new MediaControl(mediaPlayer);
         mediaControl.setFitToWidth(700);
-        mediaControl.setFitToHeight(500);
-        mediaControl.setPrefHeight(500);
+        mediaControl.setFitToHeight(525);
+        mediaControl.setPrefHeight(525);
         mediaControl.setPrefWidth(700);
         mediaView.getChildren().add(mediaControl);
         SplitPane.setResizableWithParent(mediaControl, false);

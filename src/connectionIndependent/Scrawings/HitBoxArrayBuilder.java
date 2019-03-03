@@ -1,4 +1,4 @@
-package connectionIndependent.ShapeDrawer;
+package connectionIndependent.Scrawings;
 
 import java.util.ArrayList;
 

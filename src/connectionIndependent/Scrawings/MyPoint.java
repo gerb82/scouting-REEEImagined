@@ -1,4 +1,4 @@
-package connectionIndependent.ShapeDrawer;
+package connectionIndependent.Scrawings;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -55,7 +55,7 @@ class MyPoint extends Circle implements PossibleHitBox{
             });
 
         setOnKeyPressed(event -> {
-            if (Editor.currentlyPressed == this) {
+            if (ScrawingsManager.currentlyPressed == this) {
                 if (event.getSource() == KeyCode.LEFT) {
                     double deltaX = 5;
                     double newLayoutX = getCenterX() - deltaX;
@@ -109,7 +109,7 @@ class MyPoint extends Circle implements PossibleHitBox{
 
 
         setOnKeyPressed(event -> {
-            if (Editor.currentlyPressed == this) {
+            if (ScrawingsManager.currentlyPressed == this) {
                 double lastCircleY = myCircGroup.getCircle().getCenterY();
                 double lastY = getCenterY();
                 if (event.getSource() == KeyCode.LEFT) {

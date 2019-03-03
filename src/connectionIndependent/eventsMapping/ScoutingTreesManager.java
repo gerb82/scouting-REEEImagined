@@ -62,7 +62,6 @@ public final class ScoutingTreesManager {
     private Paint arrowColor = Color.BLACK;
     private boolean editing;
     private HashMap<Byte, ScoutingEventTree> treesMap = new HashMap<>();
-    private ScoutingEventTree nowLoading;
 
     private ScoutingTreesManager(boolean editor) {
         editing = editor;
@@ -72,17 +71,12 @@ public final class ScoutingTreesManager {
         return treesMap.get(number);
     }
 
-    public void start() {
-        registerTree(nowLoading);
-    }
-
     public void addTree(ScoutingEventTree tree) {
         byte treeNumber = tree.getTreeNumber();
         while (treeNumber == -1 || treesMap.keySet().contains(treeNumber)) {
             treeNumber++;
         }
         tree.setTreeNumber(treeNumber);
-        nowLoading = tree;
     }
 
     public void registerTree(ScoutingEventTree tree) {

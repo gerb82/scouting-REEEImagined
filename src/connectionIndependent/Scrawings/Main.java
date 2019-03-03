@@ -1,4 +1,4 @@
-package connectionIndependent.ShapeDrawer;
+package connectionIndependent.Scrawings;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -16,11 +16,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage){
-        pane.setManaged(true);
-        Scene scene = new Scene(pane, 625, 500);
-        scene.heightProperty().addListener((observable, oldValue, newValue) -> pane.requestLayout());
-        scene.widthProperty().addListener((observable, oldValue, newValue) -> pane.requestLayout());
-        Editor.initialize(true);
+        Scene scene = new Scene(pane, 700, 243);
+        ScrawingsManager.initialize(true);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

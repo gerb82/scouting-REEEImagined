@@ -1,4 +1,4 @@
-package connectionIndependent.ShapeDrawer;
+package connectionIndependent.Scrawings;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -40,7 +40,7 @@ class MyPolyGroup extends Group implements PossibleHitBox {
 
             poly.setOnMousePressed(event -> {
                 mousePosition.set(new Point2D(event.getSceneX(), event.getSceneY()));
-                Editor.currentlyPressed = this;
+                ScrawingsManager.currentlyPressed = this;
                 poly.setStroke(Color.MEDIUMPURPLE);
             });
 
@@ -71,16 +71,16 @@ class MyPolyGroup extends Group implements PossibleHitBox {
             poly.setOnMouseReleased(event -> poly.setStroke(null));
 
             poly.setOnKeyPressed(event -> {
-                if (Editor.currentlyPressed == this) {
+                if (ScrawingsManager.currentlyPressed == this) {
                     if (event.getSource() == KeyCode.LEFT) {
                         double deltaX = 5;
-                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()-deltaX);
+                        ((MyPolyGroup) ScrawingsManager.currentlyPressed).setLayoutX(((MyPolyGroup) ScrawingsManager.currentlyPressed).getLayoutX()-deltaX);
                     } else if (event.getSource() == KeyCode.RIGHT) {
                         double deltaX = 5;
-                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()+deltaX);
+                        ((MyPolyGroup) ScrawingsManager.currentlyPressed).setLayoutX(((MyPolyGroup) ScrawingsManager.currentlyPressed).getLayoutX()+deltaX);
                     } else if (event.getSource() == KeyCode.DOWN) {
                         double deltaY = 5;
-                        ((MyPolyGroup) Editor.currentlyPressed).setLayoutX(((MyPolyGroup) Editor.currentlyPressed).getLayoutX()-deltaY);
+                        ((MyPolyGroup) ScrawingsManager.currentlyPressed).setLayoutX(((MyPolyGroup) ScrawingsManager.currentlyPressed).getLayoutX()-deltaY);
 
                     } else if (event.getSource() == KeyCode.UP) {
                         double deltaY = 5;

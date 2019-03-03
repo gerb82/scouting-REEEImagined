@@ -331,7 +331,7 @@ public class ServerManager {
                                         }
                                         player = new MediaPlayer(video);
                                         media = new MediaControl(player);
-                                        media.setFitToHeight(500);
+                                        media.setFitToHeight(525);
                                         media.setFitToWidth(700);
                                         videoDialog.getDialogPane().setContent(media);
                                         ButtonType fromEnd = new ButtonType("From End", ButtonBar.ButtonData.YES);

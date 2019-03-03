@@ -1,34 +1,70 @@
-package connectionIndependent.ShapeDrawer;
+package connectionIndependent.Scrawings;
 
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
+import javafx.util.Pair;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-public class Editor {
-    private static Editor ourInstance;
-    static PossibleHitBox currentlyPressed = null;
-    private ArrayList<MyPolyGroup> myPolyGroups = new ArrayList<>();
+public final class ScrawingsManager {
 
+    private static ScrawingsManager ourInstance;
 
-    private double[] square = new double[]{
-            365, 0,
-            465, 0,
-            465, 100,
-            365, 100,
-    };
-    private double[] rectangle = new double[]{
-            265, 50,
-            465, 50,
-            465, 150,
-            265, 150,
-    };
-    private Pane pane = Main.getPane();
+    public static void initialize(boolean isEditing) {
+        if (ourInstance == null) {
+            ourInstance = new ScrawingsManager(isEditing);
+        }
+    }
 
+    public static ScrawingsManager getInstance() {
+        return ourInstance;
+    }
 
-    private Editor(boolean isEditing) {
+    public void prepareDirectory(File directoryPath) {
+        directoryPath.mkdirs();
+        for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".scraw"))) {
+            file.delete();
+        }
+    }
+
+    public boolean mustOverride(File directoryPath) {
+        return directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".scraw")).length == 0;
+    }
+
+    public ArrayList<Pair<String, Scraw>> loadDirectory(File directoryPath) throws IOException {
+        try {
+            ArrayList<Pair<String, Scraw>> output = new ArrayList<>();
+            for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".scraw"))) {
+                FXMLLoader loader = new FXMLLoader(file.toURI().toURL());
+                loader.setController(this);
+                Scraw scraw = loader.load();
+                registerScraw(scraw);
+                output.add(new Pair<>(file.getName().split("\\.")[0], scraw));
+            }
+            return output;
+        } catch (IOException e) {
+            throw new IOException("Failed to load the trees directory!", e);
+        }
+    }
+
+    private HashMap<Byte, Scraw> scrawsMap = new HashMap<>();
+
+    private void registerScraw(Scraw scraw){
+        byte scrawNumber = scraw.getScrawNumber();
+        while (scrawNumber == -1 || scrawsMap.keySet().contains(scrawNumber)) {
+            scrawNumber++;
+        }
+        scraw.setTreeNumber(scrawNumber);
+        scrawsMap.put(scrawNumber, scraw);
+        scraw.requestLayout();
+    }
+
+    private ScrawingsManager(boolean isEditing) {
         if (isEditing) {
 
             Button squareButton = new Button("100*100 square");
@@ -143,14 +179,12 @@ public class Editor {
 
     }
 
-    public static void initialize(boolean isEditing) {
-        if (ourInstance == null) {
-            ourInstance = new Editor(isEditing);
-        }
+    public Scraw createScraw(){
+        return null;
     }
 
-    public static Editor getInstance() {
-        return ourInstance;
+    public void startScrawEdit(Scraw scraw){
+
     }
 
     private Button getButtonBigX(ArrayList<Button> buttons){
@@ -160,7 +194,16 @@ public class Editor {
                 button = buttons.get(i);
             }
         }
-
         return button;
+    }
+
+    public String scrawAsFXML(byte scrawNumber){
+        Scraw scraw = scrawsMap.get(scrawNumber);
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventTree?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>" + System.lineSeparator() +
+                "<?import connectionIndependent.eventsMapping.ScoutingEventDirection?>" + System.lineSeparator() +
+                scraw.toFXML("xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\"", arrows, layers);
     }
 }
