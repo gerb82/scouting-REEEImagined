@@ -16,7 +16,11 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 
-public class Main extends Application{
+/* TODO:
+    game priorities - getters and setters (getters done, setters are irrelevant for now)
+    ffmpeg - ON HOLD
+ */
+public class Main extends Application {
 
     public static File runningDirectory = new File(System.getProperty("userDir"), "data");
 
@@ -42,14 +46,15 @@ public class Main extends Application{
             try {
                 DatagramSocket socket = new DatagramSocket();
                 socket.connect(new InetSocketAddress("234.0.0.0", 8000));
-                while(true) {
+                while (true) {
                     try {
                         socket.send(new DatagramPacket("Hi I'm hosting".getBytes(), 0, 14));
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException e) {
                         }
-                    } catch (SocketException e){}
+                    } catch (SocketException e) {
+                    }
                 }
             } catch (SocketException e) {
                 throw new Error(e);

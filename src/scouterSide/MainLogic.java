@@ -17,6 +17,13 @@ import javafx.stage.Stage;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
+/* TODO:
+    breakpoints
+    live event edit
+    game overview
+    comment events
+    reconnection fixing
+ */
 public class MainLogic extends Application {
 
     private GBSocket socket;

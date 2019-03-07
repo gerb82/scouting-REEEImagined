@@ -18,6 +18,9 @@ public class Main extends Application {
     public void start(Stage primaryStage){
         Scene scene = new Scene(pane, 700, 243);
         ScrawingsManager.initialize(true);
+        Scraw scraw = ScrawingsManager.getInstance().createScraw();
+        pane.getChildren().add(scraw);
+        ScrawingsManager.getInstance().startScrawEdit(scraw);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

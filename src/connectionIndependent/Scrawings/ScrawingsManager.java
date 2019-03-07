@@ -1,9 +1,14 @@
 package connectionIndependent.Scrawings;
 
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.TextField;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Pair;
 
 import java.io.File;
@@ -54,156 +59,132 @@ public final class ScrawingsManager {
 
     private HashMap<Byte, Scraw> scrawsMap = new HashMap<>();
 
-    private void registerScraw(Scraw scraw){
+    private void registerScraw(Scraw scraw) {
         byte scrawNumber = scraw.getScrawNumber();
         while (scrawNumber == -1 || scrawsMap.keySet().contains(scrawNumber)) {
             scrawNumber++;
         }
-        scraw.setTreeNumber(scrawNumber);
+        scraw.setScrawNumber(scrawNumber);
         scrawsMap.put(scrawNumber, scraw);
         scraw.requestLayout();
     }
 
+    private ContextMenu editShape = new ContextMenu();
+    private ContextMenu miscActions = new ContextMenu();
+    protected Scraw currentlyEditing;
+    protected PossibleHitBox lastPressed;
+    protected Pane editingGround;
+    private Point2D menuOpenedAt;
+    private boolean isEditing;
+
     private ScrawingsManager(boolean isEditing) {
+        this.isEditing = isEditing;
         if (isEditing) {
-
-            Button squareButton = new Button("100*100 square");
-            squareButton.setPrefSize(100, 50);
-            squareButton.setLayoutX(Main.getPane().getWidth()-squareButton.getPrefWidth());
-            squareButton.setLayoutY(0);
-
-            squareButton.setOnAction(event -> {
-                MyPolyGroup newSquare = new MyPolyGroup(square, isEditing);
-                myPolyGroups.add(newSquare);
-                pane.getChildren().add(newSquare);
-                currentlyPressed = newSquare;
+            editShape.setAutoHide(true);
+            miscActions.setAutoHide(true);
+            MenuItem square = new MenuItem("New Square", new Rectangle(30, 30, Color.BLACK));
+            square.setOnAction(event -> {
+                double[] points = new double[]{
+                        0, 0, // top left
+                        0, 100, // bottom left
+                        100, 100, // bottom right
+                        100, 0 // top right
+                };
+                MyPolyGroup newSquare = new MyPolyGroup(points);
+                currentlyEditing.getChildren().add(newSquare);
+                newSquare.setLayoutX(menuOpenedAt.getX());
+                newSquare.setLayoutY(menuOpenedAt.getY());
+                newSquare.setContextMenu(editShape);
             });
 
-            Button rectangleButton = new Button("200*150 square");
-            rectangleButton.setPrefSize(100, 50);
-            rectangleButton.setLayoutX(Main.getPane().getWidth()-rectangleButton.getPrefWidth());
-            rectangleButton.setLayoutY(50);
-
-            rectangleButton.setOnAction(event -> {
-                MyPolyGroup newRectangle = new MyPolyGroup(rectangle, isEditing);
-                myPolyGroups.add(newRectangle);
-                pane.getChildren().add(newRectangle);
-                currentlyPressed = newRectangle;
+            MenuItem sideRect = new MenuItem("New Rectangle", new Rectangle(40, 20, Color.BLACK));
+            sideRect.setOnAction(event -> {
+                double[] points = new double[]{
+                        0, 0, // top left
+                        0, 50, // bottom left
+                        100, 50, // bottom right
+                        100, 0 // top right
+                };
+                MyPolyGroup newRectangle = new MyPolyGroup(points);
+                currentlyEditing.getChildren().add(newRectangle);
+                newRectangle.setLayoutX(menuOpenedAt.getX());
+                newRectangle.setLayoutY(menuOpenedAt.getY());
+                newRectangle.setContextMenu(editShape);
             });
 
+            MenuItem highRec = new MenuItem("New Rectangle", new Rectangle(20, 40, Color.BLACK));
+            highRec.setOnAction(event -> {
+                double[] points = new double[]{
+                        0, 0, // top left
+                        0, 100, // bottom left
+                        50, 100, // bottom right
+                        50, 0 // top right
+                };
+                MyPolyGroup newRectangle = new MyPolyGroup(points);
+                currentlyEditing.getChildren().add(newRectangle);
+                newRectangle.setLayoutX(menuOpenedAt.getX());
+                newRectangle.setLayoutY(menuOpenedAt.getY());
+                newRectangle.setContextMenu(editShape);
+            });
 
-            Button circle = new Button("circle");
-            circle.setPrefSize(85, 50);
-            circle.setLayoutX(Main.getPane().getWidth()-circle.getPrefWidth());
-            circle.setLayoutY(100);
-
+            MenuItem circle = new MenuItem("New Circle", new Circle(15, 15, 15, Color.BLACK));
             circle.setOnAction(event -> {
-                MyCircGroup newCircle = new MyCircGroup(505, 125, 10, isEditing);
-                pane.getChildren().add(newCircle);
-                currentlyPressed = newCircle;
+                MyCircGroup newCircle = new MyCircGroup(menuOpenedAt.getX(), menuOpenedAt.getY(), 20);
+                currentlyEditing.getChildren().add(newCircle);
+                newCircle.setContextMenu(editShape);
             });
 
+            miscActions.getItems().addAll(square, highRec, sideRect, circle);
 
-            Button point = new Button("new point");
-            ArrayList<Button> myButtons = new ArrayList<>();
-            myButtons.add(point);
-            point.setPrefSize(85, 50);
-            point.setLayoutX(Main.getPane().getWidth()-point.getPrefWidth());
-            point.setLayoutY(150);
 
-            point.setOnAction(event -> {
-                if (currentlyPressed instanceof MyPolyGroup) {
-                    MyPolyGroup tempPressed = (MyPolyGroup)currentlyPressed;
-                    MyPoint myPoint = new MyPoint(
-                            (Math.abs(tempPressed.getPoly().getPoints().get(tempPressed.getPoly().getPoints().size() - 2) +
-                                    tempPressed.getPoly().getPoints().get(0))) / 2,
-                            (Math.abs(tempPressed.getPoly().getPoints().get(tempPressed.getPoly().getPoints().size() - 1) +
-                                    tempPressed.getPoly().getPoints().get(1))) / 2,
-                            tempPressed.getRadius(),
-                            tempPressed.getPoly().getPoints().size(),
-                            tempPressed);
-                    tempPressed.getPoly().getPoints().addAll(myPoint.getCenterX(), myPoint.getCenterY());
-                    System.out.println(tempPressed.getPoly().getPoints().size());
-                    tempPressed.getChildren().add(myPoint);
-                }
+//            MenuItem addPoint = new MenuItem("Add Point", new MyPoint());
+//            addPoint.setOnAction(event -> {
+//                    MyPolyGroup tempPressed = (MyPolyGroup) currentlyPressed;
+//                    tempPressed.initAddPoint();
+//            });
+
+            MenuItem colorPicker = new MenuItem("", new ColorPicker());
+            ((ColorPicker) colorPicker.getGraphic()).setOnAction(event -> {
+                if (lastPressed instanceof MyPolyGroup) {
+                    ((MyPolyGroup) lastPressed).getPoly().setFill(((ColorPicker) colorPicker.getGraphic()).getValue());
+                } else if (lastPressed instanceof MyCircGroup)
+                    ((MyCircGroup) lastPressed).getCircle().setFill(((ColorPicker) colorPicker.getGraphic()).getValue());
             });
 
-            myButtons.add(circle);
-            myButtons.add(squareButton);
-            myButtons.add(rectangleButton);
-
-
-            ColorPicker colorPicker = new ColorPicker();
-            colorPicker.setPrefSize(85, 50);
-            colorPicker.setLayoutX(Main.getPane().getWidth()-colorPicker.getPrefWidth());
-            colorPicker.setLayoutY(200);
-            colorPicker.setOnAction(event -> {
-                if (currentlyPressed != null) {
-                    if (currentlyPressed instanceof MyPolyGroup) {
-                        ((MyPolyGroup) currentlyPressed).getPoly().setFill(colorPicker.getValue());
-                    } else if (currentlyPressed instanceof MyCircGroup)
-                        ((MyCircGroup) currentlyPressed).getCircle().setFill(colorPicker.getValue());
-
-                }
-            });
-
-            TextField textField = new TextField();
-
-
-
-            double[] doubles = new double[]{
-                    Math.random() * Main.getPane().getWidth()-getButtonBigX(myButtons).getWidth(), Math.random() * 500,
-                    Math.random() * Main.getPane().getWidth()-getButtonBigX(myButtons).getWidth(), Math.random() * 500,
-                    Math.random() * Main.getPane().getWidth()-getButtonBigX(myButtons).getWidth(), Math.random() * 500,
-                    Math.random() * Main.getPane().getWidth()-getButtonBigX(myButtons).getWidth(), Math.random() * 500,
-            };
-            MyPolyGroup myPolyGroup = new MyPolyGroup(doubles, isEditing);
-            myPolyGroups.add(myPolyGroup);
-            currentlyPressed = myPolyGroup;
-
-
-            pane.getChildren().addAll(myPolyGroup, point, squareButton, circle, rectangleButton, colorPicker);
-
-
-        } else {
-            double[] doubles = new double[]{
-                    Math.random() * 500, Math.random() * 500,
-                    Math.random() * 500, Math.random() * 500,
-                    Math.random() * 500, Math.random() * 500,
-                    Math.random() * 500, Math.random() * 500,
-            };
-            MyPolyGroup myPolyGroup = new MyPolyGroup(doubles, isEditing);
-
-            pane.getChildren().add(myPolyGroup);
+            editShape.getItems().add(colorPicker);
         }
-
     }
 
-    public Scraw createScraw(){
-        return null;
+    public Scraw createScraw() {
+        return new Scraw();
     }
 
-    public void startScrawEdit(Scraw scraw){
-
-    }
-
-    private Button getButtonBigX(ArrayList<Button> buttons){
-        Button button = buttons.get(0);
-        for (int i = 1; i < buttons.size(); i++) {
-            if (buttons.get(i).getWidth()>button.getWidth()){
-                button = buttons.get(i);
+    public void startScrawEdit(Scraw scraw) {
+        currentlyEditing = scraw == null ? createScraw() : scraw;
+        for (Node node : currentlyEditing.getChildren().filtered(node -> node instanceof PossibleHitBox)) {
+            PossibleHitBox hitBox = ((PossibleHitBox) node);
+            hitBox.setContextMenu(editShape);
+        }
+        editingGround = (Pane) scraw.getParent();
+        editingGround.setOnContextMenuRequested(event -> {
+            if(!(event.getTarget() instanceof PossibleHitBox)) {
+                menuOpenedAt = currentlyEditing.sceneToLocal(event.getSceneX(), event.getSceneY());
+                miscActions.show(currentlyEditing, event.getScreenX(), event.getScreenY());
             }
-        }
-        return button;
+        });
     }
 
-    public String scrawAsFXML(byte scrawNumber){
+    public String scrawAsFXML(byte scrawNumber) {
         Scraw scraw = scrawsMap.get(scrawNumber);
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + System.lineSeparator() +
                 "<?import connectionIndependent.eventsMapping.ScoutingEventTree?>" + System.lineSeparator() +
                 "<?import connectionIndependent.eventsMapping.ScoutingEventLayer?>" + System.lineSeparator() +
                 "<?import connectionIndependent.eventsMapping.ScoutingEventUnit?>" + System.lineSeparator() +
                 "<?import connectionIndependent.eventsMapping.ScoutingEventDirection?>" + System.lineSeparator() +
-                scraw.toFXML("xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\"", arrows, layers);
+                scraw.toFXML("xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\"");
+    }
+
+    public boolean isEditing() {
+        return isEditing;
     }
 }
