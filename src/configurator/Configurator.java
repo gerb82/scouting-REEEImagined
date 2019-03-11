@@ -26,7 +26,7 @@ public class Configurator extends Application {
         launch(args);
     }
 
-    private File storageDir = new File("C:\\Users\\Programmer\\Desktop\\javafx\\workspace\\scouting-REEEImagined\\data\\config");
+    private File storageDir = new File(new File(System.getProperty("userDir"), "data"), "config");
 
     private Stage stage;
     private ScoutingTreesManager manager;

@@ -1,10 +1,7 @@
-package connectionIndependent.Scrawings;
+package connectionIndependent.Scrawings.hitboxes;
 
-import javafx.event.EventHandler;
-import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.input.ContextMenuEvent;
 
 import java.util.ArrayList;
 
@@ -15,10 +12,18 @@ public interface PossibleHitBox {
         return bytes;
     }
 
+    byte getHitboxId();
+    void setHitboxId(byte newId);
+
     default void setContextMenu(ContextMenu menu) {
-        ((Group) this).setOnContextMenuRequested(event -> {
+        if(menu == null) ((Group) this).setOnContextMenuRequested(null);
+        else ((Group) this).setOnContextMenuRequested(event -> {
             menu.show((Group) this, event.getScreenX(), event.getScreenY());
             event.consume();
         });
     }
+
+    String toFXML();
+
+    <T extends PossibleHitBox> T paste(double locX, double locY);
 }

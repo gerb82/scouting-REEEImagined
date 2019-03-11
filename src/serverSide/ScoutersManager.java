@@ -57,7 +57,6 @@ public class ScoutersManager {
         }
     }
 
-    // defs, imageViews, events, url; off
     private synchronized void startScout(ActionHandler.PacketOut packet) throws BadPacketException {
         try {
             ScoutIdentifier identifier = (ScoutIdentifier) packet.getContent();

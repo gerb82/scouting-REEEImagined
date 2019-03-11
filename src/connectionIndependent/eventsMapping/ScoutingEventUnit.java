@@ -8,6 +8,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -31,6 +32,7 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
     private Text name;
     private TextField editName;
     private CheckBox stamp;
+    private Label idLabel;
     protected static ScoutingTreesManager manager = null;
 
     public ScoutingEventUnit() {
@@ -47,6 +49,7 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
         setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
         exiting = new HashMap<>();
         arriving = new HashMap<>();
+        idLabel = new Label();
 
         in = new Pivot<>(false);
         out = new Pivot<>(true);
@@ -60,7 +63,7 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
             editName = new TextField();
             enableDrag();
             remover.setOnMouseClicked(this::remove);
-            getChildren().addAll(in, out, remover, editName, stamp, anchor);
+            getChildren().addAll(in, out, remover, editName, stamp, anchor, idLabel);
             anchor.setManaged(true);
             editName.setLayoutX((getWidth() - editName.getWidth()) / 2);
             editName.setLayoutY(60);
@@ -72,7 +75,7 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
             name = new Text();
             name.setLayoutX((getWidth() - name.getWrappingWidth()) / 2);
             name.setLayoutY(60);
-            getChildren().addAll(in, out, stamp, name);
+            getChildren().addAll(in, out, stamp, name, idLabel);
             stamp.setDisable(true);
         }
 
@@ -147,6 +150,9 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
 
     public void setUnitID(byte id) {
         this.id = id;
+        idLabel.setText(String.valueOf(id));
+        idLabel.setLayoutX(100-(idLabel.getWidth()/2));
+        idLabel.setLayoutY(30);
     }
 
     public byte getUnitID() {
