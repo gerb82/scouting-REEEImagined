@@ -49,7 +49,7 @@ public class DataBaseManager implements Closeable {
         whichGame, whichCompetition, teamId, whichTeam, currentState, scoutPriority,
         chainID, gameNumber, competitionNumber, teamNumber, alliance, startingLocation, // main events table
         eventChainID, eventLocationInChain, eventType, timeStamps, // stamps table
-        commentContent, associatedTeam, associatedGame, associatedChain, timeStamp // comments table
+        commentID, dateOfEntry, commentContent, associatedTeam, associatedGame, associatedChain, timeStamp // comments table
     }
 
     private enum Tables {
@@ -179,6 +179,8 @@ public class DataBaseManager implements Closeable {
 
                 // commentsList
                 statement.execute("CREATE TABLE " + Tables.comments + "(" + System.lineSeparator() +
+                        Columns.commentID + " integer PRIMARY KEY," + System.lineSeparator() +
+                        Columns.dateOfEntry + " time," + System.lineSeparator() +
                         Columns.commentContent + " text NOT NULL," + System.lineSeparator() +
                         Columns.associatedTeam + " integer," + System.lineSeparator() +
                         Columns.associatedGame + " integer," + System.lineSeparator() +
