@@ -11,6 +11,7 @@ public class ScoutingEvent implements Serializable {
 
     private static final long serialVersionUID = 1001L;
 
+    // TODO Add comment serialization and loading from database
     public static class EventTimeStamp {
 
         private EventTimeStamp(byte type, Short timeStamp) {
@@ -36,6 +37,7 @@ public class ScoutingEvent implements Serializable {
     }
 
     private transient ArrayList<EventTimeStamp> timeStamps = new ArrayList<>();
+    private transient ArrayList<ScouterCommentEvent> comments = new ArrayList<>();
     private transient int chainID = -1;
 
     public byte getType() {
@@ -107,6 +109,14 @@ public class ScoutingEvent implements Serializable {
 
     public ArrayList<EventTimeStamp> getStamps() {
         return timeStamps;
+    }
+
+    public void addRelatedComment(ScouterCommentEvent comment){
+        comments.add(comment);
+    }
+
+    public ArrayList<ScouterCommentEvent> getComments(){
+        return comments;
     }
 
     private void writeObject(ObjectOutputStream stream) throws IOException {
