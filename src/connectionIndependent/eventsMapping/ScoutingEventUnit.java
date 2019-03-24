@@ -39,11 +39,6 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
         super();
         parentProperty().addListener((event -> {
             layer = (ScoutingEventLayer) ScoutingEventTreePart.findEventParent(this);
-            if (layer != null) {
-                if(layer.getTree() != null) {
-                    alliance = layer.getTree().getAlliance();
-                }
-            }
         }));
         setManaged(false);
         setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
@@ -157,16 +152,6 @@ public class ScoutingEventUnit extends Pane implements ScoutingEventTreePart {
 
     public byte getUnitID() {
         return id;
-    }
-
-    private boolean alliance;
-
-    public boolean getAlliance() {
-        return alliance;
-    }
-
-    public void setAlliance(boolean alliance) {
-        this.alliance = alliance;
     }
 
     private void refreshBounds(Bounds bounds) {

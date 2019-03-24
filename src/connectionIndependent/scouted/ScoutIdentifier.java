@@ -6,11 +6,11 @@ public class ScoutIdentifier implements Serializable{
 
     private String competition;
     private short game;
-    private String team;
+    private Short team;
     private byte priority;
     private byte state;
 
-    public ScoutIdentifier(String competition, short game, String team, byte priority, byte state) {
+    public ScoutIdentifier(String competition, short game, Short team, byte priority, byte state) {
         this.competition = competition;
         this.game = game;
         this.team = team;
@@ -34,11 +34,11 @@ public class ScoutIdentifier implements Serializable{
         this.game = game;
     }
 
-    public String getTeam() {
+    public Short getTeam() {
         return team;
     }
 
-    public void setTeam(String team) {
+    public void setTeam(Short team) {
         this.team = team;
     }
 
@@ -60,6 +60,6 @@ public class ScoutIdentifier implements Serializable{
 
     @Override
     public String toString() {
-        return getTeam();
+        return String.valueOf(getTeam());
     }
 }

@@ -84,17 +84,7 @@ public class ScoutingEventTree extends Pane implements ScoutingEventTreePart{
         this.treeNumber = treeNumber;
     }
 
-    private boolean alliance;
-
-    public boolean getAlliance() {
-        return alliance;
-    }
-
-    public void setAlliance(boolean alliance) {
-        this.alliance = alliance;
-    }
-
     public String toFXML(String parentTag, String arrows, String layers) {
-        return String.format("<ScoutingEventTree %s alliance=\"%b\" treeNumber=\"%d\">%n<layers>%n%s</layers>%n<children>%n%s</children>%n</ScoutingEventTree>", parentTag, alliance, treeNumber, layers, arrows);
+        return String.format("<ScoutingEventTree %s treeNumber=\"%d\">%n<layers>%n%s</layers>%n<children>%n%s</children>%n</ScoutingEventTree>", parentTag, treeNumber, layers, arrows);
     }
 }

@@ -3,7 +3,7 @@
 <?import connectionIndependent.eventsMapping.ScoutingEventLayer?>
 <?import connectionIndependent.eventsMapping.ScoutingEventUnit?>
 <?import connectionIndependent.eventsMapping.ScoutingEventDirection?>
-<ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" alliance="false" treeNumber="4">
+<ScoutingEventTree xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml" treeNumber="4">
 <layers>
 <ScoutingEventLayer treeNumber="4">
 <units>

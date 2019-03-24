@@ -68,28 +68,18 @@ public class ScoutersManager {
             }
             packet.getSocket().isConnected.addListener(listener);
             ArrayList<FullScoutingEvent> unfiltered;
-            boolean isTeam = false;
-            if (identifier.getTeam() == DataBaseManager.Alliances.blueAlliance.toString() || identifier.getTeam() == DataBaseManager.Alliances.redAlliance.toString() && ScoutingVars.allowAllianceEvents()) {
-                unfiltered = dataBase.getAllAllianceEventsByGame(identifier.getGame(), identifier.getCompetition(), DataBaseManager.Alliances.isBlueAlliance(DataBaseManager.Alliances.valueOf(identifier.getTeam())));
-            } else {
-                try {
-                    unfiltered = dataBase.getAllTeamEventsByGame(identifier.getGame(), identifier.getCompetition(), Short.valueOf(identifier.getTeam()));
-                    isTeam = true;
-                } catch (NumberFormatException e) {
-                    currentlyScouting.remove(identifier);
-                    throw new IllegalArgumentException("Alliance scouting is disabled!");
-                }
+            try {
+                unfiltered = dataBase.getAllTeamEventsByGame(identifier.getGame(), identifier.getCompetition(), Short.valueOf(identifier.getTeam()));
+            } catch (NumberFormatException e) {
+                currentlyScouting.remove(identifier);
+                throw new IllegalArgumentException("Alliance scouting is disabled!");
             }
             ArrayList<ScoutingEvent> events = new ArrayList<>();
             for (FullScoutingEvent event : unfiltered) {
                 events.add(event.getEvent());
             }
             ArrayList<ScoutingEventDefinition> initialEvents;
-            if (isTeam) {
-                initialEvents = dataBase.getTeamStartDefinitions();
-            } else {
-                initialEvents = dataBase.getAllianceDefinitions();
-            }
+            initialEvents = dataBase.getTeamStartDefinitions();
             Byte[] startEvents = new Byte[initialEvents.size()];
             int i = 0;
             for (ScoutingEventDefinition def : initialEvents) {
@@ -97,9 +87,9 @@ public class ScoutersManager {
                 i++;
             }
             Object[] content = new Object[]{
-                    (isTeam ? dataBase.getTeamDefinitions() : dataBase.getAllianceDefinitions()),
+                    dataBase.getTeamDefinitions(),
                     initialEvents,
-//                    (isTeam ? getTeamViews() : getAllianceViews()),
+//                    getTeamViews(),
                     events,
                     dataBase.getGame(identifier.getGame(), identifier.getCompetition()).getVideoOffset()
             };
@@ -123,15 +113,14 @@ public class ScoutersManager {
             if (packet.getContent() != null) {
                 ArrayList<FullScoutingEvent> finalized = new ArrayList<>();
                 ScoutedGame game = dataBase.getGame(identifier.getGame(), identifier.getCompetition());
-                boolean alliance = identifier.getTeam() == DataBaseManager.Alliances.blueAlliance.toString() || identifier.getTeam() == DataBaseManager.Alliances.redAlliance.toString();
-                Pair<String, Byte> startLoc = alliance ? null : dataBase.getTeamConfiguration(identifier.getGame(), identifier.getCompetition(), Short.valueOf(identifier.getTeam()));
+                Pair<String, Byte> startLoc = dataBase.getTeamConfiguration(identifier.getGame(), identifier.getCompetition(), Short.valueOf(identifier.getTeam()));
                 for (ScoutingEvent event : (ArrayList<ScoutingEvent>) packet.getContent()) {
-                    finalized.add(new FullScoutingEvent(event, alliance ? null : Short.valueOf(game.getTeamsArray()[startLoc.getValue()-1]), identifier.getGame(), dataBase.getCompetitionFromName(identifier.getCompetition()), alliance ? null : startLoc.getKey(), alliance ? null : startLoc.getValue(), startLoc.getValue() < 4));
+                    finalized.add(new FullScoutingEvent(event, Short.valueOf(game.getTeamsArray()[startLoc.getValue() - 1]), identifier.getGame(), dataBase.getCompetitionFromName(identifier.getCompetition()), startLoc.getKey(), startLoc.getValue()));
                 }
                 dataBase.updateEventsOnGame(Boolean.valueOf(packet.getContentType()), finalized.toArray(new FullScoutingEvent[0]));
             }
             packet.ack();
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             throw new BadPacketException(e.getMessage());
         } catch (Exception e) {
             throw new BadPacketException("There was a problem saving the events!");

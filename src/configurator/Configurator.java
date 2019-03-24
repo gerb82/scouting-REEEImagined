@@ -47,7 +47,7 @@ public class Configurator extends Application {
         root.prefWidthProperty().bind(primaryStage.getScene().widthProperty());
         root.prefHeightProperty().bind(primaryStage.getScene().heightProperty());
         for(Pair<String,ScoutingEventTree> treeTab : manager.loadDirectory(storageDir)){
-            tabs.getTabs().add(new TreeEditTab(treeTab.getKey(), treeTab.getValue(), treeTab.getValue().getAlliance()));
+            tabs.getTabs().add(new TreeEditTab(treeTab.getKey(), treeTab.getValue()));
         }
         if(tabs.getTabs().size() == 0){
             Platform.runLater(this::addNewTab);
@@ -103,7 +103,7 @@ public class Configurator extends Application {
 
         Optional<Pair<String, Boolean>> result = newTab.showAndWait();
 
-        tabs.getTabs().add(new TreeEditTab(result.get().getKey(), result.get().getValue()));
+        tabs.getTabs().add(new TreeEditTab(result.get().getKey()));
     }
 
     public class TreeEditTab extends Tab {
@@ -118,14 +118,13 @@ public class Configurator extends Application {
         private ScoutingEventTree tree;
         private CustomScrollPane scroll;
 
-        public TreeEditTab(String name, ScoutingEventTree tree, boolean alliance){
+        public TreeEditTab(String name, ScoutingEventTree tree){
             super(name);
             scroll = new CustomScrollPane();
             scroll.setManaged(true);
             setContent(scroll);
             scroll.setMaxHeight(Double.MAX_VALUE);
-            tree.setAlliance(alliance);
-            setStyle("-fx-background-color: " + (alliance ? "yellow" : "orange"));
+            setStyle("-fx-background-color: " + "yellow");
             this.tree = tree;
             treeNumber = tree.getTreeNumber();
             scroll.setMaxHeight(Double.MAX_VALUE);
@@ -134,8 +133,8 @@ public class Configurator extends Application {
             scroll.setContent(tree);
         }
 
-        public TreeEditTab(String name, boolean alliance) {
-            this(name, new ScoutingEventTree(), alliance);
+        public TreeEditTab(String name) {
+            this(name, new ScoutingEventTree());
             manager.registerTree(tree);
             treeNumber = tree.getTreeNumber();
         }
