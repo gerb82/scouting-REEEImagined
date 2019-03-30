@@ -1,9 +1,9 @@
-package connectionIndependent.Scrawings.scrawtypes;
+package connectionIndependent.scrawings.scrawtypes;
 
-import connectionIndependent.Scrawings.RemoteRecipe;
-import connectionIndependent.Scrawings.hitboxes.MyCircGroup;
-import connectionIndependent.Scrawings.hitboxes.MyPolyGroup;
-import connectionIndependent.Scrawings.hitboxes.PossibleHitBox;
+import connectionIndependent.scrawings.RemoteRecipe;
+import connectionIndependent.scrawings.hitboxes.MyCircGroup;
+import connectionIndependent.scrawings.hitboxes.MyPolyGroup;
+import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import javafx.scene.Group;
 import javafx.scene.Node;
 

@@ -1,7 +1,7 @@
-package connectionIndependent.Scrawings.hitboxes;
+package connectionIndependent.scrawings.hitboxes;
 
-import connectionIndependent.Scrawings.ScrawingsManager;
-import connectionIndependent.Scrawings.scrawtypes.ScrawRecipe;
+import connectionIndependent.scrawings.ScrawingsManager;
+import connectionIndependent.scrawings.scrawtypes.ScrawRecipe;
 import gbuiLib.MethodTypes.CreatorMethod;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;

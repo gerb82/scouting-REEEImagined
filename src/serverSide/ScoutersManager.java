@@ -114,10 +114,13 @@ public class ScoutersManager {
                 ArrayList<FullScoutingEvent> finalized = new ArrayList<>();
                 ScoutedGame game = dataBase.getGame(identifier.getGame(), identifier.getCompetition());
                 Pair<String, Byte> startLoc = dataBase.getTeamConfiguration(identifier.getGame(), identifier.getCompetition(), Short.valueOf(identifier.getTeam()));
-                for (ScoutingEvent event : (ArrayList<ScoutingEvent>) packet.getContent()) {
+                ArrayList<ScouterCommentEvent> comments = new ArrayList<>();
+                for (ScoutingEvent event : ((Pair<ArrayList<ScoutingEvent>, ArrayList<ScouterCommentEvent>>) packet.getContent()).getKey()) {
                     finalized.add(new FullScoutingEvent(event, Short.valueOf(game.getTeamsArray()[startLoc.getValue() - 1]), identifier.getGame(), dataBase.getCompetitionFromName(identifier.getCompetition()), startLoc.getKey(), startLoc.getValue()));
+                    comments.addAll(event.getComments());
                 }
-                dataBase.updateEventsOnGame(Boolean.valueOf(packet.getContentType()), finalized.toArray(new FullScoutingEvent[0]));
+                comments.addAll(((Pair<ArrayList<ScoutingEvent>, ArrayList<ScouterCommentEvent>>) packet.getContent()).getValue());
+                dataBase.updateEventsOnGame(Boolean.valueOf(packet.getContentType()), comments, finalized.toArray(new FullScoutingEvent[0]));
             }
             packet.ack();
         } catch (IllegalArgumentException e) {

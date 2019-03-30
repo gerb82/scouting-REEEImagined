@@ -5,7 +5,7 @@ public class ScouterCommentEvent extends CommentEvent {
     // TODO Serializing and sql selects and inserts
     private short associatedTeam;
     private short associatedGame;
-    private ScoutingEvent associatedChain;
+    private transient ScoutingEvent associatedChain;
     private Short timeStamp;
 
     public ScouterCommentEvent(String text, short associatedTeam, short associatedGame, ScoutingEvent associatedChain, Short timeStamp, Short commentID){

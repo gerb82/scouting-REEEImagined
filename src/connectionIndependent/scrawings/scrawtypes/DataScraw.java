@@ -1,7 +1,7 @@
-package connectionIndependent.Scrawings.scrawtypes;
+package connectionIndependent.scrawings.scrawtypes;
 
-import connectionIndependent.Scrawings.RemoteLoader;
-import connectionIndependent.Scrawings.hitboxes.PossibleHitBox;
+import connectionIndependent.scrawings.RemoteLoader;
+import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
 import javafx.scene.Group;

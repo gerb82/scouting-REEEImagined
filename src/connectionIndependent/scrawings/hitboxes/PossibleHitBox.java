@@ -1,4 +1,4 @@
-package connectionIndependent.Scrawings.hitboxes;
+package connectionIndependent.scrawings.hitboxes;
 
 import javafx.scene.Group;
 import javafx.scene.control.ContextMenu;

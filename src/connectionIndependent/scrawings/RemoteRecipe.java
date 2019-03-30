@@ -1,4 +1,4 @@
-package connectionIndependent.Scrawings;
+package connectionIndependent.scrawings;
 
 public interface RemoteRecipe {
 

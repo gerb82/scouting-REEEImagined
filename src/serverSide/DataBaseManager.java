@@ -446,7 +446,7 @@ public class DataBaseManager implements Closeable {
 //        }
 //    }
 
-    protected void updateEventsOnGame(boolean wasFinished, FullScoutingEvent... events) {
+    protected void updateEventsOnGame(boolean wasFinished, ArrayList<ScouterCommentEvent> comments, FullScoutingEvent... events) {
         try (Statement statement = database.createStatement()) {
             writeLock.lock();
             Short team = events[0].getTeam();
@@ -485,8 +485,15 @@ public class DataBaseManager implements Closeable {
                     "AND " + Columns.teamNumber + " = " + String.valueOf(team) + System.lineSeparator() +
                     "AND " + Columns.chainID + " NOT IN " + idList + ");";
 
-            statement.execute(stampsCleaner + " ");
+            String commentsRemover = "DELETE FROM " + Tables.comments + System.lineSeparator() +
+                    "WHERE " + Columns.associatedGame + " = " + game + System.lineSeparator() +
+                    "AMD " + Columns.associatedTeam + " = " + team + ";";
+
+            statement.execute(stampsCleaner);
             statement.execute(framesCleaner);
+            statement.execute(commentsRemover);
+
+
             if (cleanup) {
                 database.commit();
                 return;

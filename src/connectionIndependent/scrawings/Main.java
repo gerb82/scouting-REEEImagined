@@ -1,10 +1,7 @@
-package connectionIndependent.Scrawings;
+package connectionIndependent.scrawings;
 
-import connectionIndependent.Scrawings.hitboxes.MyCircGroup;
-import connectionIndependent.Scrawings.hitboxes.MyPolyGroup;
-import connectionIndependent.Scrawings.scrawtypes.ScrawRecipe;
+import connectionIndependent.scrawings.scrawtypes.ScrawRecipe;
 import javafx.application.Application;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;

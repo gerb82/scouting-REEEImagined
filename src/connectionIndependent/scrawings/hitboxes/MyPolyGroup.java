@@ -1,6 +1,6 @@
-package connectionIndependent.Scrawings.hitboxes;
+package connectionIndependent.scrawings.hitboxes;
 
-import connectionIndependent.Scrawings.ScrawingsManager;
+import connectionIndependent.scrawings.ScrawingsManager;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;

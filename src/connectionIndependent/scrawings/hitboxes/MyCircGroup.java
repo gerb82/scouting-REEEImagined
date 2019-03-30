@@ -1,8 +1,7 @@
-package connectionIndependent.Scrawings.hitboxes;
+package connectionIndependent.scrawings.hitboxes;
 
-import connectionIndependent.Scrawings.ScrawingsManager;
+import connectionIndependent.scrawings.ScrawingsManager;
 import javafx.scene.Group;
-import javafx.scene.control.ColorPicker;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 

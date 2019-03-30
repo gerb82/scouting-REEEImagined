@@ -1,10 +1,10 @@
-package connectionIndependent.Scrawings;
+package connectionIndependent.scrawings;
 
-import connectionIndependent.Scrawings.hitboxes.MyCircGroup;
-import connectionIndependent.Scrawings.hitboxes.MyPolyGroup;
-import connectionIndependent.Scrawings.hitboxes.PossibleHitBox;
-import connectionIndependent.Scrawings.scrawtypes.DataScraw;
-import connectionIndependent.Scrawings.scrawtypes.ScrawRecipe;
+import connectionIndependent.scrawings.hitboxes.MyCircGroup;
+import connectionIndependent.scrawings.hitboxes.MyPolyGroup;
+import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
+import connectionIndependent.scrawings.scrawtypes.DataScraw;
+import connectionIndependent.scrawings.scrawtypes.ScrawRecipe;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
