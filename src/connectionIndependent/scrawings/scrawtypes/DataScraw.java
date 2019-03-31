@@ -1,6 +1,7 @@
 package connectionIndependent.scrawings.scrawtypes;
 
 import connectionIndependent.scrawings.RemoteLoader;
+import connectionIndependent.scrawings.ScrawingsManager;
 import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import javafx.beans.DefaultProperty;
 import javafx.beans.NamedArg;
@@ -8,11 +9,11 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 public class DataScraw extends Group {
 
     private byte scrawNumber = -1;
-    public boolean alliance;
     private String recipeName;
     private ArrayList<ArrayList<Byte>> data;
     private byte rootEvent;
@@ -33,12 +34,10 @@ public class DataScraw extends Group {
         return recipeName;
     }
 
-    public boolean isAlliance() {
-        return alliance;
-    }
-
-    public void setAlliance(boolean alliance) {
-        this.alliance = alliance;
+    public void setRecipeName(String recipeName){
+        getChildren().clear();
+        getChildren().add(ScrawingsManager.getInstance().getRecipesList().filtered(scrawRecipe -> scrawRecipe.getName().equals(recipeName)).get(0));
+        this.recipeName = recipeName;
     }
 
     public byte getScrawNumber() {
@@ -50,14 +49,17 @@ public class DataScraw extends Group {
     }
 
     public DataScraw(@NamedArg("scraw") String scrawName, @NamedArg("data") ArrayList<ArrayList<Byte>> data){
-        recipeName = scrawName;
-        ScrawRecipe scraw = ((ScrawRecipe) RemoteLoader.getNodes().get(scrawName + ".scraw")).replicate();
+        this(((ScrawRecipe) RemoteLoader.getNodes().get(scrawName + ".scraw")).replicate(), data);
+    }
+
+    public DataScraw(ScrawRecipe scraw, ArrayList<ArrayList<Byte>> data){
+        recipeName = scraw.getName();
         getChildren().add(scraw);
         this.data = data;
         for(Node node : scraw.getChildren()){
             if (node instanceof PossibleHitBox) {
-                if(((PossibleHitBox) node).getHitboxId() > 0){
-                    ((PossibleHitBox) node).getBytes().addAll(data.get(((PossibleHitBox) node).getHitboxId() - 1));
+                if(((PossibleHitBox) node).getHitboxId() > -1){
+                    ((PossibleHitBox) node).getBytes().addAll(data.get(((PossibleHitBox) node).getHitboxId()));
                 }
             }
         }

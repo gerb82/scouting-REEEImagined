@@ -1,18 +1,20 @@
 package connectionIndependent.scrawings.scrawtypes;
 
 import connectionIndependent.scrawings.RemoteRecipe;
+import connectionIndependent.scrawings.ScrawingsManager;
 import connectionIndependent.scrawings.hitboxes.MyCircGroup;
 import connectionIndependent.scrawings.hitboxes.MyPolyGroup;
 import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.layout.Pane;
 
 /* TODO:
     finish this class, and the Scraws system in general
     dynamic text and colors on Scraws
     flags {start, optional, abstract value}
  */
-public class ScrawRecipe extends Group implements RemoteRecipe {
+public class ScrawRecipe extends Pane implements RemoteRecipe {
 
     private String name;
 
@@ -22,6 +24,13 @@ public class ScrawRecipe extends Group implements RemoteRecipe {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public ScrawRecipe(){
+        setMinHeight(243);
+        setMaxHeight(243);
+        setMinWidth(700);
+        setMaxWidth(700);
     }
 
     public ScrawRecipe replicate() {
@@ -46,7 +55,7 @@ public class ScrawRecipe extends Group implements RemoteRecipe {
                 children += ((PossibleHitBox) node).toFXML();
             }
         }
-        return String.format("ScrawRecipe name=\"%s\" %s>%n%s</ScrawRecipe>", name, params, children);
+        return String.format("<ScrawRecipe name=\"%s\" %s>%n%s</ScrawRecipe>", name, params, children);
     }
 
 }

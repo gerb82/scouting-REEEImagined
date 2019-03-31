@@ -6,6 +6,9 @@ import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import connectionIndependent.scrawings.scrawtypes.DataScraw;
 import connectionIndependent.scrawings.scrawtypes.ScrawRecipe;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -18,7 +21,6 @@ import javafx.util.Pair;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Optional;
 
 public final class ScrawingsManager {
@@ -46,50 +48,58 @@ public final class ScrawingsManager {
         return directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".scraw") || pathname.getAbsolutePath().endsWith(".dscr")).length == 0;
     }
 
-    public Pair<ArrayList<Pair<String, ScrawRecipe>>, ArrayList<Pair<Byte, DataScraw>>> loadDirectory(File directoryPath, Boolean alliance) throws IOException {
+    public void loadDirectory(File directoryPath) throws IOException {
         try {
             recipesList.clear();
-            scrawsMap.clear();
-            ArrayList<Pair<String, ScrawRecipe>> scrawOut = new ArrayList<>();
+            blueScrawsMap.clear();
+            redScrawsMap.clear();
             for (File file : directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".scraw"))) {
                 ScrawRecipe scraw = FXMLLoader.load(file.toURI().toURL());
                 recipesList.add(scraw);
-                scrawOut.add(new Pair<>(file.getName().split("\\.")[0], scraw));
+                scraw.setName(file.getName().split("\\.")[0]);
             }
-            ArrayList<Pair<Byte, DataScraw>> dataScrawOut = new ArrayList<>();
             File[] files;
-            if(alliance == null) files = directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith("alliances.dscr") || pathname.getAbsolutePath().endsWith("teams.dscr"));
-            else files = directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith((alliance ? "alliances" : "teams") + ".dscr"));
+            files = directoryPath.listFiles(pathname -> pathname.getAbsolutePath().endsWith(".dscr"));
             for (File file : files) {
+                boolean blueAlliance = file.getAbsolutePath().endsWith("blueScraw.dscr");
                 Pane pane = FXMLLoader.load(file.toURI().toURL());
                 for (Object scrawO : ((ListView<Object>) pane.getChildren().get(0)).getItems()) {
                     DataScraw scraw = (DataScraw) scrawO;
-                    scraw.setAlliance(file.getAbsolutePath().endsWith("alliances.dscr"));
-                    scrawsMap.put(scraw.getScrawNumber(), scraw);
-                    dataScrawOut.add(new Pair<>(scraw.getScrawNumber(), scraw));
+                    (blueAlliance ? blueScrawsMap : redScrawsMap).put(scraw.getScrawNumber(), scraw);
                 }
             }
-            return new Pair<>(scrawOut, dataScrawOut);
         } catch (IOException e) {
             throw new IOException("Failed to load the trees directory!", e);
         }
     }
 
-    private HashMap<Byte, DataScraw> scrawsMap = new HashMap<>();
-    private ArrayList<ScrawRecipe> recipesList = new ArrayList<>();
+    private ObservableMap<Byte, DataScraw> blueScrawsMap = FXCollections.observableHashMap();
+    private ObservableMap<Byte, DataScraw> redScrawsMap = FXCollections.observableHashMap();
+    private ObservableList<ScrawRecipe> recipesList = FXCollections.observableArrayList();
 
-    public ArrayList<ScrawRecipe> getRecipesList() {
+    public ObservableList<ScrawRecipe> getRecipesList() {
         return recipesList;
     }
 
-    private void registerScraw(DataScraw scraw) {
+    public ObservableMap<Byte, DataScraw> getBlueScrawsMap() {
+        return blueScrawsMap;
+    }
+
+    public ObservableMap<Byte, DataScraw> getRedScrawsMap() {
+        return redScrawsMap;
+    }
+
+    private void registerScraw(DataScraw scraw, boolean blueAlliance) {
         byte scrawNumber = scraw.getScrawNumber();
-        while (scrawNumber == -1 || scrawsMap.keySet().contains(scrawNumber)) {
+        while (scrawNumber == -1 || (blueAlliance ? blueScrawsMap.keySet() : redScrawsMap.keySet()).contains(scrawNumber)) {
             scrawNumber++;
         }
         scraw.setScrawNumber(scrawNumber);
-        scrawsMap.put(scrawNumber, scraw);
-        scraw.requestLayout();
+        (blueAlliance ? blueScrawsMap : redScrawsMap).put(scrawNumber, scraw);
+    }
+
+    private void deregisterScraw(DataScraw scraw, boolean blueAlliance) {
+        (blueAlliance ? blueScrawsMap : redScrawsMap).remove(scraw.getScrawNumber(), scraw);
     }
 
     private ContextMenu editShape = new ContextMenu();
@@ -275,7 +285,7 @@ public final class ScrawingsManager {
         return new ScrawRecipe();
     }
 
-    public Optional<ScrawRecipe> startScrawEdit(ScrawRecipe scraw) {
+    public Dialog<ScrawRecipe> startScrawEdit(ScrawRecipe scraw) {
         currentlyEditing = scraw == null ? createScraw() : scraw;
         for (Node node : currentlyEditing.getChildren().filtered(node -> node instanceof PossibleHitBox)) {
             PossibleHitBox hitBox = ((PossibleHitBox) node);
@@ -285,13 +295,17 @@ public final class ScrawingsManager {
         editingGround = new Pane(scraw);
         edit.getDialogPane().setContent(editingGround);
         edit.getDialogPane().setMinSize(700, 243);
-        edit.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        if (!recipesList.contains(currentlyEditing))
+            edit.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        else edit.getDialogPane().getButtonTypes().add(ButtonType.OK);
         edit.setResultConverter(param -> {
             for (Node node : currentlyEditing.getChildren().filtered(node -> node instanceof PossibleHitBox)) {
                 PossibleHitBox hitBox = ((PossibleHitBox) node);
                 hitBox.setContextMenu(null);
                 editingGround.setOnContextMenuRequested(null);
             }
+            scraw.setClip(null);
             if (param == ButtonType.OK) {
                 if (!recipesList.contains(currentlyEditing)) recipesList.add(currentlyEditing);
                 return currentlyEditing;
@@ -304,16 +318,17 @@ public final class ScrawingsManager {
                 miscActions.show(currentlyEditing, event.getScreenX(), event.getScreenY());
             }
         });
-        return edit.showAndWait();
+        return edit;
     }
 
     private String scrawRecipeAsFXML(int scrawNumber) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + System.lineSeparator() +
-                "<?import connectionIndependent.Scrawings.scrawtypes.ScrawRecipe?>" + System.lineSeparator() +
-                "<?import connectionIndependent.Scrawings.hitboxes.MyPolyGroup?>" + System.lineSeparator() +
-                "<?import connectionIndependent.Scrawings.hitboxes.MyCircGroup?>" + System.lineSeparator() +
+                "<?import connectionIndependent.scrawings.scrawtypes.ScrawRecipe?>" + System.lineSeparator() +
+                "<?import connectionIndependent.scrawings.hitboxes.MyPolyGroup?>" + System.lineSeparator() +
+                "<?import connectionIndependent.scrawings.hitboxes.MyCircGroup?>" + System.lineSeparator() +
                 "<?import javafx.scene.shape.Circle?>" + System.lineSeparator() +
                 "<?import javafx.scene.shape.Polygon?>" + System.lineSeparator() +
+                "<?import java.lang.Double?>" + System.lineSeparator() +
                 recipesList.get(scrawNumber).toFXML("xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\"");
     }
 
@@ -321,73 +336,39 @@ public final class ScrawingsManager {
         for (ScrawRecipe recipe : recipesList) {
             File scraw = new File(directory, recipe.getName() + ".scraw");
             scraw.createNewFile();
-            new ObjectOutputStream(new FileOutputStream(scraw)).writeUTF(scrawRecipeAsFXML(recipesList.indexOf(recipe)));
+            new FileOutputStream(scraw).write(scrawRecipeAsFXML(recipesList.indexOf(recipe)).getBytes());
         }
-        File teamScraws = new File(directory, "teams.dscr");
-        String teamScrawsContents = "";
-        String teamScrawsData = "";
-        String teamScrawDecs = "";
-        File allianceScraws = new File(directory, "alliances.dscr");
-        String allianceScrawsContents = "";
-        String allianceScrawsData = "";
-        String allianceScrawDecs = "";
-        for (DataScraw scraw : scrawsMap.values()) {
-            if (scraw.isAlliance()) {
-                allianceScrawsContents += String.format("<String value=\"%s.scraw\"/>%n", scraw.getRecipeName());
-                allianceScrawsData += String.format("<DataScraw rootEvent=\"%d\" fx:id=\"s%s\" fx:factory=\"bytesArray\">%n", scraw.getRootEvent(), scraw.getScrawNumber());
-                for (ArrayList<Byte> array : scraw.getData()) {
-                    allianceScrawsData += String.format("<DataScraw fx:factory=\"byteArray\">%n");
-                    for (Byte bite : array) {
-                        allianceScrawsData += String.format("<Byte value=\"%d\"/>%n", bite);
-                    }
-                    allianceScrawsData += String.format("</DataScraw>%n");
+        saveDataScraws(directory, true);
+        saveDataScraws(directory, false);
+    }
+
+    private void saveDataScraws(File directory, boolean blueAlliance) throws IOException {
+        File scraws = new File(directory, (blueAlliance ? "blue" : "red") + "Scraw.dscr");
+        String scrawsContents = "";
+        String scrawData = "";
+        String scrawDecs = "";
+        for (DataScraw scraw : blueAlliance ? blueScrawsMap.values() : redScrawsMap.values()) {
+            scrawsContents += String.format("<String value=\"%s.scraw\"/>%n", scraw.getRecipeName());
+            scrawData += String.format("<DataScraw rootEvent=\"%d\" fx:id=\"s%d\" fx:factory=\"bytesArray\">%n", scraw.getRootEvent(), scraw.getScrawNumber());
+            for (ArrayList<Byte> array : scraw.getData()) {
+                scrawData += String.format("<DataScraw fx:factory=\"byteArray\">%n");
+                for (Byte bite : array) {
+                    scrawData += String.format("<Byte value=\"%d\"/>%n", bite);
                 }
-                allianceScrawsData += String.format("</DataScraw>%n");
-                allianceScrawDecs += String.format("<DataScraw scraw\"%s\" data=\"$s%s\"/>%n", scraw.getRecipeName(), scraw.getScrawNumber());
-            } else {
-                teamScrawsContents += String.format("<String value=\"%s.scraw\"/>%n", scraw.getRecipeName());
-                teamScrawsData += String.format("<DataScraw rootEvent=\"%d\" fx:id=\"s%d\" fx:factory=\"bytesArray\">%n", scraw.getRootEvent(), scraw.getScrawNumber());
-                for (ArrayList<Byte> array : scraw.getData()) {
-                    teamScrawsData += String.format("<DataScraw fx:factory=\"byteArray\">%n");
-                    for (Byte bite : array) {
-                        teamScrawsData += String.format("<Byte value=\"%d\"/>%n", bite);
-                    }
-                    teamScrawsData += String.format("</DataScraw>%n");
-                }
-                teamScrawsData += String.format("</DataScraw>%n");
-                teamScrawDecs += String.format("<DataScraw scraw\"%s\" data=\"$s%s\"/>%n", scraw.getRecipeName(), scraw.getScrawNumber());
+                scrawData += String.format("</DataScraw>%n");
             }
+            scrawData += String.format("</DataScraw>%n");
+            scrawDecs += String.format("<DataScraw scraw\"%s\" data=\"$s%s\"/>%n", scraw.getRecipeName(), scraw.getScrawNumber());
         }
-        if (!allianceScrawsContents.isEmpty()) {
-            allianceScraws.createNewFile();
-            new ObjectOutputStream(new FileOutputStream(allianceScraws)).writeUTF(String.format(
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>%n" +
-                            "<?import connectionIndependent.Scrawings.RemoteLoader?>%n" +
-                            "<?import java.lang.String?>%n" +
-                            "<?import connectionIndependent.Scrawings.scrawtypes.DataScraw?>%n" +
-                            "<?import java.lang.Byte?>%n" +
-                            "<Pane xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\">%n" +
-                            "<fx:define>%n" +
-                            "<RemoteLoader>%n" +
-                            "<fileLocs>%n" +
-                            "%s" +
-                            "</fileLocs>%n" +
-                            "</RemoteLoader>%n" +
-                            "%s" +
-                            "</fx:define>%n" +
-                            "<ListView>%n" +
-                            "%s" +
-                            "</ListView>%n" +
-                            "</Pane>"
-                    , allianceScrawsContents, allianceScrawsData, allianceScrawDecs));
-        }
-        teamScraws.createNewFile();
-        new ObjectOutputStream(new FileOutputStream(teamScraws)).writeUTF(String.format(
+        scraws.createNewFile();
+        new FileOutputStream(scraws).write(String.format(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>%n" +
-                        "<?import connectionIndependent.Scrawings.RemoteLoader?>%n" +
+                        "<?import connectionIndependent.scrawings.RemoteLoader?>%n" +
                         "<?import java.lang.String?>%n" +
-                        "<?import connectionIndependent.Scrawings.scrawtypes.DataScraw?>%n" +
+                        "<?import connectionIndependent.scrawings.scrawtypes.DataScraw?>%n" +
                         "<?import java.lang.Byte?>%n" +
+                        "<?import javafx.scene.layout.Pane?>%n" +
+                        "<?import javafx.scene.control.ListView?>%n" +
                         "<Pane xmlns=\"http://javafx.com/javafx\" xmlns:fx=\"http://javafx.com/fxml\">%n" +
                         "<fx:define>%n" +
                         "<RemoteLoader>%n" +
@@ -401,7 +382,7 @@ public final class ScrawingsManager {
                         "%s" +
                         "</ListView>%n" +
                         "</Pane>"
-                , teamScrawsContents, teamScrawsData, teamScrawDecs));
+                , scrawsContents, scrawData, scrawDecs).getBytes());
 
     }
 

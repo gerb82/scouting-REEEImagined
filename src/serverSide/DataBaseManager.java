@@ -9,10 +9,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -448,42 +445,32 @@ public class DataBaseManager implements Closeable {
 
     protected void updateEventsOnGame(boolean wasFinished, ArrayList<ScouterCommentEvent> comments, FullScoutingEvent... events) {
         try (Statement statement = database.createStatement()) {
+            if (events.length <= 0) return;
             writeLock.lock();
             Short team = events[0].getTeam();
             byte competition = events[0].getCompetition();
             short game = events[0].getGame();
             Byte startingLocation = events[0].getStartingLocation();
-            Set<Integer> numberedEvents = new HashSet<>();
             boolean cleanup = events[0].getEvent().getChainID() == -2;
-            boolean first = true;
-            String idList = "(";
-            if (!cleanup) {
-                statement.execute("INSERT OR REPLACE INTO " + Tables.gamesProgress + "(" + Columns.whichGame + "," + Columns.whichCompetition + "," + Columns.teamId + "," + Columns.currentState + (wasFinished ? "," + Columns.scoutPriority : "") + ") values" + System.lineSeparator() +
-                        "(" + game + "," + competition + "," + startingLocation + "," + (wasFinished ? 2 + "," + 0 : 1 + "," + ("SELECT " + Columns.scoutPriority + " FROM " + Tables.gamesProgress + " WHERE " + Columns.whichGame + " = " + game + "," + Columns.whichCompetition + " = " + competition + "," + Columns.teamId + " = " + team)) + ");"
-                );
-                for (FullScoutingEvent event : events) {
-                    if (event.getEvent().getChainID() != -1) {
-                        if (numberedEvents.contains(event.getEvent().getChainID())) {
-                            throw new IllegalArgumentException("A duplicate event was detected!");
-                        } else {
-                            numberedEvents.add(event.getEvent().getChainID());
-                            idList += (!first ? "," : "") + event.getEvent().getChainID();
-                        }
-                    }
-                }
-            }
+            statement.execute("INSERT OR REPLACE INTO " + Tables.gamesProgress + "(" + Columns.whichGame + "," + Columns.whichCompetition + "," + Columns.teamId + "," + Columns.currentState + (wasFinished ? "," + Columns.scoutPriority : "") + ") values" + System.lineSeparator() +
+                    "(" + game + "," + competition + "," + startingLocation + "," + (cleanup ? 0 + "," + 0 : (wasFinished ? 2 + "," + 0 : 1 + "," + ("SELECT " + Columns.scoutPriority + " FROM " + Tables.gamesProgress + " WHERE " + Columns.whichGame + " = " + game + "," + Columns.whichCompetition + " = " + competition + "," + Columns.teamId + " = " + team))) + ");"
+            );
             String stampsCleaner = "DELETE FROM " + Tables.events + System.lineSeparator() +
                     "WHERE " + Columns.eventChainID + " in " +
                     ("(SELECT " + Columns.chainID + " from " + Tables.eventFrames + System.lineSeparator() +
                             "where " + Columns.gameNumber + " = " + game + System.lineSeparator() +
                             "AND " + Columns.competitionNumber + " = " + competitionsMap.get(competition) + System.lineSeparator() +
-                            "AND " + Columns.teamNumber + " = " + String.valueOf(team)) + ");";
+                            "AND " + Columns.teamNumber + " = " + team) + ");";
 
             String framesCleaner = "DELETE FROM " + Tables.eventFrames + System.lineSeparator() +
                     "where " + Columns.gameNumber + " = " + game + System.lineSeparator() +
                     "AND " + Columns.competitionNumber + " = " + competitionsMap.get(competition) + System.lineSeparator() +
-                    "AND " + Columns.teamNumber + " = " + String.valueOf(team) + System.lineSeparator() +
-                    "AND " + Columns.chainID + " NOT IN " + idList + ");";
+                    "AND " + Columns.teamNumber + " = " + team + System.lineSeparator() +
+                    "AND " + Columns.chainID + " NOT IN " +
+                    ("SELECT " + Columns.commentID + " FROM " + Tables.eventFrames + "where " + Columns.gameNumber + " = " + game + System.lineSeparator() +
+                            "AND " + Columns.competitionNumber + " = " + competitionsMap.get(competition) + System.lineSeparator() +
+                            "AND " + Columns.teamNumber + " = " + team) + System.lineSeparator() +
+                    ");";
 
             String commentsRemover = "DELETE FROM " + Tables.comments + System.lineSeparator() +
                     "WHERE " + Columns.associatedGame + " = " + game + System.lineSeparator() +
@@ -496,6 +483,7 @@ public class DataBaseManager implements Closeable {
 
             if (cleanup) {
                 database.commit();
+                writeLock.unlock();
                 return;
             }
             String framesFixer = "INSERT INTO " + Tables.eventFrames + "(" + Columns.chainID + "," + Columns.gameNumber + "," + Columns.competitionNumber + "," + Columns.teamNumber + "," + Columns.startingLocation + ")" + System.lineSeparator() +
@@ -504,11 +492,11 @@ public class DataBaseManager implements Closeable {
                     "values"; // continues in the for-loop
             statement.execute("SELECT " + Columns.chainID + " FROM " + Tables.eventFrames + " ORDER BY " + Columns.chainID + " DESC LIMIT 1;");
             ResultSet set = statement.getResultSet();
-            Integer lastID;
-            if(set.next()) lastID = set.getInt(Columns.chainID.toString());
+            int lastID;
+            if (set.next()) lastID = set.getInt(Columns.chainID.toString());
             else lastID = 0;
             set.close();
-            first = true;
+            boolean first = true;
             for (FullScoutingEvent event : events) {
                 if (event.getEvent().getChainID() == -1) {
                     event.getEvent().setChainID(++lastID);
@@ -530,7 +518,24 @@ public class DataBaseManager implements Closeable {
                 }
             }
             statement.execute(framesFixer + ";");
-            statement.execute( stampsFixer + ";");
+            statement.execute(stampsFixer + ";");
+            if (comments.size() > 0) {
+                String commentsS = "INSERT INTO " + Tables.comments + "(" + Columns.commentID + "," + Columns.commentContent + "," + Columns.associatedGame + "," + Columns.associatedTeam + "," + Columns.associatedChain + "," + Columns.timeStamp + ") VALUES";
+                commentsS += String.join("", Collections.nCopies(comments.size(), "(?,?" + game + "," + team + ",?,?)"));
+                PreparedStatement addComments = database.prepareStatement(commentsS);
+                statement.execute("SELECT " + Columns.commentID + " FROM " + Tables.comments + " ORDER BY " + Columns.commentID + " DESC LIMIT 1;");
+                set = statement.getResultSet();
+                if (set.next()) lastID = set.getInt(Columns.chainID.toString());
+                else lastID = 0;
+                for (int i = 0; i/4 < comments.size();) {
+                    ScouterCommentEvent comment = comments.get(i/4);
+                    addComments.setInt(++i, comment.getCommentID() == -1 ? ++lastID : comment.getCommentID());
+                    addComments.setString(++i, comment.getText());
+                    if (comment.getAssociatedChain() != null) addComments.setInt(++i, comment.getAssociatedChain().getChainID()); else addComments.setNull(++i, Types.INTEGER);
+                    if (comment.getTimeStamp() != null) addComments.setShort(++i, comment.getTimeStamp()); else addComments.setNull(++i, Types.INTEGER);
+                }
+                addComments.execute();
+            }
             database.commit();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -540,7 +545,7 @@ public class DataBaseManager implements Closeable {
                 throw new Error("could not roll back database changes!", e1);
             }
             throw new IllegalArgumentException("The transaction could not be completed.", e);
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             writeLock.unlock();

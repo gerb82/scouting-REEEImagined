@@ -38,8 +38,6 @@ public class MyPolyGroup extends Group implements PossibleHitBox {
     private void prepareForEdit() {
         getChildren().add(poly);
         poly.setStrokeWidth(2.5);
-        Color fill = Color.BLACK;
-        poly.setFill(fill);
         for (int i = 0; i < poly.getPoints().size(); i += 2) {
             MyPoint myPoint = new MyPoint(poly.getPoints().get(i), poly.getPoints().get(i + 1), i, this);
             myPoints.add(myPoint);
@@ -159,9 +157,9 @@ public class MyPolyGroup extends Group implements PossibleHitBox {
     public String toFXML(){
         String points = "";
         for(double kill : this.poly.getPoints()){
-            points += String.format("<Double value=\"%d\"/>%n", (int) kill);
+            points += String.format("<Double fx:value=\"%d\"/>%n", (int) kill);
         }
-        return String.format("<MyPolyGroup hitboxId=\"%d\" layoutX=\"%d\" layoutY=\"%d\">%n<poly>%n<Polygon fill=\"%s\">%n%s</Polygon>%n</poly>%n</MyPolyGroup>", hitboxId, (int) getLayoutX(), (int) getLayoutY(), poly.getFill().toString(), points);
+        return String.format("<MyPolyGroup hitboxId=\"%d\" layoutX=\"%d\" layoutY=\"%d\">%n<poly>%n<Polygon fill=\"%s\">%n<points>%n%s</points>%n</Polygon>%n</poly>%n</MyPolyGroup>%n", hitboxId, (int) getLayoutX(), (int) getLayoutY(), fillToRGB((Color) poly.getFill()), points);
     }
 
     private byte hitboxId = -1;

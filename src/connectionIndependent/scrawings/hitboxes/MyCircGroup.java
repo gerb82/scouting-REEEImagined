@@ -84,7 +84,7 @@ public class MyCircGroup extends Group implements PossibleHitBox {
     }
 
     public String toFXML(){
-        return String.format("<MyCircGroup hitboxId=\"%d\">%n<circle>%n<Circle centerX=\"%d\" centerY=\"%d\" radius=\'%d\' fill=\"%s\"/>%n</circle>%n</MyCircGroup>", hitboxId, (int) circle.getCenterX(), (int) circle.getCenterY(), (int) circle.getRadius(), circle.getFill().toString());
+        return String.format("<MyCircGroup hitboxId=\"%d\">%n<circle>%n<Circle centerX=\"%d\" centerY=\"%d\" radius=\'%d\' fill=\"%s\"/>%n</circle>%n</MyCircGroup>%n", hitboxId, (int) circle.getCenterX(), (int) circle.getCenterY(), (int) circle.getRadius(), fillToRGB((Color) circle.getFill()));
     }
 
     private byte hitboxId = -1;

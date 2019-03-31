@@ -3,7 +3,7 @@ package gbuiLib.gbfx.popUpListView;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.MouseButton;
 
-public abstract class EditCell<T> extends ListCell<T> {
+public abstract class EditCell<T> extends DeleteableCell<T> {
 
     @Override
     public void startEdit() {

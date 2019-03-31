@@ -2,6 +2,7 @@ package connectionIndependent.scrawings.hitboxes;
 
 import javafx.scene.Group;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 
@@ -26,4 +27,14 @@ public interface PossibleHitBox {
     String toFXML();
 
     <T extends PossibleHitBox> T paste(double locX, double locY);
+
+    default String fillToRGB(Color color){
+        return "#" + hexFixer(color.getRed()) + hexFixer(color.getGreen()) + hexFixer(color.getBlue());
+    }
+
+    default String hexFixer(double color){
+        String s = Integer.toHexString((int) (color*255));
+        if(s.length() == 1) return "0" + s;
+        return s;
+    }
 }
