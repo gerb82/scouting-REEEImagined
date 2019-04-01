@@ -33,7 +33,8 @@ public class Main extends Application {
 
     private void gridUpdate(GridPane grid, DataScraw scraw, ScrawRecipe recipe) {
         grid.getChildren().removeIf(node -> !(node instanceof ComboBox));
-        if (!scraw.getRecipeName().equals(recipe.getName())) {
+        if (recipe == null) return;
+        if (scraw.getRecipeName() == null || !scraw.getRecipeName().equals(recipe.getName())) {
             scraw.getData().clear();
             scraw.setRecipeName(recipe.getName());
         }
@@ -45,7 +46,7 @@ public class Main extends Application {
         }
         for (int i = 0; i <= highestID; i++) {
             final int myNum = i;
-            if (scraw.getData().get(myNum) == null) scraw.getData().set(myNum, new ArrayList<>());
+            if (scraw.getData().size() <= myNum || scraw.getData().get(myNum) == null) scraw.getData().add(myNum, new ArrayList<>());
             grid.addRow(myNum + 1, new Label("Nodes " + myNum), new TextField(arraySerialize(scraw.getData().get(myNum))) {{
                 textProperty().addListener((observable, oldValue, newValue) -> {
                     String checkedInput = newValue.replaceAll("[^0-9,]|,+[^0-9]*,+", "");
@@ -75,6 +76,7 @@ public class Main extends Application {
         boolean first = true;
         for (Byte bite : array) {
             result += (!first ? "," : "") + bite;
+            first = false;
         }
         return result;
     }
@@ -106,10 +108,12 @@ public class Main extends Application {
             public void startEdit() {
                 super.startEdit();
                 if (getItem() == null && ScrawingsManager.getInstance().getRecipesList().size() > 0) {
-                    setItem(new DataScraw(ScrawingsManager.getInstance().getRecipesList().get(0), new ArrayList<>()));
+                    commitEdit(new DataScraw(ScrawingsManager.getInstance().getRecipesList().get(0), DataScraw.bytesArray(), (byte) 0));
+                    ScrawingsManager.getInstance().registerScraw(getItem(), blueAlliance);
                     getListView().getItems().add(null);
+                } else {
+                    cancelEdit();
                 }
-                System.out.println("test");
             }
         });
         ScrollPane preview = new ScrollPane() {{
@@ -124,6 +128,16 @@ public class Main extends Application {
         type.setCellFactory(param -> new ListCell<ScrawRecipe>() {
             @Override
             protected void updateItem(ScrawRecipe item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item != null) {
+                    setText(item.getName());
+                }
+            }
+        });
+        type.setButtonCell(new ListCell<ScrawRecipe>() {
+            @Override
+            protected void updateItem(ScrawRecipe item, boolean empty) {
+                super.updateItem(item, empty);
                 if (item != null) {
                     setText(item.getName());
                 }
@@ -131,21 +145,20 @@ public class Main extends Application {
         });
         dScraws.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) return;
-            preview.setContent(newValue);
-            values.getChildren().removeIf(node -> !node.equals(type));
-            if (newValue.getRecipeName() != null) {
-                gridUpdate(values, newValue, type.getItems().filtered(scrawRecipe -> scrawRecipe.getName().equals(newValue.getRecipeName())).get(0));
-            }
+            if (newValue.getRecipeName() == null) return;
+            type.getSelectionModel().select(ScrawingsManager.getInstance().getRecipesList().filtered(scrawRecipe -> newValue.getRecipeName().equals(scrawRecipe.getName())).get(0));
+            preview.setContent(type.getSelectionModel().getSelectedItem());
+            gridUpdate(values, newValue, type.getSelectionModel().getSelectedItem());
         });
-        type.showingProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue) {
+        dataScraws.tabPaneProperty().addListener((observable, oldValue, newValue) -> dataScraws.getTabPane().getSelectionModel().selectedItemProperty().addListener((observable1, oldValue1, newValue1) -> {
+            if (!newValue.equals(dataScraws)) {
                 type.getItems().clear();
                 type.getItems().addAll(ScrawingsManager.getInstance().getRecipesList());
             }
-        });
+        }));
         dScraws.getItems().addListener((ListChangeListener<? super DataScraw>) c -> {
             while (c.next()) {
-                if(c.wasPermutated()) continue;
+                if (c.wasPermutated()) continue;
                 dScraws.getItems().sort((o1, o2) -> {
                     if (o1 == null) return 1;
                     if (o2 == null) return -1;
@@ -153,9 +166,13 @@ public class Main extends Application {
                 });
             }
         });
+        type.getItems().addAll(ScrawingsManager.getInstance().getRecipesList());
         dScraws.getItems().addAll((blueAlliance ? ScrawingsManager.getInstance().getBlueScrawsMap() : ScrawingsManager.getInstance().getRedScrawsMap()).values());
         values.addRow(0, type);
-        type.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> gridUpdate(values, dScraws.getSelectionModel().getSelectedItem(), newValue));
+        type.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            gridUpdate(values, dScraws.getSelectionModel().getSelectedItem(), newValue);
+            preview.setContent(newValue);
+        });
         split.getItems().addAll(dScraws, editor);
         dataScraws.setContent(split);
         return dataScraws;
@@ -166,7 +183,6 @@ public class Main extends Application {
         TabPane types = new TabPane();
         Tab recipes = new Tab("Recipes");
         ScrawingsManager.initialize(true);
-        RemoteLoader.setLoadDirectory(runningDirectory.getPath());
         ScrawingsManager.getInstance().loadDirectory(runningDirectory);
 
         types.getTabs().addAll(recipes, dataScraws(true), dataScraws(false));
@@ -207,6 +223,7 @@ public class Main extends Application {
         }};
         scraws.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             recipeName.setDisable(newValue == null);
+            recipeName.setText(newValue == null ? "" : ((ScrawRecipe) newValue).getName());
             if (newValue == null) return;
             preview.setContent((ScrawRecipe) newValue);
         });

@@ -1,6 +1,5 @@
 package connectionIndependent.scrawings.scrawtypes;
 
-import connectionIndependent.scrawings.RemoteLoader;
 import connectionIndependent.scrawings.ScrawingsManager;
 import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
 import javafx.beans.DefaultProperty;
@@ -9,12 +8,10 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 
 import java.util.ArrayList;
-import java.util.function.Predicate;
 
 public class DataScraw extends Group {
 
     private byte scrawNumber = -1;
-    private String recipeName;
     private ArrayList<ArrayList<Byte>> data;
     private byte rootEvent;
 
@@ -31,13 +28,16 @@ public class DataScraw extends Group {
     }
 
     public String getRecipeName() {
-        return recipeName;
+        try {
+            return ((ScrawRecipe) getChildren().get(0)).getName();
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
-    public void setRecipeName(String recipeName){
+    public void setRecipeName(String recipeName) {
         getChildren().clear();
-        getChildren().add(ScrawingsManager.getInstance().getRecipesList().filtered(scrawRecipe -> scrawRecipe.getName().equals(recipeName)).get(0));
-        this.recipeName = recipeName;
+        getChildren().add(ScrawingsManager.getInstance().getRecipesList().filtered(scrawRecipe -> scrawRecipe.getName().equals(recipeName)).get(0).replicate());
     }
 
     public byte getScrawNumber() {
@@ -48,43 +48,41 @@ public class DataScraw extends Group {
         this.scrawNumber = scrawNumber;
     }
 
-    public DataScraw(@NamedArg("scraw") String scrawName, @NamedArg("data") ArrayList<ArrayList<Byte>> data){
-        this(((ScrawRecipe) RemoteLoader.getNodes().get(scrawName + ".scraw")).replicate(), data);
-    }
-
-    public DataScraw(ScrawRecipe scraw, ArrayList<ArrayList<Byte>> data){
-        recipeName = scraw.getName();
-        getChildren().add(scraw);
+    public DataScraw(@NamedArg("scraw") ScrawRecipe scraw, @NamedArg("data") BytesArray data, @NamedArg("rootEvent") byte root) {
+        rootEvent = root;
+        getChildren().add(scraw.replicate());
         this.data = data;
-        for(Node node : scraw.getChildren()){
-            if (node instanceof PossibleHitBox) {
-                if(((PossibleHitBox) node).getHitboxId() > -1){
-                    ((PossibleHitBox) node).getBytes().addAll(data.get(((PossibleHitBox) node).getHitboxId()));
+        if(!data.isEmpty()) {
+            for (Node node : scraw.getChildren()) {
+                if (node instanceof PossibleHitBox) {
+                    if (((PossibleHitBox) node).getHitboxId() > -1) {
+                        ((PossibleHitBox) node).getBytes().addAll(data.get(((PossibleHitBox) node).getHitboxId()));
+                    }
                 }
             }
         }
     }
 
-    public static ByteArray byteArray(){
+    public static ByteArray byteArray() {
         return new ByteArray();
     }
 
     @DefaultProperty("Values")
     public static class ByteArray extends ArrayList<Byte> {
 
-        public ByteArray getValues(){
+        public ByteArray getValues() {
             return this;
         }
     }
 
-    public static BytesArray bytesArray(){
+    public static BytesArray bytesArray() {
         return new BytesArray();
     }
 
     @DefaultProperty("Values")
-    public static class BytesArray extends ArrayList<ArrayList<Byte>>{
+    public static class BytesArray extends ArrayList<ArrayList<Byte>> {
 
-        public BytesArray getValues(){
+        public BytesArray getValues() {
             return this;
         }
     }

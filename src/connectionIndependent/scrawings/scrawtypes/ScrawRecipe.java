@@ -1,11 +1,8 @@
 package connectionIndependent.scrawings.scrawtypes;
 
-import connectionIndependent.scrawings.RemoteRecipe;
-import connectionIndependent.scrawings.ScrawingsManager;
 import connectionIndependent.scrawings.hitboxes.MyCircGroup;
 import connectionIndependent.scrawings.hitboxes.MyPolyGroup;
 import connectionIndependent.scrawings.hitboxes.PossibleHitBox;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 
@@ -14,7 +11,7 @@ import javafx.scene.layout.Pane;
     dynamic text and colors on Scraws
     flags {start, optional, abstract value}
  */
-public class ScrawRecipe extends Pane implements RemoteRecipe {
+public class ScrawRecipe extends Pane {
 
     private String name;
 
