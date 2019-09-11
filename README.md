@@ -1,3 +1,11 @@
+WARNING:
+this code is outdated, never finished, and probably discontinued.
+this project is here for educational purposes, and mainly for if i ever wanna finish or redo it, or reuse stuff from it
+
+
+
+
+
 Scouting REEEImagined:
 
 
